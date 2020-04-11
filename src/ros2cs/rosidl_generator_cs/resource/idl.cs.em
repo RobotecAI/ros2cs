@@ -21,8 +21,7 @@ include_directives = set()
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using ROS2.Interfaces;
-using ROS2.Utils;
+using ROS2;
 
 @#######################################################################
 @# Handle message
