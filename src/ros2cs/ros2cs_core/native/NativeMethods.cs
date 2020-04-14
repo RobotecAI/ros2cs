@@ -338,7 +338,7 @@ namespace ROS2
 
         // --- Custom rclcs lib ---
 
-        private static readonly IntPtr nativeRclcs = dllLoadUtils.LoadLibrary("rclcs");
+        private static readonly IntPtr nativeROS2CS = dllLoadUtils.LoadLibrary("ros2cs");
 
         // rclcs_init
 
@@ -346,7 +346,7 @@ namespace ROS2
         internal static RCLCSInitType
             rclcs_init =
             (RCLCSInitType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeRclcs,
+            nativeROS2CS,
             "rclcs_init"),
             typeof(RCLCSInitType));
 
@@ -357,7 +357,7 @@ namespace ROS2
         internal static GetErrorStringType
             rclcs_get_error_string =
             (GetErrorStringType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeRclcs,
+            nativeROS2CS,
             "rclcs_get_error_string"),
             typeof(GetErrorStringType));
 
@@ -368,7 +368,7 @@ namespace ROS2
         internal static DisposeErrorStringType
             rclcs_dispose_error_string =
             (DisposeErrorStringType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeRclcs,
+            nativeROS2CS,
             "rclcs_dispose_error_string"),
             typeof(DisposeErrorStringType));
 
@@ -378,7 +378,7 @@ namespace ROS2
         internal static NodeCreateDefaltOptionsType
             rclcs_node_create_default_options =
             (NodeCreateDefaltOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeRclcs,
+            nativeROS2CS,
             "rclcs_node_create_default_options"),
             typeof(NodeCreateDefaltOptionsType));
 
@@ -388,7 +388,7 @@ namespace ROS2
         internal static NodeDisposeOptionsType
             rclcs_node_dispose_options =
             (NodeDisposeOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeRclcs,
+            nativeROS2CS,
             "rclcs_node_dispose_options"),
             typeof(NodeDisposeOptionsType));
 
@@ -398,7 +398,7 @@ namespace ROS2
         internal static SubscriptionCreateDefaultOptionsType
             rclcs_subscription_create_default_options =
             (SubscriptionCreateDefaultOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeRclcs,
+            nativeROS2CS,
             "rclcs_subscription_create_default_options"),
             typeof(SubscriptionCreateDefaultOptionsType));
 
@@ -408,7 +408,7 @@ namespace ROS2
         internal static SubscriptionDisposeOptionsType
             rclcs_subscription_dispose_options =
             (SubscriptionDisposeOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeRclcs,
+            nativeROS2CS,
             "rclcs_subscription_dispose_options"),
             typeof(SubscriptionDisposeOptionsType));
 
@@ -418,7 +418,7 @@ namespace ROS2
         internal static PublisherCreateDefaultOptionsType
             rclcs_publisher_create_default_options =
             (PublisherCreateDefaultOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeRclcs,
+            nativeROS2CS,
             "rclcs_publisher_create_default_options"),
             typeof(PublisherCreateDefaultOptionsType));
 
@@ -428,7 +428,7 @@ namespace ROS2
         internal static PublisherDisposeOptionsType
             rclcs_publisher_dispose_options =
             (PublisherDisposeOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeRclcs,
+            nativeROS2CS,
             "rclcs_publisher_dispose_options"),
             typeof(PublisherDisposeOptionsType));
 
@@ -438,7 +438,7 @@ namespace ROS2
         internal static SubscriptionSetQosProfile
             rclcs_subscription_set_qos_profile =
             (SubscriptionSetQosProfile)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeRclcs,
+            nativeROS2CS,
             "rclcs_subscription_set_qos_profile"),
             typeof(SubscriptionSetQosProfile));
 
@@ -448,7 +448,7 @@ namespace ROS2
         internal static PublisherSetQosProfile
             rclcs_publisher_set_qos_profile =
             (PublisherSetQosProfile)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeRclcs,
+            nativeROS2CS,
             "rclcs_publisher_set_qos_profile"),
             typeof(PublisherSetQosProfile));
 
@@ -458,7 +458,7 @@ namespace ROS2
         internal static RclcsClockCreate
             rclcs_ros_clock_create =
             (RclcsClockCreate)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeRclcs,
+            nativeROS2CS,
             "rclcs_ros_clock_create"),
             typeof(RclcsClockCreate));
 
@@ -468,7 +468,7 @@ namespace ROS2
         internal static RclcsClockDispose
             rclcs_ros_clock_dispose =
             (RclcsClockDispose)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeRclcs,
+            nativeROS2CS,
             "rclcs_ros_clock_dispose"),
             typeof(RclcsClockDispose));
     }
