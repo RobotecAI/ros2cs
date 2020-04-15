@@ -9,6 +9,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(builtin_interfaces REQUIRED)
 find_package(dotnet_cmake_module REQUIRED)
 find_package(rosidl_generator_cs REQUIRED)
 
@@ -22,6 +23,7 @@ set(_assemblies_dep_dlls
     ${nav_msgs_ASSEMBLIES_DLL}
     ${tf2_msgs_ASSEMBLIES_DLL}
     ${sensor_msgs_ASSEMBLIES_DLL}
+    ${builtin_interfaces_ASSEMBLIES_DLL}
 )
 
 add_dotnet_executable(ros2cs_talker
@@ -34,8 +36,21 @@ add_dotnet_executable(ros2cs_listener
   INCLUDE_DLLS
   ${_assemblies_dep_dlls}
 )
+add_dotnet_executable(ros2cs_performance_talker
+  ROS2PerformanceTalker.cs
+  INCLUDE_DLLS
+  ${_assemblies_dep_dlls}
+)
+
+add_dotnet_executable(ros2cs_performance_listener
+  ROS2PerformanceListener.cs
+  INCLUDE_DLLS
+  ${_assemblies_dep_dlls}
+)
 
 install_dotnet(ros2cs_listener DESTINATION lib/${PROJECT_NAME}/dotnet)
 install_dotnet(ros2cs_talker DESTINATION lib/${PROJECT_NAME}/dotnet)
+install_dotnet(ros2cs_performance_talker DESTINATION lib/${PROJECT_NAME}/dotnet)
+install_dotnet(ros2cs_performance_listener DESTINATION lib/${PROJECT_NAME}/dotnet)
 
 ament_package()
