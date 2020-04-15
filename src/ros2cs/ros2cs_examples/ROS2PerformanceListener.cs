@@ -72,7 +72,7 @@ namespace ConsoleApplication
             int sampleSize = Convert.ToInt32(Console.ReadLine());
             Console.Clear();
             Console.WriteLine("Waiting for {0} messages...", sampleSize);
-            FixedSizedQueue queuee = new FixedSizedQueue(sampleSize);
+            FixedSizedQueue queue = new FixedSizedQueue(sampleSize);
 
             RosTime timeStamp = new RosTime();
             int counter = 0;
@@ -87,15 +87,16 @@ namespace ConsoleApplication
                   timeStamp.sec = msg.Header.Stamp.Sec;
                   var diff = (timeNow - timeStamp).Seconds;
                   
-                  queuee.Enqueue(diff);
+                  queue.Enqueue(diff);
                   counter++;
                   
-                  if (counter == queuee.Size)
+                  if (counter == queue.Size)
                   {
                       counter = 0;
                       Console.Clear();
-                      var result = queuee.MeanAndStdDev();
+                      var result = queue.MeanAndStdDev();
                       Console.WriteLine("Latency of sample size {0} - avg: {1:F6}s, std dev: {2:F10}s", sampleSize, result.mean, result.stdDev);
+                      Environment.Exit(0);
                   }
               },
               qos);

@@ -16,7 +16,7 @@
       <HintPath>../../../install/lib/dotnet/sensor_msgs_assembly.dll</HintPath>
     </Reference>
     <Reference Include="builtin_interfaces">
-      <HintPath>/home/pjaroszek/projects/robotec/ros2cs/install/lib/dotnet/builtin_interfaces_assembly.dll</HintPath>
+      <HintPath>../../../install/lib/dotnet/builtin_interfaces_assembly.dll</HintPath>
     </Reference>
   </ItemGroup>
 
