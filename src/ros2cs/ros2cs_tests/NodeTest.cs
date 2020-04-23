@@ -7,18 +7,17 @@ namespace ROS2.Test
     public class NodeTest
     {
         Context context;
-        Node node;
+        INode node;
 
         string TEST_NODE = "my_node";
         string TEST_NAMESPACE = "/my_ns";
-
 
         [SetUp]
         public void SetUp()
         {
             context = new Context();
             Ros2cs.Init(context);
-            node = Ros2cs.CreateNode(TEST_NODE, nodeNamespace: TEST_NAMESPACE, context: context);
+            node = Ros2cs.CreateNode(TEST_NODE, ns: TEST_NAMESPACE, ctx: context);
         }
 
         [TearDown]

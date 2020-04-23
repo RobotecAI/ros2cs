@@ -62,14 +62,13 @@ namespace ConsoleApplication
         {
             Console.WriteLine("Enter PC2 data size: ");
             int messageSize = Convert.ToInt32(Console.ReadLine());
-            Context ctx = new Context();
-            Ros2cs.Init(ctx);
-            INode node = Ros2cs.CreateNode("perf_talker", ctx);
+            Ros2cs.Init();
+            INode node = Ros2cs.CreateNode("perf_talker");
             QualityOfServiceProfile qos = new QualityOfServiceProfile(QosProfiles.SENSOR_DATA);
             IPublisher<sensor_msgs.msg.PointCloud2> pc_pub = node.CreatePublisher<sensor_msgs.msg.PointCloud2>("perf_chatter", qos);
             sensor_msgs.msg.PointCloud2 msg = PrepMessage(messageSize);
 
-            while (Ros2cs.Ok(ctx))
+            while (Ros2cs.Ok())
             {
                 // adamdbrw - if at least small sleep is not made before
                 // the first published message, it doesn't reach subscribers
@@ -81,7 +80,7 @@ namespace ConsoleApplication
                 msg.UpdateHeaderTime(nowTime.sec, nowTime.nanosec);
                 pc_pub.Publish(msg);
             }
-            Ros2cs.Shutdown(ctx);
+            Ros2cs.Shutdown();
         }
     }
 }

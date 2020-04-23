@@ -2,6 +2,7 @@
 
 namespace ROS2
 {
+    public interface IPublisherBase: IDisposable {}
     public interface IPublisher<T>: IPublisherBase
         where T: Message
     {

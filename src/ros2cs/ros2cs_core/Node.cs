@@ -10,27 +10,28 @@ namespace ROS2
     public class Node: INode
     {
         public ConcurrentBag<ISubscriptionBase> Subscriptions { get { return subscriptions; } }
-
         internal rcl_node_t handle;
 
+        private ConcurrentBag<ISubscriptionBase> subscriptions;
         private IntPtr defaultNodeOptions;
         private bool disposed;
-        private ConcurrentBag<ISubscriptionBase> subscriptions;
+
         private IList<IPublisherBase> publishers;
 
+        //Use Ros2cs.CreateNode to construct
         public Node(string nodeName, Context context, string nodeNamespace = null)
         {
             subscriptions = new ConcurrentBag<ISubscriptionBase>();
             publishers = new List<IPublisherBase>();
 
-            if (nodeNamespace == null) { nodeNamespace = "/";  }
+            if (nodeNamespace == null)
+                nodeNamespace = "/";
+
             if (context.Ok)
             {
                 handle = NativeMethods.rcl_get_zero_initialized_node();
                 defaultNodeOptions = NativeMethods.rclcs_node_create_default_options();
-
                 Utils.CheckReturnEnum(NativeMethods.rcl_node_init(ref handle, nodeName, nodeNamespace, ref context.handle, defaultNodeOptions));
-
             }
             else
             {
@@ -72,7 +73,6 @@ namespace ROS2
                     publisher.Dispose();
                 }
                 publishers.Clear();
-                subscriptions.Clear();
                 DestroyNode();
 
                 disposed = true;
@@ -85,7 +85,6 @@ namespace ROS2
             NativeMethods.rclcs_node_dispose_options(defaultNodeOptions);
         }
 
-
         public Publisher<T> CreatePublisher<T>(string topic, QualityOfServiceProfile qos = null) where T : Message, new()
         {
             Publisher<T> publisher = new Publisher<T>(topic, this, qos);
@@ -95,11 +94,6 @@ namespace ROS2
 
         public Subscription<T> CreateSubscription<T>(string topic, Action<T> callback, QualityOfServiceProfile qos = null) where T : Message, new()
         {
-            if(qos == null)
-            {
-                qos = new QualityOfServiceProfile(QosProfiles.DEFAULT);
-            }
-
             Subscription<T> subscription = new Subscription<T>(topic, this, callback, qos);
             subscriptions.Add(subscription);
             return subscription;

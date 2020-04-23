@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace ROS2
 {
-    public class WaitSet: IDisposable
+    internal class WaitSet: IDisposable
     {
         private rcl_wait_set_t handle;
         private rcl_allocator_t allocator;

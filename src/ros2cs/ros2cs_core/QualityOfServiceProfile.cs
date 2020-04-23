@@ -18,7 +18,6 @@ namespace ROS2
         internal rmw_qos_profile_t handle;
         public QosProfiles Profile;
 
-
         //TODO - once the upgrade is there for FastRTPS, use liveliness as well
         public QualityOfServiceProfile(QosProfiles profile)
         {

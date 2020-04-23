@@ -1,6 +1,3 @@
-// generated from rosidl_generator_cs/resource/msg.c.em
-// generated code does not contain a copyright notice
-
 @#######################################################################
 @# EmPy template for generating <msg>_s.c files
 @#

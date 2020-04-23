@@ -1,6 +1,3 @@
-// generated from rosidl_generator_cs/resource/msg_typesupport.c.em
-// generated code does not contain a copyright notice
-
 @#######################################################################
 @# EmPy template for generating <msg_pkg>_s.ep.<typesupport_impl>_c.c files
 @#

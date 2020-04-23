@@ -10,18 +10,19 @@
     <PackageReference Include="nunit" Version="3.11.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.11.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
+    <PackageReference Include="System.Collections.Concurrent" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ros2cs_core\ros2cs.csproj" />
+    <ProjectReference Include="..\ros2cs_core\ros2cs_core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="std_msgs">
-      <HintPath>../../../../install/ros2cs_tests/lib/ros2cs_tests/dotnet/std_msgs_assembly.dll</HintPath>
+      <HintPath>../../../install/lib/ros2cs_tests/dotnet/std_msgs_assembly.dll</HintPath>
     </Reference>
     <Reference Include="test_msgs">
-      <HintPath>../../../../install/ros2cs_tests/lib/ros2cs_tests/dotnet/test_msgs_assembly.dll</HintPath>
+      <HintPath>../../../install/lib/ros2cs_tests/dotnet/test_msgs_assembly.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

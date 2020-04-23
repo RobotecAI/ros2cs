@@ -60,9 +60,7 @@ set(CS_INTERFACES
   interfaces/Interfaces.cs
   interfaces/INode.cs
   interfaces/IPublisher.cs
-  interfaces/IPublisherBase.cs
   interfaces/ISubscription.cs
-  interfaces/ISubscriptionBase.cs
 )
 
 set(CS_NATIVE

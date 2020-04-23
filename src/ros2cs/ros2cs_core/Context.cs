@@ -7,51 +7,46 @@ namespace ROS2
 	/// </summary>
 	public class Context: IDisposable
 	{
-        //TODO: Init context when created?
         internal rcl_context_t handle;
         private rcl_allocator_t allocator;
-
-        public bool isInit;
-        private bool disposed;
+				private bool IsInitialized;
 
         public Context()
         {
-            allocator = NativeMethods.rcutils_get_default_allocator();
-            handle = NativeMethods.rcl_get_zero_initialized_context();
-        }
-
-        public void Init()
-        {
-            Utils.CheckReturnEnum(NativeMethods.rclcs_init(ref handle, allocator));
-            isInit = true;
-        }
-
-        public void Shutdown()
-        {
-            Utils.CheckReturnEnum(NativeMethods.rcl_shutdown(ref handle));
-            isInit = false;
+						IsInitialized = false;
         }
 
         public bool Ok
         {
-            get { return NativeMethods.rcl_context_is_valid(ref handle); }
+            get { return IsInitialized && NativeMethods.rcl_context_is_valid(ref handle); }
         }
+
+				//To keep clarity with rcl naming
+				internal void Shutdown()
+				{
+						Dispose(true);
+				}
+
+				internal void Init()
+				{
+						allocator = NativeMethods.rcutils_get_default_allocator();
+						handle = NativeMethods.rcl_get_zero_initialized_context();
+						Utils.CheckReturnEnum(NativeMethods.rclcs_init(ref handle, allocator));
+						IsInitialized = true;
+				}
 
         public void Dispose()
         {
-            Dispose(true);
+            Shutdown();
         }
 
         private void Dispose(bool disposing)
         {
-            if (!disposed)
+            if (IsInitialized)
             {
-                if(isInit)
-                {
-                    Shutdown();
-                }
+                Utils.CheckReturnEnum(NativeMethods.rcl_shutdown(ref handle));
                 NativeMethods.rcl_context_fini(ref handle);
-                disposed = true;
+								IsInitialized = false;
             }
         }
 
@@ -59,7 +54,5 @@ namespace ROS2
         {
             Dispose(false);
         }
-
     }
-
 }

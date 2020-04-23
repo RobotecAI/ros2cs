@@ -5,39 +5,73 @@ namespace ROS2
 {
     public static class Ros2cs
     {
-        public static void Init(Context context)
+        private static Context defaultGlobalContext;
+
+        public static void Init()
         {
-            context.Init();
+            defaultGlobalContext = new Context();
+            Init(defaultGlobalContext);
         }
 
-        public static void Shutdown(Context context)
+        public static void Shutdown()
         {
-            context.Shutdown();
+            Shutdown(defaultGlobalContext);
+            defaultGlobalContext = null;
         }
 
-        public static Node CreateNode(string nodeName, Context context, string nodeNamespace = null)
+        public static void Init(Context ctx)
         {
-            return new Node(nodeName, context, nodeNamespace: nodeNamespace);
+            ctx.Init();
         }
 
-        public static void Spin(INode node, Context context)
+        public static void Shutdown(Context ctx)
         {
-            while (Ok(context))
+            ctx.Shutdown();
+        }
+
+        public static INode CreateNode(string nodeName, string ns = null)
+        {
+            return CreateNode(nodeName, defaultGlobalContext, ns);
+        }
+
+        public static INode CreateNode(string nodeName, Context ctx, string ns = null)
+        {
+            return new Node(nodeName, ctx, ns);
+        }
+
+        public static void Spin(INode node)
+        {
+            Spin(node, defaultGlobalContext);
+        }
+
+        public static void Spin(INode node, Context ctx)
+        {
+            while (Ok(ctx))
             {
-                SpinOnce(node, context, 0.1);
+                SpinOnce(node, 0.1);
             }
         }
 
-        public static bool Ok(Context context)
+        public static bool Ok()
         {
-            return NativeMethods.rcl_context_is_valid(ref context.handle);
+            return Ok(defaultGlobalContext);
         }
 
-        public static void SpinOnce(INode node, Context context, double timeoutSec)
+        public static bool Ok(Context ctx)
+        {
+            return (ctx != null && NativeMethods.rcl_context_is_valid(ref ctx.handle));
+        }
+
+        public static void SpinOnce(INode node, double timeoutSec)
+        {
+            SpinOnce(node, timeoutSec, defaultGlobalContext);
+        }
+
+        public static void SpinOnce(INode node, double timeoutSec, Context ctx)
         {
             if (timeoutSec > 0.0001d)
             {
-                WaitSet waitSet = new WaitSet(context, node.Subscriptions);
+                WaitSet waitSet = new WaitSet(ctx, node.Subscriptions);
                 waitSet.Wait(timeoutSec);
             }
 
@@ -46,27 +80,13 @@ namespace ROS2
                 if (subscription == null)
                     continue; //Rare situation in which we are disposing, the snapshot was taken before clear() was called but after explicit Dispose()
 
-                Message message = subscription.CreateMessage();
-                bool gotMessage = Take(subscription, message);
-
-                if (gotMessage)
-                {
-                    subscription.TriggerCallback(message);
-                }
+                subscription.TakeMessage();
             }
         }
 
         public static String GetRMWImplementationID()
         {
             return MarshallingHelpers.PtrToString(NativeMethods.rmw_get_implementation_identifier());
-        }
-
-        public static bool Take(ISubscriptionBase subscription, Message message)
-        {
-            rcl_subscription_t subscription_handle = subscription.Handle;
-            IntPtr message_handle = message.Handle;
-            RCLReturnEnum ret = (RCLReturnEnum)NativeMethods.rcl_take(ref subscription_handle, message_handle, IntPtr.Zero);
-            return ret == RCLReturnEnum.RCL_RET_OK;
         }
     }
 }

@@ -64,10 +64,9 @@ namespace ConsoleApplication
     {
         public static void Main(string[] args)
         {
-            Context ctx = new Context();
-            Ros2cs.Init(ctx);
+            Ros2cs.Init();
             Clock clock = new Clock();
-            INode node = Ros2cs.CreateNode("perf_listener", ctx);
+            INode node = Ros2cs.CreateNode("perf_listener");
             Console.WriteLine("Enter sample size: ");
             int sampleSize = Convert.ToInt32(Console.ReadLine());
             Console.Clear();
@@ -86,10 +85,10 @@ namespace ConsoleApplication
                   timeStamp.nanosec = msg.Header.Stamp.Nanosec;
                   timeStamp.sec = msg.Header.Stamp.Sec;
                   var diff = (timeNow - timeStamp).Seconds;
-                  
+
                   queue.Enqueue(diff);
                   counter++;
-                  
+
                   if (counter == queue.Size)
                   {
                       counter = 0;
@@ -101,8 +100,8 @@ namespace ConsoleApplication
               },
               qos);
 
-            Ros2cs.Spin(node, ctx);
-            Ros2cs.Shutdown(ctx);
+            Ros2cs.Spin(node);
+            Ros2cs.Shutdown();
         }
     }
 }

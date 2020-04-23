@@ -2,24 +2,35 @@ using System;
 
 namespace ROS2
 {
-    public class Subscription<T>: ISubscription<T>
-        where T : Message, new ()
+    public class Subscription<T>: ISubscription<T> where T : Message, new ()
     {
-        private rcl_subscription_t handle;
-        rcl_node_t nodeHandle;
-
-        private IntPtr subscriptionOptions;
         public rcl_subscription_t Handle { get { return handle; } }
         internal Action<T> callback;
 
+        private IntPtr subscriptionOptions;
+        private rcl_subscription_t handle;
+        private rcl_node_t nodeHandle;
         private bool disposed;
 
-        public Message CreateMessage()
+        public void TakeMessage()
+        {
+            Message message = CreateMessage();
+            IntPtr message_handle = message.Handle;
+            RCLReturnEnum ret = (RCLReturnEnum)NativeMethods.rcl_take(ref handle, message_handle, IntPtr.Zero);
+            bool gotMessage = ret == RCLReturnEnum.RCL_RET_OK;
+
+            if (gotMessage)
+            {
+                TriggerCallback(message);
+            }
+        }
+
+        private Message CreateMessage()
         {
             return (Message)new T();
         }
 
-        public void TriggerCallback(Message message)
+        private void TriggerCallback(Message message)
         {
             message.ReadNativeMessage();
             callback((T)message);
@@ -63,16 +74,10 @@ namespace ROS2
         {
             if(!disposed)
             {
-                if(disposing)
-                {
-                    // Dispose managed resources.
-                }
-
                 DestroySubscription();
                 disposed = true;
             }
         }
-
 
         private void DestroySubscription()
         {
