@@ -6,10 +6,7 @@ namespace ROS2
     internal static class NativeMethods
     {
         private static readonly DllLoadUtils dllLoadUtils = DllLoadUtilsFactory.GetDllLoadUtils();
-        // --- RCL ---
         private static readonly IntPtr nativeRCL = dllLoadUtils.LoadLibraryNoSuffix("rcl");
-
-        // rcl_get_zero_initialized_context
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate rcl_context_t GetZeroInitializedContextType();
@@ -20,7 +17,6 @@ namespace ROS2
             "rcl_get_zero_initialized_context"),
             typeof(GetZeroInitializedContextType));
 
-        // rcl_get_zero_initialized_init_options
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate rcl_init_options_t GetZeroInitializedInitOptionsType();
         internal static GetZeroInitializedInitOptionsType
@@ -30,7 +26,6 @@ namespace ROS2
             "rcl_get_zero_initialized_init_options"),
             typeof(GetZeroInitializedInitOptionsType));
 
-        // rcl_init_options_init
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int InitOptionsInitType(ref rcl_init_options_t init_options, rcl_allocator_t allocator);
         internal static InitOptionsInitType
@@ -40,7 +35,6 @@ namespace ROS2
         "rcl_init_options_init"),
         typeof(InitOptionsInitType));
 
-        // rcl_shutdown
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int ShutdownType(ref rcl_context_t context);
         internal static ShutdownType
@@ -50,7 +44,6 @@ namespace ROS2
             "rcl_shutdown"),
             typeof(ShutdownType));
 
-        // rcl_context_is_valid
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate bool ContextIsValidType(ref rcl_context_t context);
         internal static ContextIsValidType
@@ -60,7 +53,6 @@ namespace ROS2
             "rcl_context_is_valid"),
             typeof(ContextIsValidType));
 
-        // rcl_init
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int InitType(int argc, [In, Out] string[] argv, ref rcl_init_options_t option, ref rcl_context_t context);
         internal static InitType
@@ -70,7 +62,6 @@ namespace ROS2
             "rcl_init"),
             typeof(InitType));
 
-        // rcl_context_fini
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int ContextFiniType(ref rcl_context_t context);
         internal static ContextFiniType
@@ -80,7 +71,6 @@ namespace ROS2
             "rcl_context_fini"),
             typeof(ContextFiniType));
 
-        // rcl_get_zero_initialized_node
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate rcl_node_t GetZeroInitializedNodeType();
         internal static GetZeroInitializedNodeType
@@ -90,8 +80,6 @@ namespace ROS2
             "rcl_get_zero_initialized_node"),
             typeof(GetZeroInitializedNodeType));
 
-
-        // rcl_node_init
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int NodeInitType(ref rcl_node_t node, string name, string node_namespace, ref rcl_context_t context, IntPtr default_options);
         internal static NodeInitType
@@ -101,7 +89,6 @@ namespace ROS2
             "rcl_node_init"),
             typeof(NodeInitType));
 
-        // rcl_node_fini
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int NodeFiniType(ref rcl_node_t node);
         internal static NodeFiniType
@@ -111,7 +98,6 @@ namespace ROS2
             "rcl_node_fini"),
             typeof(NodeFiniType));
 
-        // rcl_node_get_name
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate IntPtr NodeGetNameType(ref rcl_node_t node);
         internal static NodeGetNameType
@@ -121,7 +107,6 @@ namespace ROS2
             "rcl_node_get_name"),
             typeof(NodeGetNameType));
 
-        // rcl_node_get_namespace
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate IntPtr NodeGetNamespaceType(ref rcl_node_t node);
         internal static NodeGetNamespaceType
@@ -131,7 +116,6 @@ namespace ROS2
             "rcl_node_get_namespace"),
             typeof(NodeGetNamespaceType));
 
-        // rcl_publisher_get_default_options
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate rcl_publisher_options_t PublisherGetDefaultOptionsType();
         internal static PublisherGetDefaultOptionsType
@@ -141,7 +125,6 @@ namespace ROS2
             "rcl_publisher_get_default_options"),
             typeof(PublisherGetDefaultOptionsType));
 
-        // rcl_get_zero_initialized_publisher
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate rcl_publisher_t GetZeroInitiazizedPublisherType();
         internal static GetZeroInitiazizedPublisherType
@@ -151,7 +134,6 @@ namespace ROS2
             "rcl_get_zero_initialized_publisher"),
             typeof(GetZeroInitiazizedPublisherType));
 
-        // rcl_publisher_init
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int PublisherInitType(ref rcl_publisher_t publisher, ref rcl_node_t node, IntPtr type_support_ptr, string topic_name, IntPtr publisher_options);
         internal static PublisherInitType
@@ -161,7 +143,6 @@ namespace ROS2
             "rcl_publisher_init"),
             typeof(PublisherInitType));
 
-        // rcl_publisher_fini
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int PublisherFiniType(ref rcl_publisher_t publisher, ref rcl_node_t node);
         internal static PublisherFiniType
@@ -171,7 +152,6 @@ namespace ROS2
             "rcl_publisher_fini"),
             typeof(PublisherFiniType));
 
-        // rcl_publish
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int PublishType(ref rcl_publisher_t publisher, IntPtr message);
         internal static PublishType
@@ -181,7 +161,6 @@ namespace ROS2
             "rcl_publish"),
             typeof(PublishType));
 
-        // rcl_get_zero_initialized_subscription
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate rcl_subscription_t GetZeroInitializedSubcriptionType();
         internal static GetZeroInitializedSubcriptionType
@@ -191,8 +170,6 @@ namespace ROS2
             "rcl_get_zero_initialized_subscription"),
             typeof(GetZeroInitializedSubcriptionType));
 
-
-        // rcl_subscription_init
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int SubscriptionInitType(ref rcl_subscription_t subscription, ref rcl_node_t node, IntPtr type_support_ptr, string topic_name, IntPtr subscription_options);
         internal static SubscriptionInitType
@@ -202,7 +179,6 @@ namespace ROS2
             "rcl_subscription_init"),
             typeof(SubscriptionInitType));
 
-        // rcl_subscription_fini
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int SubscriptionFiniType(ref rcl_subscription_t subscription, ref rcl_node_t node);
         internal static SubscriptionFiniType
@@ -212,7 +188,6 @@ namespace ROS2
             "rcl_subscription_fini"),
             typeof(SubscriptionFiniType));
 
-        // rcl_subscription_is_valid
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate bool SubscriptionIsValidType(ref rcl_subscription_t subscription);
         internal static SubscriptionIsValidType
@@ -222,7 +197,6 @@ namespace ROS2
             "rcl_subscription_is_valid"),
             typeof(SubscriptionIsValidType));
 
-        // rcl_take
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int TakeType(ref rcl_subscription_t subscription, IntPtr message_handle, IntPtr message_info);
         internal static TakeType
@@ -232,7 +206,6 @@ namespace ROS2
             "rcl_take"),
             typeof(TakeType));
 
-        // rcl_get_zero_initialized_wait_set
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate rcl_wait_set_t GetZeroInitializedWaitSetType();
         internal static GetZeroInitializedWaitSetType
@@ -242,7 +215,6 @@ namespace ROS2
             "rcl_get_zero_initialized_wait_set"),
             typeof(GetZeroInitializedWaitSetType));
 
-        // rcl_wait_set_init
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int WaitSetInitType(ref rcl_wait_set_t wait_set,
                                               ulong number_of_subscriptions,
@@ -260,7 +232,6 @@ namespace ROS2
             "rcl_wait_set_init"),
             typeof(WaitSetInitType));
 
-        // rcl_wait_set_fini
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int WatiSetFiniType(ref rcl_wait_set_t wait_set);
         internal static WatiSetFiniType
@@ -270,7 +241,6 @@ namespace ROS2
             "rcl_wait_set_fini"),
             typeof(WatiSetFiniType));
 
-        // rcl_wait_set_clear
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int WaitSetClearType(ref rcl_wait_set_t wait_set);
         internal static WaitSetClearType
@@ -280,7 +250,6 @@ namespace ROS2
             "rcl_wait_set_clear"),
             typeof(WaitSetClearType));
 
-        // rcl_wait_set_add_subscription
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int WaitSetAddSubscriptionType(ref rcl_wait_set_t wait_set, ref rcl_subscription_t subscription, UIntPtr index);
         internal static WaitSetAddSubscriptionType
@@ -290,7 +259,6 @@ namespace ROS2
             "rcl_wait_set_add_subscription"),
             typeof(WaitSetAddSubscriptionType));
 
-        // rcl_wait
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int WaitType(ref rcl_wait_set_t wait_set, ulong timeout);
         internal static WaitType
@@ -300,7 +268,6 @@ namespace ROS2
             "rcl_wait"),
             typeof(WaitType));
 
-        // rcl_clock_get_now
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int RclClockGetNow(IntPtr ros_clock, ref long query_now);
         internal static RclClockGetNow
@@ -310,11 +277,7 @@ namespace ROS2
             "rcl_clock_get_now"),
             typeof(RclClockGetNow));
 
-
-        // --- RCUtils ---
         private static readonly IntPtr nativeRCUtils = dllLoadUtils.LoadLibraryNoSuffix("rcutils");
-
-        // rcutils_get_default_allocator
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate rcl_allocator_t RclGetDefaultAllocatorType();
@@ -325,7 +288,6 @@ namespace ROS2
             "rcutils_get_default_allocator"),
             typeof(RclGetDefaultAllocatorType));
 
-        // rcl_reset_error
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void ResetErrorType();
         internal static ResetErrorType
@@ -335,12 +297,7 @@ namespace ROS2
             "rcutils_reset_error"),
             typeof(ResetErrorType));
 
-
-        // --- Custom rclcs lib ---
-
         private static readonly IntPtr nativeROS2CS = dllLoadUtils.LoadLibrary("ros2cs");
-
-        // rclcs_init
 
         internal delegate int RCLCSInitType(ref rcl_context_t context, rcl_allocator_t allocator);
         internal static RCLCSInitType
@@ -350,7 +307,15 @@ namespace ROS2
             "rclcs_init"),
             typeof(RCLCSInitType));
 
-        // rcl_get_error_string
+        //TODO - load library rmw
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate IntPtr GetRMWIdentifierType();
+        internal static GetRMWIdentifierType
+            rmw_get_implementation_identifier =
+            (GetRMWIdentifierType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+            nativeROS2CS,
+            "rclcs_get_rmw_implementation_id"),
+            typeof(GetRMWIdentifierType));
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate IntPtr GetErrorStringType();
@@ -361,8 +326,6 @@ namespace ROS2
             "rclcs_get_error_string"),
             typeof(GetErrorStringType));
 
-        // rcl_dispose_error_string
-
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void DisposeErrorStringType(IntPtr error_c_string);
         internal static DisposeErrorStringType
@@ -372,7 +335,6 @@ namespace ROS2
             "rclcs_dispose_error_string"),
             typeof(DisposeErrorStringType));
 
-        // rclcs_node_create_default_options
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate IntPtr NodeCreateDefaltOptionsType();
         internal static NodeCreateDefaltOptionsType
@@ -382,7 +344,6 @@ namespace ROS2
             "rclcs_node_create_default_options"),
             typeof(NodeCreateDefaltOptionsType));
 
-        // rclcs_node_dispose_options
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void NodeDisposeOptionsType(IntPtr options);
         internal static NodeDisposeOptionsType
@@ -392,7 +353,6 @@ namespace ROS2
             "rclcs_node_dispose_options"),
             typeof(NodeDisposeOptionsType));
 
-        // rclcs_subscription_create_default_options
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate IntPtr SubscriptionCreateDefaultOptionsType();
         internal static SubscriptionCreateDefaultOptionsType
@@ -402,7 +362,6 @@ namespace ROS2
             "rclcs_subscription_create_default_options"),
             typeof(SubscriptionCreateDefaultOptionsType));
 
-        // rclcs_subscription_dispose_options
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void SubscriptionDisposeOptionsType(IntPtr options);
         internal static SubscriptionDisposeOptionsType
@@ -412,7 +371,6 @@ namespace ROS2
             "rclcs_subscription_dispose_options"),
             typeof(SubscriptionDisposeOptionsType));
 
-        // rclcs_publisher_create_default_options
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate IntPtr PublisherCreateDefaultOptionsType();
         internal static PublisherCreateDefaultOptionsType
@@ -422,7 +380,6 @@ namespace ROS2
             "rclcs_publisher_create_default_options"),
             typeof(PublisherCreateDefaultOptionsType));
 
-        // rclcs_publisher_dispose_options
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void PublisherDisposeOptionsType(IntPtr options);
         internal static PublisherDisposeOptionsType
@@ -432,7 +389,6 @@ namespace ROS2
             "rclcs_publisher_dispose_options"),
             typeof(PublisherDisposeOptionsType));
 
-        // rclcs_subscription_set_qos_profile
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void SubscriptionSetQosProfile(IntPtr subscription_options, int profile);
         internal static SubscriptionSetQosProfile
@@ -442,7 +398,6 @@ namespace ROS2
             "rclcs_subscription_set_qos_profile"),
             typeof(SubscriptionSetQosProfile));
 
-        // rclcs_subscription_set_qos_profile
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void PublisherSetQosProfile(IntPtr publisher_options, int profile);
         internal static PublisherSetQosProfile
@@ -452,7 +407,6 @@ namespace ROS2
             "rclcs_publisher_set_qos_profile"),
             typeof(PublisherSetQosProfile));
 
-        // rclcs_ros_clock_create
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate IntPtr RclcsClockCreate(ref rcl_allocator_t allocator_handle);
         internal static RclcsClockCreate
@@ -462,7 +416,6 @@ namespace ROS2
             "rclcs_ros_clock_create"),
             typeof(RclcsClockCreate));
 
-        // rclcs_ros_clock_dispose
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void RclcsClockDispose(IntPtr clock_handle);
         internal static RclcsClockDispose

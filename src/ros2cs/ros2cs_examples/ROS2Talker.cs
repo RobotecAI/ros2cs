@@ -15,6 +15,7 @@ namespace ConsoleApplication
             INode node = Ros2cs.CreateNode("talker", ctx);
             Publisher<std_msgs.msg.String> chatter_pub = node.CreatePublisher<std_msgs.msg.String>("chatter");
             std_msgs.msg.String msg = new std_msgs.msg.String();
+            Console.WriteLine("Using RMW implementation: " + Ros2cs.GetRMWImplementationID());
 
             int i = 1;
 

@@ -56,6 +56,11 @@ namespace ROS2
             }
         }
 
+        public static String GetRMWImplementationID()
+        {
+            return MarshallingHelpers.PtrToString(NativeMethods.rmw_get_implementation_identifier());
+        }
+
         public static bool Take(ISubscriptionBase subscription, Message message)
         {
             rcl_subscription_t subscription_handle = subscription.Handle;
