@@ -101,13 +101,18 @@ namespace ROS2
         public ulong depth;
         public rmw_qos_reliability_policy_t reliability;
         public rmw_qos_durability_policy_t durability;
-        public IntPtr deadline;
-        public IntPtr lifespan;
+        public rmw_time_t deadline;
+        public rmw_time_t lifespan;
         public rmw_qos_liveliness_policy_t liveliness;
-        public IntPtr liveliness_lease_duration;
+        public rmw_time_t liveliness_lease_duration;
         public byte avoid_ros_namespace_conventions;
     }
 
+    public struct rmw_time_t
+    {
+        public ulong sec;
+        public ulong nsec;
+    }
 
     public enum rmw_qos_history_policy_t
     {

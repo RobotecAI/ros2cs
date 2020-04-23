@@ -354,13 +354,13 @@ namespace ROS2
             typeof(NodeDisposeOptionsType));
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate IntPtr SubscriptionCreateDefaultOptionsType();
-        internal static SubscriptionCreateDefaultOptionsType
-            rclcs_subscription_create_default_options =
-            (SubscriptionCreateDefaultOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        internal delegate IntPtr SubscriptionCreateOptionsType(rmw_qos_profile_t qos);
+        internal static SubscriptionCreateOptionsType
+            rclcs_subscription_create_options =
+            (SubscriptionCreateOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
             nativeROS2CS,
-            "rclcs_subscription_create_default_options"),
-            typeof(SubscriptionCreateDefaultOptionsType));
+            "rclcs_subscription_create_options"),
+            typeof(SubscriptionCreateOptionsType));
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void SubscriptionDisposeOptionsType(IntPtr options);
@@ -372,13 +372,13 @@ namespace ROS2
             typeof(SubscriptionDisposeOptionsType));
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate IntPtr PublisherCreateDefaultOptionsType();
-        internal static PublisherCreateDefaultOptionsType
-            rclcs_publisher_create_default_options =
-            (PublisherCreateDefaultOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        internal delegate IntPtr PublisherCreateOptionsType(rmw_qos_profile_t qos);
+        internal static PublisherCreateOptionsType
+            rclcs_publisher_create_options =
+            (PublisherCreateOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
             nativeROS2CS,
-            "rclcs_publisher_create_default_options"),
-            typeof(PublisherCreateDefaultOptionsType));
+            "rclcs_publisher_create_options"),
+            typeof(PublisherCreateOptionsType));
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void PublisherDisposeOptionsType(IntPtr options);
@@ -388,24 +388,6 @@ namespace ROS2
             nativeROS2CS,
             "rclcs_publisher_dispose_options"),
             typeof(PublisherDisposeOptionsType));
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate void SubscriptionSetQosProfile(IntPtr subscription_options, int profile);
-        internal static SubscriptionSetQosProfile
-            rclcs_subscription_set_qos_profile =
-            (SubscriptionSetQosProfile)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeROS2CS,
-            "rclcs_subscription_set_qos_profile"),
-            typeof(SubscriptionSetQosProfile));
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate void PublisherSetQosProfile(IntPtr publisher_options, int profile);
-        internal static PublisherSetQosProfile
-            rclcs_publisher_set_qos_profile =
-            (PublisherSetQosProfile)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeROS2CS,
-            "rclcs_publisher_set_qos_profile"),
-            typeof(PublisherSetQosProfile));
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate IntPtr RclcsClockCreate(ref rcl_allocator_t allocator_handle);

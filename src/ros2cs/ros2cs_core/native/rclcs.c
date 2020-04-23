@@ -55,24 +55,26 @@ void rclcs_node_dispose_options(rcl_node_options_t * node_options_handle)
 }
 
 ROSIDL_GENERATOR_C_EXPORT
-rcl_subscription_options_t * rclcs_subscription_create_default_options()
+rcl_subscription_options_t *rclcs_subscription_create_options(rmw_qos_profile_t qos)
 {
   rcl_subscription_options_t  * default_subscription_options_handle = (rcl_subscription_options_t *)malloc(sizeof(rcl_subscription_options_t));
   *default_subscription_options_handle = rcl_subscription_get_default_options();
+  default_subscription_options_handle->qos = qos;
   return default_subscription_options_handle;
 }
 
 ROSIDL_GENERATOR_C_EXPORT
-void rclcs_subscription_dispose_options(rcl_subscription_options_t * subscription_options_handle)
+void rclcs_subscription_dispose_options(rcl_subscription_options_t *subscription_options_handle)
 {
   free(subscription_options_handle);
 }
 
 ROSIDL_GENERATOR_C_EXPORT
-rcl_publisher_options_t * rclcs_publisher_create_default_options()
+rcl_publisher_options_t *rclcs_publisher_create_options(rmw_qos_profile_t qos)
 {
-  rcl_publisher_options_t  * default_publisher_options_handle = (rcl_publisher_options_t *)malloc(sizeof(rcl_publisher_options_t));
+  rcl_publisher_options_t *default_publisher_options_handle = (rcl_publisher_options_t *)malloc(sizeof(rcl_publisher_options_t));
   *default_publisher_options_handle = rcl_publisher_get_default_options();
+  default_publisher_options_handle->qos = qos;
   return default_publisher_options_handle;
 }
 
@@ -94,58 +96,6 @@ ROSIDL_GENERATOR_C_EXPORT
 void rclcs_dispose_error_string(char * error_c_string)
 {
   free(error_c_string);
-}
-
-ROSIDL_GENERATOR_C_EXPORT
-void rclcs_subscription_set_qos_profile(rcl_subscription_options_t * subscription_options, int profile)
-{
-  switch(profile)
-  {
-    case 0:
-      subscription_options->qos = rmw_qos_profile_sensor_data;
-      break;
-    case 1:
-      subscription_options->qos = rmw_qos_profile_parameters;
-      break;
-    case 2:
-      subscription_options->qos = rmw_qos_profile_default;
-      break;
-    case 3:
-      subscription_options->qos = rmw_qos_profile_services_default;
-      break;
-    case 4:
-      subscription_options->qos = rmw_qos_profile_parameter_events;
-      break;
-    case 5:
-      subscription_options->qos = rmw_qos_profile_system_default;
-      break;
-  }
-}
-
-ROSIDL_GENERATOR_C_EXPORT
-void rclcs_publisher_set_qos_profile(rcl_publisher_options_t * publisher_options, int profile)
-{
-  switch(profile)
-  {
-    case 0:
-      publisher_options->qos = rmw_qos_profile_sensor_data;
-      break;
-    case 1:
-      publisher_options->qos = rmw_qos_profile_parameters;
-      break;
-    case 2:
-      publisher_options->qos = rmw_qos_profile_default;
-      break;
-    case 3:
-      publisher_options->qos = rmw_qos_profile_services_default;
-      break;
-    case 4:
-      publisher_options->qos = rmw_qos_profile_parameter_events;
-      break;
-    case 5:
-      publisher_options->qos = rmw_qos_profile_system_default;
-      break;
-  }
 }
 
 ROSIDL_GENERATOR_C_EXPORT

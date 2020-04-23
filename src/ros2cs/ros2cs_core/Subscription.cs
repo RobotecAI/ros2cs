@@ -10,8 +10,6 @@ namespace ROS2
 
         private IntPtr subscriptionOptions;
         public rcl_subscription_t Handle { get { return handle; } }
-        QualityOfServiceProfile qualityOfServiceProfile;
-
         internal Action<T> callback;
 
         private bool disposed;
@@ -27,29 +25,17 @@ namespace ROS2
             callback((T)message);
         }
 
-        public Subscription(string topic, Node node, Action<T> callback, QualityOfServiceProfile qualityOfServiceProfile = null)
+        public Subscription(string topic, Node node, Action<T> callback, QualityOfServiceProfile qos = null)
         {
             this.callback = callback;
             nodeHandle = node.handle;
             handle = NativeMethods.rcl_get_zero_initialized_subscription();
-            subscriptionOptions = NativeMethods.rclcs_subscription_create_default_options();
 
+            QualityOfServiceProfile qualityOfServiceProfile = qos;
             if (qualityOfServiceProfile == null)
-            {
-                this.qualityOfServiceProfile = new QualityOfServiceProfile(QosProfiles.DEFAULT);
-            }
-            else
-            {
-                this.qualityOfServiceProfile = qualityOfServiceProfile;
-            }
+                qualityOfServiceProfile = new QualityOfServiceProfile(QosProfiles.DEFAULT);
 
-            //FIXME(sam): was not able to use a c# struct as qos profile, figure out why and replace the following hack...
-            NativeMethods.rclcs_subscription_set_qos_profile(subscriptionOptions, (int)qualityOfServiceProfile.Profile);
-
-            //TODO(sam): Figure out why System.Reflection is not available
-            //when building with colcon/xtool on ubuntu 18.04 and mono 4.5
-            //MethodInfo m = typeof(T).GetTypeInfo().GetDeclaredMethod("_GET_TYPE_SUPPORT");
-            //IntPtr typeSupportHandle = (IntPtr)m.Invoke(null, new object[] { });
+            subscriptionOptions = NativeMethods.rclcs_subscription_create_options(qualityOfServiceProfile.handle);
 
             IMessageInternals msg = new T();
             IntPtr typeSupportHandle = msg.TypeSupportHandle;
@@ -93,6 +79,5 @@ namespace ROS2
             Utils.CheckReturnEnum(NativeMethods.rcl_subscription_fini(ref handle, ref nodeHandle));
             NativeMethods.rclcs_node_dispose_options(subscriptionOptions);
         }
-
     }
 }

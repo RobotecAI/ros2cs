@@ -15,12 +15,13 @@ namespace ROS2
         {
             nodeHandle = node.handle;
             handle = NativeMethods.rcl_get_zero_initialized_publisher();
-            IntPtr publisherOptions = NativeMethods.rclcs_publisher_create_default_options();
             int qosProfileRmw = qos == null ? (int)QosProfiles.DEFAULT : (int)qos.Profile;
-            NativeMethods.rclcs_publisher_set_qos_profile(publisherOptions, qosProfileRmw);
 
-            //MethodInfo m = typeof(T).GetTypeInfo().GetDeclaredMethod("_GET_TYPE_SUPPORT");
-            //IntPtr typeSupportHandle = (IntPtr)m.Invoke(null, new object[] { });
+            QualityOfServiceProfile qualityOfServiceProfile = qos;
+            if (qualityOfServiceProfile == null)
+                qualityOfServiceProfile = new QualityOfServiceProfile(QosProfiles.DEFAULT);
+
+            IntPtr publisherOptions = NativeMethods.rclcs_publisher_create_options(qualityOfServiceProfile.handle);
 
             //TODO - do not create message to get type support handle
             IMessageInternals msg = new T();

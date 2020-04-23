@@ -1,8 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ROS2
 {
@@ -16,17 +12,21 @@ namespace ROS2
        SYSTEM_DEFAULT
     }
 
-    public class QualityOfServiceProfile : IDisposable
+    //TODO - allow for detailed manipulation - expose rmw_qos_profile_t
+    public class QualityOfServiceProfile
     {
-        private bool disposed;
-
         internal rmw_qos_profile_t handle;
-
         public QosProfiles Profile;
 
+
+        //TODO - once the upgrade is there for FastRTPS, use liveliness as well
         public QualityOfServiceProfile(QosProfiles profile)
         {
             handle = new rmw_qos_profile_t();
+            handle.liveliness = rmw_qos_liveliness_policy_t.RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT;
+            handle.liveliness_lease_duration.sec = 0;
+            handle.liveliness_lease_duration.nsec = 0;
+
             SetProfile(profile);
         }
 
@@ -57,6 +57,24 @@ namespace ROS2
                     break;
             }
             SetProfileDefault();
+        }
+
+        public void SetLifespan(ulong sec, ulong nsec)
+        {
+            handle.lifespan.sec = sec;
+            handle.lifespan.nsec = nsec;
+        }
+
+        public void SetDeadline(ulong sec, ulong nsec)
+        {
+            handle.deadline.sec = sec;
+            handle.deadline.nsec = nsec;
+        }
+
+        public void SetLivelinessLeaseDuration(ulong sec, ulong nsec)
+        {
+            handle.liveliness_lease_duration.sec = sec;
+            handle.liveliness_lease_duration.nsec = nsec;
         }
 
         public void SetTransientLocal(int depth = 10)
@@ -107,20 +125,10 @@ namespace ROS2
 
         private void SetProfileSystemDefault()
         {
-
             handle.history = rmw_qos_history_policy_t.RMW_QOS_POLICY_HISTORY_KEEP_LAST;
             handle.depth = 1000;
             handle.reliability = rmw_qos_reliability_policy_t.RMW_QOS_POLICY_RELIABILITY_RELIABLE;
             handle.durability = rmw_qos_durability_policy_t.RMW_QOS_POLICY_DURABILITY_VOLATILE;
-        }
-
-        public void Dispose()
-        {
-            if (!disposed)
-            {
-                //TODO(sam): dispose handle?
-                disposed = true;
-            }
         }
     }
 }
