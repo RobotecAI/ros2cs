@@ -69,12 +69,6 @@ namespace ConsoleApplication
             IPublisher<sensor_msgs.msg.PointCloud2> pc_pub = node.CreatePublisher<sensor_msgs.msg.PointCloud2>("perf_chatter", qos);
             sensor_msgs.msg.PointCloud2 msg = PrepMessage(messageSize);
 
-/*
-            IPublisher<std_msgs.msg.String> chatter_pub = node.CreatePublisher<std_msgs.msg.String>("chatter");
-            std_msgs.msg.String msg = new std_msgs.msg.String();
-
-            int i = 1;
-*/
             while (Ros2cs.Ok(ctx))
             {
                 // adamdbrw - if at least small sleep is not made before
@@ -85,9 +79,6 @@ namespace ConsoleApplication
 
                 var nowTime = clock.Now;
                 msg.UpdateHeaderTime(nowTime.sec, nowTime.nanosec);
-                //msg.Data = "Hello World: " + i;
-                //i++;
-                // Console.WriteLine("Publishing ");
                 pc_pub.Publish(msg);
             }
             Ros2cs.Shutdown(ctx);
