@@ -1,6 +1,0 @@
-*.dll
-*.exe
-/src/bin
-/src/obj
-*.userprefs
-*.pyc

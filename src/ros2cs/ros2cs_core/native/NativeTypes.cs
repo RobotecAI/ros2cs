@@ -26,7 +26,7 @@ namespace ROS2
         private IntPtr impl;
         private IntPtr instance_id_storage;
     }
-    // NOTE(sam): removed unsafe to fix build error
+
     public struct rcl_error_string_t
     {
         internal IntPtr str;
@@ -66,14 +66,6 @@ namespace ROS2
     {
         private IntPtr impl;
     }
-
-    //NOTE(sam): does not seem to work on Windows 10 for some reason...
-    //public struct rcl_subscription_options_t
-    //{
-    //    public rmw_qos_profile_t qos;
-    //    private bool ignore_local_publications;
-    //    private rcl_allocator_t allocator;
-    //}
 
     public struct rcl_wait_set_t
     {
