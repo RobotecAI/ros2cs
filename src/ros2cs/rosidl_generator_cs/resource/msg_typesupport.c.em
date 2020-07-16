@@ -15,16 +15,13 @@ from rosidl_generator_c import idl_structure_type_to_c_typename
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <rosidl_generator_c/message_type_support_struct.h>
-#include <rosidl_generator_c/visibility_control.h>
+#include <rosidl_runtime_c/visibility_control.h>
 
 @{
 msg_typename = idl_structure_type_to_c_typename(message.structure.namespaced_type)
 key = "/".join(include_parts)
 includes = {}
-includes[key + '_support'] = '#include <%s__type_support.h>' % key
-includes[key + '_struct'] = '#include <%s__struct.h>' % key
-includes[key + '_functions'] = '#include <%s__functions.h>' % key
+includes[key + '.h'] = '#include <%s.h>' % key
 }@
 @[for v in sorted(includes.values())]@
 @(v)

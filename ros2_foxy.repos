@@ -2,24 +2,24 @@
   ros2/rosidl_defaults:
     type: git
     url: https://github.com/ros2/rosidl_defaults.git
-    version: dashing
+    version: master
   ros2/common_interfaces:
     type: git
     url: https://github.com/ros2/common_interfaces.git
-    version: dashing
+    version: master
   ros2/unique_identifier_msgs:
     type: git
     url: https://github.com/ros2/unique_identifier_msgs.git
-    version: dashing
+    version: master
   ros2/rcl_interfaces:
     type: git
     url: https://github.com/ros2/rcl_interfaces.git
-    version: dashing
+    version: master
   ros2/geometry2:
     type: git
     url: https://github.com/ros2/geometry2.git
-    version: dashing
+    version: foxy
   ros2/test_interface_files:
     type: git
     url: https://github.com/ros2/test_interface_files.git
-    version: dashing
+    version: master

@@ -127,6 +127,9 @@ add_custom_command(
   VERBATIM
 )
 
+
+message(STATUS "Adding custom target")
+
 set(_target_suffix "__cs")
 if(TARGET ${rosidl_generate_interfaces_TARGET}${_target_suffix})
   message(WARNING "Custom target ${rosidl_generate_interfaces_TARGET}${_target_suffix} already exists")
@@ -226,11 +229,12 @@ foreach(_generated_msg_c_ts_file ${_generated_msg_c_ts_files})
     endif()
   endif()
 
-  #message("Link libraries: ${PROJECT_NAME}__${_typesupport_impl}")
+  message("Link libraries: ${PROJECT_NAME}__${_typesupport_impl}")
   target_link_libraries(
     ${_target_name}
     ${PROJECT_NAME}__${_typesupport_impl}
     ${_extension_link_flags}
+    ${PROJECT_NAME}__rosidl_generator_c
   )
   rosidl_target_interfaces(${_target_name}
     ${PROJECT_NAME} rosidl_typesupport_c)
@@ -255,14 +259,14 @@ foreach(_generated_msg_c_ts_file ${_generated_msg_c_ts_files})
   add_dependencies(${_target_name}
     ${rosidl_generate_interfaces_TARGET}__${_typesupport_impl}
   )
+
   ament_target_dependencies(${_target_name}
     "rosidl_generator_c"
     "rosidl_generator_cs"
-    "${PROJECT_NAME}__rosidl_generator_c"
   )
 
   if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
-    install(TARGETS ${_target_name}
+    install(TARGETS ${_target_name} EXPORT ${_target_name}
       ARCHIVE DESTINATION lib
       LIBRARY DESTINATION lib
       RUNTIME DESTINATION bin
@@ -272,8 +276,9 @@ foreach(_generated_msg_c_ts_file ${_generated_msg_c_ts_files})
 
 endforeach()
 
+message("Install targets")
 if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
-  install(TARGETS ${_target_name_lib}
+  install(TARGETS ${_target_name_lib} EXPORT ${_target_name}
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin)

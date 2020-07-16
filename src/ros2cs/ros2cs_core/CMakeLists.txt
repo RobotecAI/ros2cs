@@ -32,7 +32,7 @@ if(typesupport_impls STREQUAL "")
 endif()
 
 function(configure_csharp_c_extension_library _library_name)
-  install(TARGETS ${_library_name}
+  install(TARGETS ${_library_name} EXPORT ${_library_name}
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin
@@ -43,6 +43,7 @@ add_library(
   ros2cs_native SHARED
   native/rclcs.c
 )
+
 ament_target_dependencies(ros2cs_native
   "builtin_interfaces"
   "rcl"
@@ -52,6 +53,7 @@ ament_target_dependencies(ros2cs_native
   "rcutils"
 )
 ament_export_libraries(ros2cs_native)
+ament_export_targets(ros2cs_native)
 configure_csharp_c_extension_library(ros2cs_native)
 
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
