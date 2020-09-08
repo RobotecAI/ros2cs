@@ -5,14 +5,14 @@ A C# module for ROS2, including C# implementation of rcl APIs, message generatio
 
 ### Prerequisites
 
-*  ROS2 dashing installed on the system
-*  Ubuntu 18.04 (not tested on other platforms)
+*  ROS2 foxy installed on the system, along with `ros-foxy-test-msgs package`
+*  Ubuntu 20.04
 *  vcstool package - [see here](https://github.com/dirk-thomas/vcstool)
 *  .NET core - [see here](https://www.microsoft.com/net/learn/get-started)
 
 ### Building
 
-You need to source your ROS2 installation (e.g. `source /opt/ros/dashing/setup.bash`) before you proceed, for each new open terminal. You can also include this command in your `~/.bashrc` file.
+You need to source your ROS2 installation (e.g. `source /opt/ros/foxy/setup.bash`) before you proceed, for each new open terminal. You can also include this command in your `~/.bashrc` file.
 
 *  Clone this project,
 *  navigate to the top project folder and run the `get_repos.sh` script (it will use vcstool to download required ros2 and custom message - if any - packages),
