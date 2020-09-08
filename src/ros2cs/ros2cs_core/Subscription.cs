@@ -16,7 +16,7 @@ namespace ROS2
         {
             Message message = CreateMessage();
             IntPtr message_handle = message.Handle;
-            RCLReturnEnum ret = (RCLReturnEnum)NativeMethods.rcl_take(ref handle, message_handle, IntPtr.Zero);
+            RCLReturnEnum ret = (RCLReturnEnum)NativeMethods.rcl_take(ref handle, message_handle, IntPtr.Zero, IntPtr.Zero);
             bool gotMessage = ret == RCLReturnEnum.RCL_RET_OK;
 
             if (gotMessage)

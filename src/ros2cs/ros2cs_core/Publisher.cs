@@ -68,7 +68,7 @@ namespace ROS2
         public void Publish(T msg)
         {
             msg.WriteNativeMessage();
-            Utils.CheckReturnEnum(NativeMethods.rcl_publish(ref handle, msg.Handle));
+            Utils.CheckReturnEnum(NativeMethods.rcl_publish(ref handle, msg.Handle, IntPtr.Zero));
         }
     }
 }

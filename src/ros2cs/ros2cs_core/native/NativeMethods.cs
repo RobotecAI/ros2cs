@@ -153,7 +153,7 @@ namespace ROS2
             typeof(PublisherFiniType));
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int PublishType(ref rcl_publisher_t publisher, IntPtr message);
+        internal delegate int PublishType(ref rcl_publisher_t publisher, IntPtr message, IntPtr allocator);
         internal static PublishType
             rcl_publish =
             (PublishType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -198,7 +198,7 @@ namespace ROS2
             typeof(SubscriptionIsValidType));
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate int TakeType(ref rcl_subscription_t subscription, IntPtr message_handle, IntPtr message_info);
+        internal delegate int TakeType(ref rcl_subscription_t subscription, IntPtr message_handle, IntPtr message_info, IntPtr allocation);
         internal static TakeType
             rcl_take =
             (TakeType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
