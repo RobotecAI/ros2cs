@@ -47,10 +47,16 @@ namespace ROS2
 
             Clear();
 
+            ulong subscribtionsInWaitset = 0;
             foreach (ISubscriptionBase subscription in subscriptions)
             {
+                // We only allocated for numberOfSubscriptions, so only add up to as many, next spin will handle new joiners
+                if (subscribtionsInWaitset >= numberOfSubscriptions)
+                    break;
+
                 rcl_subscription_t subscription_handle = subscription.Handle;
                 Utils.CheckReturnEnum(NativeMethods.rcl_wait_set_add_subscription(ref handle, ref subscription_handle, UIntPtr.Zero));
+                subscribtionsInWaitset++;
             }
         }
 
