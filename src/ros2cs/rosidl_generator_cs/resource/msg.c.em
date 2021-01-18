@@ -109,7 +109,7 @@ bool @(msg_typename)_native_write_field_@(member.name)(@(get_c_type(member.type.
 @[for member in message.structure.members]@
 @[  if isinstance(member.type, (AbstractSequence, Array)) and isinstance(member.type.value_type, BasicType)]@
 ROSIDL_GENERATOR_C_EXPORT
-@(get_c_type(member.type.value_type)) *@(msg_typename)_native_read_field_@(member.name)(void *message_handle, int *size)
+@(get_c_type(member.type.value_type)) *@(msg_typename)_native_read_field_@(member.name)(int *size, void *message_handle)
 {
   @(msg_typename) *ros_message = (@(msg_typename) *)message_handle;
 @[    if isinstance(member.type, Array)]@
