@@ -9,21 +9,12 @@ namespace ROS2
     {
         private rcl_wait_set_t handle;
         private rcl_allocator_t allocator;
-        private bool disposed;
+        private bool disposed = false;
 
-        public WaitSet(Context ctx, ConcurrentBag<ISubscriptionBase> subscriptions = null)
+        public WaitSet(Context ctx, List<ISubscriptionBase> subscriptions)
         {
             ulong numberOfSubscriptions;
-
-            if (subscriptions == null)
-            {
-                numberOfSubscriptions = 0;
-                subscriptions = new ConcurrentBag<ISubscriptionBase>();
-            }
-            else
-            {
-                numberOfSubscriptions = (ulong)subscriptions.Count;
-            }
+            numberOfSubscriptions = (ulong)subscriptions.Count;
 
             ulong numberOfGuardConditions = 0;
             ulong numberOfTimers = 0;
@@ -50,7 +41,7 @@ namespace ROS2
             ulong subscribtionsInWaitset = 0;
             foreach (ISubscriptionBase subscription in subscriptions)
             {
-                // We only allocated for numberOfSubscriptions, so only add up to as many, next spin will handle new joiners
+                // We only allocated for numberOfSubscriptions, so only add up to as many. Shouldn't happen now.
                 if (subscribtionsInWaitset >= numberOfSubscriptions)
                     break;
 

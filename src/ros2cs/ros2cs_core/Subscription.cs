@@ -10,18 +10,23 @@ namespace ROS2
         private IntPtr subscriptionOptions;
         private rcl_subscription_t handle;
         private rcl_node_t nodeHandle;
-        private bool disposed;
+        private bool disposed = false;
+        private object lock_ = new object();
+        private Node node_;
 
         public void TakeMessage()
         {
             Message message = CreateMessage();
             IntPtr message_handle = message.Handle;
-            RCLReturnEnum ret = (RCLReturnEnum)NativeMethods.rcl_take(ref handle, message_handle, IntPtr.Zero, IntPtr.Zero);
-            bool gotMessage = ret == RCLReturnEnum.RCL_RET_OK;
-
-            if (gotMessage)
+            lock (lock_)
             {
-                TriggerCallback(message);
+                RCLReturnEnum ret = (RCLReturnEnum)NativeMethods.rcl_take(ref handle, message_handle, IntPtr.Zero, IntPtr.Zero);
+                bool gotMessage = ret == RCLReturnEnum.RCL_RET_OK;
+
+                if (gotMessage)
+                {
+                    TriggerCallback(message);
+                }
             }
         }
 
@@ -39,6 +44,7 @@ namespace ROS2
         public Subscription(string topic, Node node, Action<T> callback, QualityOfServiceProfile qos = null)
         {
             this.callback = callback;
+            node_ = node;
             nodeHandle = node.handle;
             handle = NativeMethods.rcl_get_zero_initialized_subscription();
 
@@ -79,10 +85,15 @@ namespace ROS2
             }
         }
 
-        private void DestroySubscription()
+        private bool DestroySubscription()
         {
-            Utils.CheckReturnEnum(NativeMethods.rcl_subscription_fini(ref handle, ref nodeHandle));
-            NativeMethods.rclcs_node_dispose_options(subscriptionOptions);
+            lock (lock_)
+            {
+                Utils.CheckReturnEnum(NativeMethods.rcl_subscription_fini(ref handle, ref nodeHandle));
+                NativeMethods.rclcs_node_dispose_options(subscriptionOptions);
+                return node_.RemoveSubscription(this);
+            }
+            return false;
         }
     }
 }

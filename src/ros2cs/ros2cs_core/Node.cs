@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 
@@ -9,19 +10,30 @@ namespace ROS2
     /// </summary>
     public class Node: INode
     {
-        public ConcurrentBag<ISubscriptionBase> Subscriptions { get { return subscriptions; } }
+        public List<ISubscriptionBase> Subscriptions
+        {
+          get
+          {
+            lock (lock_)
+            {
+              return subscriptions.ToList();
+            }
+          }
+        }
+
         internal rcl_node_t handle;
 
-        private ConcurrentBag<ISubscriptionBase> subscriptions;
+        private HashSet<ISubscriptionBase> subscriptions;
         private IntPtr defaultNodeOptions;
-        private bool disposed;
+        private bool disposed = false;
+        private object lock_ = new object();
 
         private IList<IPublisherBase> publishers;
 
         //Use Ros2cs.CreateNode to construct
         public Node(string nodeName, Context context, string nodeNamespace = null)
         {
-            subscriptions = new ConcurrentBag<ISubscriptionBase>();
+            subscriptions = new HashSet<ISubscriptionBase>();
             publishers = new List<IPublisherBase>();
 
             if (nodeNamespace == null)
@@ -63,19 +75,19 @@ namespace ROS2
         {
             if(!disposed)
             {
-                foreach(ISubscriptionBase subscription in subscriptions)
+                lock (lock_)
                 {
-                    subscription.Dispose();
-                }
+                    subscriptions.Clear();
 
-                foreach(IPublisherBase publisher in publishers)
-                {
-                    publisher.Dispose();
-                }
-                publishers.Clear();
-                DestroyNode();
+                    foreach(IPublisherBase publisher in publishers)
+                    {
+                        publisher.Dispose();
+                    }
+                    publishers.Clear();
+                    DestroyNode();
 
-                disposed = true;
+                    disposed = true;
+                }
             }
         }
 
@@ -95,11 +107,23 @@ namespace ROS2
         public Subscription<T> CreateSubscription<T>(string topic, Action<T> callback, QualityOfServiceProfile qos = null) where T : Message, new()
         {
             Subscription<T> subscription = new Subscription<T>(topic, this, callback, qos);
-            subscriptions.Add(subscription);
+            lock (lock_)
+            {
+                subscriptions.Add(subscription);
+            }
             return subscription;
         }
 
+        public bool RemoveSubscription(ISubscriptionBase subscription)
+        {
+            lock (lock_)
+            {
+                if (subscriptions != null && subscriptions.Contains(subscription))
+                {
+                    return subscriptions.Remove(subscription);
+                }
+                return false;
+            }
+        }
     }
-
-
 }
