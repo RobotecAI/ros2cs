@@ -77,6 +77,10 @@ namespace ROS2
             {
                 lock (lock_)
                 {
+                    foreach(ISubscriptionBase subscription in subscriptions)
+                    {
+                        subscription.Dispose();
+                    }
                     subscriptions.Clear();
 
                     foreach(IPublisherBase publisher in publishers)
