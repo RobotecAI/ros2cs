@@ -91,7 +91,6 @@ namespace ROS2
             {
                 Utils.CheckReturnEnum(NativeMethods.rcl_subscription_fini(ref handle, ref nodeHandle));
                 NativeMethods.rclcs_node_dispose_options(subscriptionOptions);
-                return node_.RemoveSubscription(this);
             }
             return false;
         }
