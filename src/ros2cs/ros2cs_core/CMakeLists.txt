@@ -21,7 +21,7 @@ find_package(rmw_implementation_cmake REQUIRED)
 find_package(rosidl_generator_c REQUIRED)
 find_package(dotnet_cmake_module REQUIRED)
 
-set(CSHARP_TARGET_FRAMEWORK "netcoreapp2.0")
+set(CSHARP_TARGET_FRAMEWORK "netcoreapp3.1")
 find_package(DotNETExtra REQUIRED)
 
 # Only build the library if a C typesupport exists
