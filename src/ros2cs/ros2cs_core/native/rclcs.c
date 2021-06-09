@@ -113,6 +113,7 @@ void rclcs_ros_clock_dispose(rcl_clock_t * clock_handle)
   free(clock_handle);
 }
 
+ROSIDL_GENERATOR_C_EXPORT
 const char *rclcs_get_rmw_implementation_id()
 {
   const char *id_string = rmw_get_implementation_identifier();
