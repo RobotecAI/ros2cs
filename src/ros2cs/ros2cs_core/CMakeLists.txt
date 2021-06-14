@@ -90,6 +90,7 @@ set(CS_SOURCES
   Ros2cs.cs
   Subscription.cs
   WaitSet.cs
+  Logging.cs
   properties/AssemblyInfo.cs
 )
 
