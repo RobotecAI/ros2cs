@@ -10,6 +10,8 @@ namespace ROS2
     /// </summary>
     public class Node: INode
     {
+        private Ros2csLogger logger = Ros2csLogger.GetInstance();
+
         public List<ISubscriptionBase> Subscriptions
         {
           get
@@ -37,7 +39,9 @@ namespace ROS2
             publishers = new List<IPublisherBase>();
 
             if (nodeNamespace == null)
+            {
                 nodeNamespace = "/";
+            }
 
             if (context.Ok)
             {
