@@ -35,27 +35,22 @@ namespace ROS2
         //Use Ros2cs.CreateNode to construct
         public Node(string nodeName, Context context, string nodeNamespace = null)
         {
-            logger.LogInfo("Creating Ros2cs Node");
-
             subscriptions = new HashSet<ISubscriptionBase>();
             publishers = new List<IPublisherBase>();
 
             if (nodeNamespace == null)
             {
-                logger.LogWarning("Node namespace in null, setting to '/'");
                 nodeNamespace = "/";
             }
 
             if (context.Ok)
             {
-                logger.LogDebug("Ros2cs context is ok");
                 handle = NativeMethods.rcl_get_zero_initialized_node();
                 defaultNodeOptions = NativeMethods.rclcs_node_create_default_options();
                 Utils.CheckReturnEnum(NativeMethods.rcl_node_init(ref handle, nodeName, nodeNamespace, ref context.handle, defaultNodeOptions));
             }
             else
             {
-                logger.LogError("Context not initialized");
                 throw new NotInitializedException();
             }
         }
