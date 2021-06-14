@@ -18,7 +18,7 @@ namespace ROS2
 
         public delegate void Callback(object message);
 
-        public static Dictionary<LogLevel, String> LevelNames = new Dictionary<LogLevel, String>()
+        private static Dictionary<LogLevel, String> LevelNames = new Dictionary<LogLevel, String>()
         {
             {LogLevel.DEBUG, "DEBUG"},
             {LogLevel.INFO, "INFO"},
@@ -28,7 +28,7 @@ namespace ROS2
 
         public static LogLevel LogLevel { get; set; }
 
-        public static Dictionary<LogLevel, Callback> LevelCallbacks = new Dictionary<LogLevel, Callback>()
+        private static Dictionary<LogLevel, Callback> LevelCallbacks = new Dictionary<LogLevel, Callback>()
         {
             {LogLevel.DEBUG, null},
             {LogLevel.INFO, null},
@@ -36,7 +36,7 @@ namespace ROS2
             {LogLevel.ERROR, null},
         };
 
-        public static Dictionary<LogLevel, ConsoleColor> LevelColors = new Dictionary<LogLevel, ConsoleColor>()
+        private static Dictionary<LogLevel, ConsoleColor> LevelColors = new Dictionary<LogLevel, ConsoleColor>()
         {
             {LogLevel.DEBUG, ConsoleColor.Green},
             {LogLevel.INFO, ConsoleColor.White},
