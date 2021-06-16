@@ -23,10 +23,11 @@
 #include <signal.h>
 
 ROSIDL_GENERATOR_C_EXPORT
-int rclcs_init(rcl_context_t *context, rcl_allocator_t allocator)
+int rclcs_init(rcl_context_t *context)
 {
   rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
-
+  *context = rcl_get_zero_initialized_context();
+  rcutils_allocator_t allocator = rcutils_get_default_allocator();
   rcl_ret_t ret = rcl_init_options_init(&init_options, allocator);
   if (ret != RCL_RET_OK)
     return (int)ret;
