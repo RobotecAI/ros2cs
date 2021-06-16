@@ -4,30 +4,37 @@ namespace ROS2
 {
     public class Subscription<T>: ISubscription<T> where T : Message, new ()
     {
-        public rcl_subscription_t Handle { get { return handle; } }
-        internal Action<T> callback;
-
-        private IntPtr subscriptionOptions;
-        private rcl_subscription_t handle;
+        public rcl_subscription_t Handle { get { return subscriptionHandle; } }
+        private rcl_subscription_t subscriptionHandle;
         private rcl_node_t nodeHandle;
+
+        private readonly Action<T> callback;
+        private IntPtr subscriptionOptions;
+
         private bool disposed = false;
-        private object lock_ = new object();
-        private Node node_;
+        private object mutex = new object();
 
         public void TakeMessage()
         {
-            Message message = CreateMessage();
-            IntPtr message_handle = message.Handle;
-            lock (lock_)
+          RCLReturnEnum ret;
+          Message message;
+          lock (mutex)
+          {
+            if (disposed || !Ros2cs.Ok())
             {
-                RCLReturnEnum ret = (RCLReturnEnum)NativeMethods.rcl_take(ref handle, message_handle, IntPtr.Zero, IntPtr.Zero);
-                bool gotMessage = ret == RCLReturnEnum.RCL_RET_OK;
-
-                if (gotMessage)
-                {
-                    TriggerCallback(message);
-                }
+              return;
             }
+            
+            message = CreateMessage();
+            ret = (RCLReturnEnum)NativeMethods.rcl_take(ref subscriptionHandle, message.Handle, IntPtr.Zero, IntPtr.Zero);
+          }
+
+          bool gotMessage = ret == RCLReturnEnum.RCL_RET_OK;
+
+          if (gotMessage)
+          {
+              TriggerCallback(message);
+          }
         }
 
         private Message CreateMessage()
@@ -41,16 +48,17 @@ namespace ROS2
             callback((T)message);
         }
 
-        public Subscription(string topic, Node node, Action<T> callback, QualityOfServiceProfile qos = null)
+        public Subscription(string topic, Node node, Action<T> cb, QualityOfServiceProfile qos = null)
         {
-            this.callback = callback;
-            node_ = node;
-            nodeHandle = node.handle;
-            handle = NativeMethods.rcl_get_zero_initialized_subscription();
+            callback = cb;
+            nodeHandle = node.nodeHandle;
+            subscriptionHandle = NativeMethods.rcl_get_zero_initialized_subscription();
 
             QualityOfServiceProfile qualityOfServiceProfile = qos;
             if (qualityOfServiceProfile == null)
-                qualityOfServiceProfile = new QualityOfServiceProfile(QosProfiles.DEFAULT);
+            {
+              qualityOfServiceProfile = new QualityOfServiceProfile(QosProfiles.DEFAULT);
+            }
 
             subscriptionOptions = NativeMethods.rclcs_subscription_create_options(qualityOfServiceProfile.handle);
 
@@ -59,8 +67,8 @@ namespace ROS2
             msg.Dispose();
 
             Utils.CheckReturnEnum(NativeMethods.rcl_subscription_init(
-                                    ref handle,
-                                    ref nodeHandle,
+                                    ref subscriptionHandle,
+                                    ref node.nodeHandle,
                                     typeSupportHandle,
                                     topic,
                                     subscriptionOptions));
@@ -68,31 +76,26 @@ namespace ROS2
 
         ~Subscription()
         {
-            Dispose(false);
+            DestroySubscription();
         }
 
         public void Dispose()
         {
-            Dispose(true);
+            DestroySubscription();
         }
 
-        private void Dispose(bool disposing)
+        private void DestroySubscription()
         {
-            if(!disposed)
+          lock (mutex)
+          {
+            if (!disposed)
             {
-                DestroySubscription();
-                disposed = true;
+              Utils.CheckReturnEnum(NativeMethods.rcl_subscription_fini(ref subscriptionHandle, ref nodeHandle));
+              NativeMethods.rclcs_node_dispose_options(subscriptionOptions);
+              disposed = true;
+              Ros2csLogger.GetInstance().LogInfo("Subscription destroyed");
             }
-        }
-
-        private bool DestroySubscription()
-        {
-            lock (lock_)
-            {
-                Utils.CheckReturnEnum(NativeMethods.rcl_subscription_fini(ref handle, ref nodeHandle));
-                NativeMethods.rclcs_node_dispose_options(subscriptionOptions);
-            }
-            return false;
+          }
         }
     }
 }

@@ -7,9 +7,9 @@ namespace ConsoleApplication
 {
     public class ROS2Talker
     {
-
         public static void Main(string[] args)
         {
+            Console.WriteLine("Talker starting");
             Ros2cs.Init();
             INode node = Ros2cs.CreateNode("talker");
             Publisher<std_msgs.msg.String> chatter_pub = node.CreatePublisher<std_msgs.msg.String>("chatter");

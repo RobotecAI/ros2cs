@@ -82,7 +82,6 @@ set(CS_SOURCES
   ${CS_INTERFACES}
   ${CS_NATIVE}
   ${CS_UTILS}
-  Context.cs
   Clock.cs
   Node.cs
   Publisher.cs
@@ -90,7 +89,7 @@ set(CS_SOURCES
   Ros2cs.cs
   Subscription.cs
   WaitSet.cs
-  Logging.cs
+  Ros2csLogger.cs
   properties/AssemblyInfo.cs
 )
 

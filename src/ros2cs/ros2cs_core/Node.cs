@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 
 namespace ROS2
 {
@@ -10,128 +9,131 @@ namespace ROS2
     /// </summary>
     public class Node: INode
     {
+        public readonly string name;
         private Ros2csLogger logger = Ros2csLogger.GetInstance();
 
-        public List<ISubscriptionBase> Subscriptions
+        internal List<ISubscriptionBase> Subscriptions
         {
           get
           {
-            lock (lock_)
+            lock (mutex)
             {
               return subscriptions.ToList();
             }
           }
         }
-
-        internal rcl_node_t handle;
-
-        private HashSet<ISubscriptionBase> subscriptions;
+        internal rcl_node_t nodeHandle;
         private IntPtr defaultNodeOptions;
+        private HashSet<ISubscriptionBase> subscriptions;
+        private HashSet<IPublisherBase> publishers;
         private bool disposed = false;
-        private object lock_ = new object();
+        private readonly object mutex = new object();
 
-        private IList<IPublisherBase> publishers;
-
-        //Use Ros2cs.CreateNode to construct
-        public Node(string nodeName, Context context, string nodeNamespace = null)
+        internal Node(string nodeName, ref rcl_context_t context)
         {
-            subscriptions = new HashSet<ISubscriptionBase>();
-            publishers = new List<IPublisherBase>();
+          name = nodeName;
+          string nodeNamespace = "/";
+          subscriptions = new HashSet<ISubscriptionBase>();
+          publishers = new HashSet<IPublisherBase>();
 
-            if (nodeNamespace == null)
-            {
-                nodeNamespace = "/";
-            }
-
-            if (context.Ok)
-            {
-                handle = NativeMethods.rcl_get_zero_initialized_node();
-                defaultNodeOptions = NativeMethods.rclcs_node_create_default_options();
-                Utils.CheckReturnEnum(NativeMethods.rcl_node_init(ref handle, nodeName, nodeNamespace, ref context.handle, defaultNodeOptions));
-            }
-            else
-            {
-                throw new NotInitializedException();
-            }
-        }
-
-        public string Name
-        {
-            get { return MarshallingHelpers.PtrToString(NativeMethods.rcl_node_get_name(ref handle)); }
-        }
-
-        public string Namespace
-        {
-            get { return MarshallingHelpers.PtrToString(NativeMethods.rcl_node_get_namespace(ref handle)); }
+          nodeHandle = NativeMethods.rcl_get_zero_initialized_node();
+          defaultNodeOptions = NativeMethods.rclcs_node_create_default_options();
+          Utils.CheckReturnEnum(NativeMethods.rcl_node_init(ref nodeHandle, nodeName, nodeNamespace, ref context, defaultNodeOptions));
+          logger.LogInfo("Node initialized");
         }
 
         ~Node()
         {
-            Dispose(false);
+          DestroyNode();
         }
 
         public void Dispose()
         {
-            Dispose(true);
+          DestroyNode();
         }
 
-        private void Dispose(bool disposing)
+        internal void DestroyNode()
         {
-            if(!disposed)
+          lock (mutex)
+          {
+            if (!disposed)
             {
-                lock (lock_)
-                {
-                    foreach(ISubscriptionBase subscription in subscriptions)
-                    {
-                        subscription.Dispose();
-                    }
-                    subscriptions.Clear();
+              foreach(ISubscriptionBase subscription in subscriptions)
+              {
+                subscription.Dispose();
+              }
+              subscriptions.Clear();
 
-                    foreach(IPublisherBase publisher in publishers)
-                    {
-                        publisher.Dispose();
-                    }
-                    publishers.Clear();
-                    DestroyNode();
+              foreach(IPublisherBase publisher in publishers)
+              {
+                publisher.Dispose();
+              }
+              publishers.Clear();
 
-                    disposed = true;
-                }
+              Utils.CheckReturnEnum(NativeMethods.rcl_node_fini(ref nodeHandle));
+              NativeMethods.rclcs_node_dispose_options(defaultNodeOptions);
+              disposed = true;
+              logger.LogInfo("Node " + name + " destroyed");
             }
-        }
-
-        public void DestroyNode()
-        {
-            Utils.CheckReturnEnum(NativeMethods.rcl_node_fini(ref handle));
-            NativeMethods.rclcs_node_dispose_options(defaultNodeOptions);
+          }
         }
 
         public Publisher<T> CreatePublisher<T>(string topic, QualityOfServiceProfile qos = null) where T : Message, new()
         {
+          lock (mutex)
+          {
+            if (disposed || !Ros2cs.Ok())
+            {
+              logger.LogWarning("Cannot create publisher as the class is already disposed or shutdown was called");
+              return null;
+            }
+
             Publisher<T> publisher = new Publisher<T>(topic, this, qos);
             publishers.Add(publisher);
+            logger.LogInfo("Created Publisher for topic " + topic);
             return publisher;
+          }
         }
 
         public Subscription<T> CreateSubscription<T>(string topic, Action<T> callback, QualityOfServiceProfile qos = null) where T : Message, new()
         {
-            Subscription<T> subscription = new Subscription<T>(topic, this, callback, qos);
-            lock (lock_)
+          lock (mutex)
+          {
+            if (disposed || !Ros2cs.Ok())
             {
-                subscriptions.Add(subscription);
+              logger.LogWarning("Cannot create subscription as the class is already disposed or shutdown was called");
+              return null;
             }
+
+            Subscription<T> subscription = new Subscription<T>(topic, this, callback, qos);
+            subscriptions.Add(subscription);
+            logger.LogInfo("Created Subscription for topic " + topic);
             return subscription;
+          }
         }
 
         public bool RemoveSubscription(ISubscriptionBase subscription)
         {
-            lock (lock_)
+          lock (mutex)
+          {
+            if (subscriptions.Contains(subscription))
             {
-                if (subscriptions != null && subscriptions.Contains(subscription))
-                {
-                    return subscriptions.Remove(subscription);
-                }
-                return false;
+              return subscriptions.Remove(subscription);
             }
+            return false;
+          }
+        }
+
+        public bool RemovePublisher(IPublisherBase publisher)
+        {
+          lock (mutex)
+          {
+            if (publishers.Contains(publisher))
+            {
+              return publishers.Remove(publisher);
+            }
+            return false;
+          }
         }
     }
 }
