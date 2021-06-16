@@ -27,8 +27,15 @@ namespace ROS2
           eventArgs.Cancel = true;
           Shutdown();
         };
+        AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnExit);
         initialized = true;
       }
+    }
+
+    static void OnExit(object sender, EventArgs e)
+    {
+      Ros2csLogger.GetInstance().LogInfo("Ros2cs process exit handler");
+      Shutdown();
     }
 
     public static void Shutdown()
