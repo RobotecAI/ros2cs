@@ -105,8 +105,14 @@ namespace ROS2
       }
     }
 
+    public static void SpinOnce(INode node, double timeoutSec = 0.1)
+    {
+      var nodes = new List<INode>{ node };
+      SpinOnce(nodes, timeoutSec);
+    }
+
     private static bool warned_once = false;
-    public static void SpinOnce(List<INode> nodes, double timeoutSec)
+    public static void SpinOnce(List<INode> nodes, double timeoutSec = 0.1)
     {
       lock (mutex)
       {  // Figure out how to minimize this lock
