@@ -112,7 +112,7 @@ function(csharp_add_project name)
         set(CSHARP_IMPORTS "")
     endif()
 
-    if(${_csharp_add_project_EXECUTABLE} AND NOT DOTNET_CORE_FOUND)
+    if(${_csharp_add_project_EXECUTABLE} AND NOT DotNetCore_FOUND)
         set(ext "exe")
     else()
         set(ext "dll")
@@ -177,7 +177,7 @@ function(csharp_add_project name)
         DEPENDS ${sources_dep}
     )
 
-    set(DOTNET_OUTPUT_PATH ${CSHARP_BUILDER_OUTPUT_PATH}/${CSHARP_TARGET_FRAMEWORK}/publish/)
+    set(DOTNET_OUTPUT_PATH ${CSHARP_BUILDER_OUTPUT_PATH}/${CSHARP_TARGET_FRAMEWORK}/)
 
     set_target_properties(${name}
         PROPERTIES
@@ -187,7 +187,7 @@ function(csharp_add_project name)
         ${DOTNET_OUTPUT_PATH}
         OUTPUT_NAME
         ${name}${CSBUILD_OUTPUT_SUFFIX}.${ext}
-        DOTNET_CORE
-        ${DOTNET_CORE_FOUND}
+        DotNetCore
+        ${DotNetCore_FOUND}
     )
 endfunction()
