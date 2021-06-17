@@ -23,19 +23,8 @@ namespace ROS2
         }
 
         Utils.CheckReturnEnum(NativeMethods.rclcs_init(ref global_context));
-        Console.CancelKeyPress += (sender, eventArgs) => {
-          eventArgs.Cancel = true;
-          Shutdown();
-        };
-        AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnExit);
         initialized = true;
       }
-    }
-
-    static void OnExit(object sender, EventArgs e)
-    {
-      Ros2csLogger.GetInstance().LogInfo("Ros2cs process exit handler");
-      Shutdown();
     }
 
     public static void Shutdown()
@@ -61,7 +50,7 @@ namespace ROS2
 
     public static bool Ok()
     {
-        return initialized;
+      return initialized;
     }
 
     private sealed class Destructor
