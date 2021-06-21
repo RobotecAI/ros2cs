@@ -9,4 +9,4 @@ fi
 pluginDir=$1
 
 cp --verbose install/lib/dotnet/* ${pluginDir}
-cp --verbose install/lib/*.so ${pluginDir}/x86_64/
+cp --verbose install/lib/*.so ${pluginDir}/Linux/x86_64/
