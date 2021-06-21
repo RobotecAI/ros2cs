@@ -1,11 +1,10 @@
 namespace ROS2 {
-    //Codes returned from rcl C library as for Dashing
+    //Codes returned from rcl C library (updated for Galactic)
     public enum RCLReturnEnum
   	{
       RCL_RET_OK = 0,
       RCL_RET_ERROR = 1,
       RCL_RET_TIMEOUT = 2,
-
       RCL_RET_BAD_ALLOC = 10,
       RCL_RET_INVALID_ARGUMENT = 11,
       RCL_RET_INCORRECT_RMW_IMPLEMENTATION = 12,
@@ -22,6 +21,7 @@ namespace ROS2 {
       RCL_RET_NODE_INVALID = 200,
       RCL_RET_NODE_INVALID_NAME = 201,
       RCL_RET_NODE_INVALID_NAMESPACE = 202,
+      RCL_RET_NODE_NAME_NON_EXISTENT = 203,
 
       // rcl publisher specific ret codes in 3XX
       RCL_RET_PUBLISHER_INVALID = 300,
@@ -46,8 +46,10 @@ namespace ROS2 {
       // rcl params, logs and events
       RCL_RET_INVALID_REMAP_RULE = 1001,
       RCL_RET_WRONG_LEXME = 1002,
+      RCL_RET_INVALID_ROS_ARGS = 1003,
       RCL_RET_INVALID_PARAM_RULE = 1010,
       RCL_RET_INVALID_LOG_LEVEL_RULE = 1020,
+
       RCL_RET_INVALID_EVENT_ID = 2000,
       RCL_RET_EVENT_TAKE_FAILER = 2001
   	}

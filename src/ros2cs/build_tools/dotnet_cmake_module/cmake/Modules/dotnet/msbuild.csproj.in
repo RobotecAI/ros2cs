@@ -2,7 +2,7 @@
 <Project ToolsVersion="@MSBUILD_TOOLSET@" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <!-- <Platform Condition=" '$(Platform)' == '' ">x64</Platform> -->
     <ProjectGuid>{EED1EB2A-9001-4506-984E-E7DC92C9B237}</ProjectGuid>
     <OutputType>@CSHARP_BUILDER_OUTPUT_TYPE@</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
