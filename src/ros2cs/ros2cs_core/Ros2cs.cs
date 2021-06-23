@@ -10,7 +10,6 @@ namespace ROS2
     private static readonly object mutex = new object();
     private static bool initialized = false;  // should be equivalent to rclcpp::ok() - investigate
     private static rcl_context_t global_context;  // a simplification, we only use global default context
-    private static rcl_allocator_t allocator;
     private static List<INode> nodes = new List<INode>(); // kept to shutdown everything in order
 
     public static void Init()
