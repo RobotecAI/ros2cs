@@ -117,7 +117,7 @@ namespace ROS2
             typeof(NodeGetNamespaceType));
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate rcl_publisher_options_t PublisherGetDefaultOptionsType();
+        internal delegate IntPtr PublisherGetDefaultOptionsType();
         internal static PublisherGetDefaultOptionsType
             rcl_publisher_get_default_options =
             (PublisherGetDefaultOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(

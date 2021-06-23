@@ -43,20 +43,6 @@ namespace ROS2
         private IntPtr rcl_node_impl_t;
     }
 
-    public struct rcl_node_options_t
-    {
-        private UIntPtr domain_id;
-        private rcl_allocator_t allocator;
-        private bool use_global_arguments;
-        private rcl_arguments_t arguments;
-    }
-
-    public struct rcl_publisher_options_t
-    {
-        private rmw_qos_profile_t qos;
-        private rcl_allocator_t allocator;
-    }
-
     public struct rcl_publisher_t
     {
         private IntPtr impl;
