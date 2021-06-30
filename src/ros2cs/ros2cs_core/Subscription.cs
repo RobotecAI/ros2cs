@@ -6,6 +6,10 @@ namespace ROS2
     {
         public rcl_subscription_t Handle { get { return subscriptionHandle; } }
         private rcl_subscription_t subscriptionHandle;
+
+        public string Topic { get { return topic; } }
+        private string topic;
+
         private rcl_node_t nodeHandle;
 
         private readonly Action<T> callback;
@@ -24,7 +28,7 @@ namespace ROS2
             {
               return;
             }
-            
+
             message = CreateMessage();
             ret = (RCLReturnEnum)NativeMethods.rcl_take(ref subscriptionHandle, message.Handle, IntPtr.Zero, IntPtr.Zero);
           }
@@ -48,10 +52,11 @@ namespace ROS2
             callback((T)message);
         }
 
-        public Subscription(string topic, Node node, Action<T> cb, QualityOfServiceProfile qos = null)
+        public Subscription(string subTopic, Node node, Action<T> cb, QualityOfServiceProfile qos = null)
         {
             callback = cb;
             nodeHandle = node.nodeHandle;
+            topic = subTopic;
             subscriptionHandle = NativeMethods.rcl_get_zero_initialized_subscription();
 
             QualityOfServiceProfile qualityOfServiceProfile = qos;

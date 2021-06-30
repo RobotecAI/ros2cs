@@ -5,14 +5,18 @@ namespace ROS2
 {
   public class Publisher<T>: IPublisher<T> where T : Message, new ()
   {
+    public string Topic { get { return topic; } }
+    private string topic;
+
     private Ros2csLogger logger = Ros2csLogger.GetInstance();
     rcl_publisher_t publisherHandle;
     IntPtr publisherOptions = IntPtr.Zero;
     rcl_node_t nodeHandle;
     private bool disposed = false;
 
-    public Publisher(string topic, Node node, QualityOfServiceProfile qos = null)
+    public Publisher(string pubTopic, Node node, QualityOfServiceProfile qos = null)
     {
+      topic = pubTopic;
       nodeHandle = node.nodeHandle;
 
       QualityOfServiceProfile qualityOfServiceProfile = qos;

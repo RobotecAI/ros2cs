@@ -75,7 +75,7 @@ namespace ROS2
 
         foreach (var node in nodes)
         {
-          if (node.name == nodeName)
+          if (node.Name == nodeName)
           {
             throw new InvalidOperationException("Node with name " + nodeName + " already exists, cannot create");
           }
@@ -93,8 +93,7 @@ namespace ROS2
       {
         if (!initialized)
         {
-          Ros2csLogger.GetInstance().LogError("Ros2cs is not initialized, cannot remove node");
-          throw new NotInitializedException();
+          return false; // removal is handled with shutdown already
         }
         node.Dispose();
         return nodes.Remove(node);

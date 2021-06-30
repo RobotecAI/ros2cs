@@ -5,6 +5,7 @@ namespace ROS2
     public interface ISubscriptionBase : IDisposable
     {
         void TakeMessage();
+        string Topic {get;}
         rcl_subscription_t Handle {get;}
     }
 

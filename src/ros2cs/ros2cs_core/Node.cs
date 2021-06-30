@@ -9,7 +9,8 @@ namespace ROS2
     /// </summary>
     public class Node: INode
     {
-        public readonly string name;
+        public string Name { get { return name; } }
+        private string name;
         private Ros2csLogger logger = Ros2csLogger.GetInstance();
 
         internal List<ISubscriptionBase> Subscriptions
@@ -107,7 +108,7 @@ namespace ROS2
 
             Subscription<T> subscription = new Subscription<T>(topic, this, callback, qos);
             subscriptions.Add(subscription);
-            logger.LogInfo("Created Subscription for topic " + topic);
+            logger.LogInfo("Created subscription for topic " + topic);
             return subscription;
           }
         }
@@ -118,6 +119,7 @@ namespace ROS2
           {
             if (subscriptions.Contains(subscription))
             {
+              logger.LogInfo("Removing subscription for topic " + subscription.Topic);
               return subscriptions.Remove(subscription);
             }
             return false;
@@ -130,6 +132,7 @@ namespace ROS2
           {
             if (publishers.Contains(publisher))
             {
+              logger.LogInfo("Removing publisher for topic " + publisher.Topic);
               return publishers.Remove(publisher);
             }
             return false;

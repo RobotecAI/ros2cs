@@ -20,6 +20,11 @@ namespace ROS2
       ulong numberOfSubscriptions;
       numberOfSubscriptions = (ulong)subscriptions.Count;
 
+      if (numberOfSubscriptions == 0)
+      {
+          return;
+      }
+
       ulong numberOfGuardConditions = 0;
       ulong numberOfTimers = 0;
       ulong numberOfClients = 0;

@@ -2,7 +2,11 @@
 
 namespace ROS2
 {
-    public interface IPublisherBase: IDisposable {}
+    public interface IPublisherBase: IDisposable
+    {
+        string Topic {get;}  
+    }
+
     public interface IPublisher<T>: IPublisherBase
         where T: Message
     {
