@@ -205,7 +205,7 @@ namespace ROS2
 
     public void Dispose()
     {
-      if(!disposed)
+      if (!disposed)
       {
         NativeMethods.rclcs_ros_clock_dispose(handle);
         disposed = true;

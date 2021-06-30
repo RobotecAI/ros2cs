@@ -8,7 +8,7 @@ namespace ROS2
   {
     private static readonly Destructor destructor = new Destructor();
     private static readonly object mutex = new object();
-    private static bool initialized = false;  // should be equivalent to rclcpp::ok() - investigate
+    private static bool initialized = false;  // should be equivalent to rcl::ok() - investigate
     private static rcl_context_t global_context;  // a simplification, we only use global default context
     private static List<INode> nodes = new List<INode>(); // kept to shutdown everything in order
 
@@ -73,9 +73,31 @@ namespace ROS2
           throw new NotInitializedException();
         }
 
+        foreach (var node in nodes)
+        {
+          if (node.name == nodeName)
+          {
+            throw new InvalidOperationException("Node with name " + nodeName + " already exists, cannot create");
+          }
+        }
+
         var new_node = new Node(nodeName, ref global_context);
         nodes.Add(new_node);
         return new_node;
+      }
+    }
+
+    public static bool RemoveNode(INode node)
+    {
+      lock (mutex)
+      {
+        if (!initialized)
+        {
+          Ros2csLogger.GetInstance().LogError("Ros2cs is not initialized, cannot remove node");
+          throw new NotInitializedException();
+        }
+        node.Dispose();
+        return nodes.Remove(node);
       }
     }
 
