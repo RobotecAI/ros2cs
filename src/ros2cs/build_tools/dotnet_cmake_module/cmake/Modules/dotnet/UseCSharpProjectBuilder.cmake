@@ -5,12 +5,9 @@
 # https://github.com/Illumina/interop/tree/master/cmake/Modules
 
 function(csharp_add_project name)
-    if(CSBUILD_PROJECT_DIR)
-        set(CURRENT_TARGET_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/${CSBUILD_PROJECT_DIR}")
-    else()
-        set(CURRENT_TARGET_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-    endif()
-    set(CSBUILD_PROJECT_DIR "")
+    set(CSBUILD_PROJECT_DIR ${_TARGET_NAME})
+    set(CURRENT_TARGET_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/${CSBUILD_PROJECT_DIR}")
+
     file(MAKE_DIRECTORY ${CURRENT_TARGET_BINARY_DIR})
     cmake_parse_arguments(_csharp_add_project
         "EXECUTABLE"
