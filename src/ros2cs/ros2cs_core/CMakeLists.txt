@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.6)
 
 project(ros2cs_core C)
 
@@ -112,6 +112,143 @@ ament_export_dependencies(rosidl_typesupport_c)
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+endif()
+
+option(STANDALONE_BUILD "Deploy standalone libraries with build" ON)
+
+if(STANDALONE_BUILD)
+  set(REQ_STANDALONE_LIBS "")
+  set(REQ_THIRD_PARTY_STANDALONE_LIBS "")
+  set(REQ_STANDALONE_DLLS "")
+
+  macro(get_standalone_third_party_dependencies _library_name)
+    find_file(${_library_name}_PATH "${_library_name}")
+    if("${${_library_name}_PATH}" STREQUAL "${_library_name}_PATH-NOTFOUND")
+      message( FATAL_ERROR "Can't find third party dependency: ${_library_name}" )
+    endif()
+    
+    list(APPEND REQ_THIRD_PARTY_STANDALONE_LIBS ${${_library_name}_PATH})
+  endmacro()
+
+  macro(install_standalone_third_party)
+    install(FILES ${REQ_THIRD_PARTY_STANDALONE_LIBS}
+      DESTINATION standalone
+    )
+  endmacro()
+  
+  macro(get_standalone_dependencies _library_name)
+    find_package(${_library_name} REQUIRED)
+
+    # Get rmw_dds_common typesupports for dds implementations
+    if("${_library_name}" STREQUAL "rmw_dds_common")
+      ament_index_get_resources(middleware_implementations "rmw_typesupport")
+      foreach(rmw_impl ${middleware_implementations})
+        string(REGEX REPLACE "rmw_" "" rmw_impl ${rmw_impl})
+        list(APPEND REQ_STANDALONE_LIBS ${rmw_dds_common_LIBRARIES__rosidl_typesupport_${rmw_impl}})
+      endforeach()
+    endif()
+    
+    # Get cyclonedds DDSC
+    if("${_library_name}" STREQUAL "CycloneDDS")
+      if (WIN32)
+        get_target_property(DDSC_LIB_PATH CycloneDDS::ddsc IMPORTED_IMPLIB_RELWITHDEBINFO)
+      elseif(UNIX)
+        get_target_property(DDSC_LIB_PATH CycloneDDS::ddsc IMPORTED_LOCATION_NONE)
+      endif()
+      list(APPEND REQ_STANDALONE_LIBS ${DDSC_LIB_PATH})
+    endif()
+    
+    list(APPEND REQ_STANDALONE_LIBS ${${_library_name}_LIBRARIES})
+  endmacro()
+    
+  macro(install_standalone_dependencies)
+    # Filter valid libraries
+    list(FILTER REQ_STANDALONE_LIBS INCLUDE REGEX ".*(lib|dll|so)(\.[0-9])*$")
+    list(REMOVE_DUPLICATES REQ_STANDALONE_LIBS)
+
+    if (WIN32)
+      foreach(lib_path ${REQ_STANDALONE_LIBS})
+        string(REGEX REPLACE "\/(l|L)ib\/" "/bin/" bin_path ${lib_path})
+        string(REGEX REPLACE "\.lib$" ".dll" dll_path ${bin_path})
+        list(APPEND REQ_STANDALONE_DLLS ${dll_path})
+      endforeach()
+      install(FILES ${REQ_STANDALONE_DLLS}
+        DESTINATION standalone
+      )
+
+      # There is an issue with resolving environment variable paths in runtime for "rcpputils" library on Windows OS.
+      # We replacing this library with our patched version. See "resources/rcpputils.diff".
+      install(FILES "${CMAKE_CURRENT_BINARY_DIR}/../../resources/Windows/x86_64/rcpputils.dll"
+        DESTINATION standalone
+      )
+    elseif(UNIX)
+      set(_resolvedFiles "")
+      foreach(lib_path ${REQ_STANDALONE_LIBS})
+        # Generate soversion files (.so.<major>). Some libs links to soversion symlinks which are not returned by find_package by default.
+        get_filename_component(_resolvedFile "${lib_path}" REALPATH)
+        string(REGEX REPLACE "so(\.[0-9]*)(\.[0-9]*)(\.[0-9]*)$" "so\\1" soversion_lib "${_resolvedFile}")
+        get_filename_component(_resolved_soversion "${soversion_lib}" REALPATH)
+        list (APPEND _resolvedFiles "${_resolvedFile}")
+
+        # If soversion file can be created, then install library with soversion name.
+        if(NOT "${soversion_lib}" STREQUAL "${_resolved_soversion}")
+          get_filename_component(soversion_lib_name "${soversion_lib}" NAME)
+          install(FILES ${_resolved_soversion}
+            DESTINATION standalone
+            RENAME ${soversion_lib_name}
+          )
+        endif()
+      endforeach()
+      
+      install(FILES ${_resolvedFiles}
+        DESTINATION standalone
+      )
+    endif()
+  endmacro()
+
+  set(ros2_standalone_libs
+    rcl
+    rcl_logging_spdlog
+    rcl_yaml_param_parser
+    rcpputils
+    rcutils
+    rmw
+    CycloneDDS
+    rmw_cyclonedds_cpp
+    FastRTPS
+    rmw_fastrtps_cpp
+    rmw_dds_common
+    rmw_implementation
+    rosidl_runtime_c
+    rosidl_typesupport_c
+    rosidl_typesupport_cpp
+    rosidl_typesupport_introspection_c
+    rosidl_typesupport_introspection_cpp
+    spdlog
+    tracetools
+    yaml
+  )
+
+  foreach(ros2_standalone_lib ${ros2_standalone_libs})
+    get_standalone_dependencies(${ros2_standalone_lib})
+  endforeach()
+  install_standalone_dependencies()
+
+  if(WIN32)
+    set(third_party_standalone_libs
+      libssl-1_1-x64.dll
+      libcrypto-1_1-x64.dll
+      msvcp140.dll
+      vcruntime140.dll
+      vcruntime140_1.dll
+      tinyxml2.dll
+    )
+    foreach(third_party_lib ${third_party_standalone_libs})
+      get_standalone_third_party_dependencies(${third_party_lib})
+    endforeach()
+    install_standalone_third_party()
+  endif(WIN32)
+  
 endif()
 
 ament_package()
