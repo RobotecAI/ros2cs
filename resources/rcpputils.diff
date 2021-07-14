@@ -1,0 +1,21 @@
+diff --git a/src/find_library.cpp b/src/find_library.cpp
+index 4fe18f2..cb4d910 100644
+--- a/src/find_library.cpp
++++ b/src/find_library.cpp
+@@ -61,13 +61,15 @@ std::string find_library_path(const std::string & library_name)
+   std::string filename = kSolibPrefix;
+   filename += library_name + kSolibExtension;
+ 
++  printf("Looking for library by filename %s in env %s\n", filename.c_str(), search_path.c_str());
+   for (const auto & search_path : search_paths) {
+     std::string path = search_path + "/" + filename;
++    printf("Trying path %s\n", path.c_str());
+     if (rcutils_is_file(path.c_str())) {
+       return path;
+     }
+   }
+-  return "";
++  return filename;
+ }
+ 
+ }  // namespace rcpputils

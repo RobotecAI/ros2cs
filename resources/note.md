@@ -1,0 +1,1 @@
+This directory contains a patched version of rcpputils for Windows. Patched version fixes the resolving of dds implementation libraries on Windows. See "rcpputils.diff" for patch details.
