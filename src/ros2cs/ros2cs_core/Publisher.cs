@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using ROS2.Internal;
 
 namespace ROS2
 {
@@ -21,17 +22,14 @@ namespace ROS2
 
       QualityOfServiceProfile qualityOfServiceProfile = qos;
       if (qualityOfServiceProfile == null)
-        qualityOfServiceProfile = new QualityOfServiceProfile(QosProfiles.DEFAULT);
+        qualityOfServiceProfile = new QualityOfServiceProfile();
 
-      publisherOptions = NativeMethods.rclcs_publisher_create_options(qualityOfServiceProfile.handle);
+      publisherOptions = NativeRclInterface.rclcs_publisher_create_options(qualityOfServiceProfile.handle);
 
-      //TODO - do not create message to get type support handle
-      IMessageInternals msg = new T();
-      IntPtr typeSupportHandle = msg.TypeSupportHandle;
-      msg.Dispose();
+      IntPtr typeSupportHandle = MessageTypeSupportHelper.GetTypeSupportHandle<T>();
 
-      publisherHandle = NativeMethods.rcl_get_zero_initialized_publisher();
-      Utils.CheckReturnEnum(NativeMethods.rcl_publisher_init(
+      publisherHandle = NativeRcl.rcl_get_zero_initialized_publisher();
+      Utils.CheckReturnEnum(NativeRcl.rcl_publisher_init(
                               ref publisherHandle,
                               ref nodeHandle,
                               typeSupportHandle,
@@ -53,8 +51,8 @@ namespace ROS2
     {
       if (!disposed)
       {
-        Utils.CheckReturnEnum(NativeMethods.rcl_publisher_fini(ref publisherHandle, ref nodeHandle));
-        NativeMethods.rclcs_publisher_dispose_options(publisherOptions);
+        Utils.CheckReturnEnum(NativeRcl.rcl_publisher_fini(ref publisherHandle, ref nodeHandle));
+        NativeRclInterface.rclcs_publisher_dispose_options(publisherOptions);
         logger.LogInfo("Publisher destroyed");
         disposed = true;
       }
@@ -67,9 +65,9 @@ namespace ROS2
         logger.LogWarning("Cannot publish as the class is already disposed or shutdown was called");
         return;
       }
-
-      msg.WriteNativeMessage();
-      Utils.CheckReturnEnum(NativeMethods.rcl_publish(ref publisherHandle, msg.Handle, IntPtr.Zero));
+      MessageInternals msgInternals = msg as MessageInternals;
+      msgInternals.WriteNativeMessage();
+      Utils.CheckReturnEnum(NativeRcl.rcl_publish(ref publisherHandle, msgInternals.Handle, IntPtr.Zero));
     }
   }
 }

@@ -1,4 +1,5 @@
 using System;
+using ROS2.Internal;
 
 namespace ROS2
 {
@@ -21,7 +22,7 @@ namespace ROS2
         public void TakeMessage()
         {
           RCLReturnEnum ret;
-          Message message;
+          MessageInternals message;
           lock (mutex)
           {
             if (disposed || !Ros2cs.Ok())
@@ -30,7 +31,7 @@ namespace ROS2
             }
 
             message = CreateMessage();
-            ret = (RCLReturnEnum)NativeMethods.rcl_take(ref subscriptionHandle, message.Handle, IntPtr.Zero, IntPtr.Zero);
+            ret = (RCLReturnEnum)NativeRcl.rcl_take(ref subscriptionHandle, message.Handle, IntPtr.Zero, IntPtr.Zero);
           }
 
           bool gotMessage = ret == RCLReturnEnum.RCL_RET_OK;
@@ -41,12 +42,12 @@ namespace ROS2
           }
         }
 
-        private Message CreateMessage()
+        private MessageInternals CreateMessage()
         {
-            return (Message)new T();
+            return new T() as MessageInternals;
         }
 
-        private void TriggerCallback(Message message)
+        private void TriggerCallback(MessageInternals message)
         {
             message.ReadNativeMessage();
             callback((T)message);
@@ -57,21 +58,22 @@ namespace ROS2
             callback = cb;
             nodeHandle = node.nodeHandle;
             topic = subTopic;
-            subscriptionHandle = NativeMethods.rcl_get_zero_initialized_subscription();
+            subscriptionHandle = NativeRcl.rcl_get_zero_initialized_subscription();
 
             QualityOfServiceProfile qualityOfServiceProfile = qos;
             if (qualityOfServiceProfile == null)
             {
-              qualityOfServiceProfile = new QualityOfServiceProfile(QosProfiles.DEFAULT);
+              qualityOfServiceProfile = new QualityOfServiceProfile();
             }
 
-            subscriptionOptions = NativeMethods.rclcs_subscription_create_options(qualityOfServiceProfile.handle);
+            subscriptionOptions = NativeRclInterface.rclcs_subscription_create_options(qualityOfServiceProfile.handle);
 
-            IMessageInternals msg = new T();
-            IntPtr typeSupportHandle = msg.TypeSupportHandle;
+            T msg = new T();
+            MessageInternals msgInternals = msg as MessageInternals;
+            IntPtr typeSupportHandle = msgInternals.TypeSupportHandle;
             msg.Dispose();
 
-            Utils.CheckReturnEnum(NativeMethods.rcl_subscription_init(
+            Utils.CheckReturnEnum(NativeRcl.rcl_subscription_init(
                                     ref subscriptionHandle,
                                     ref node.nodeHandle,
                                     typeSupportHandle,
@@ -95,8 +97,8 @@ namespace ROS2
           {
             if (!disposed)
             {
-              Utils.CheckReturnEnum(NativeMethods.rcl_subscription_fini(ref subscriptionHandle, ref nodeHandle));
-              NativeMethods.rclcs_node_dispose_options(subscriptionOptions);
+              Utils.CheckReturnEnum(NativeRcl.rcl_subscription_fini(ref subscriptionHandle, ref nodeHandle));
+              NativeRclInterface.rclcs_node_dispose_options(subscriptionOptions);
               disposed = true;
               Ros2csLogger.GetInstance().LogInfo("Subscription destroyed");
             }

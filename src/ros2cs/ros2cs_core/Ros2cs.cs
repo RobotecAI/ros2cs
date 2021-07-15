@@ -21,7 +21,7 @@ namespace ROS2
           return;
         }
 
-        Utils.CheckReturnEnum(NativeMethods.rclcs_init(ref global_context));
+        Utils.CheckReturnEnum(NativeRclInterface.rclcs_init(ref global_context));
         initialized = true;
       }
     }
@@ -36,7 +36,7 @@ namespace ROS2
         }
         initialized = false;
 
-        Utils.CheckReturnEnum(NativeMethods.rcl_shutdown(ref global_context));
+        Utils.CheckReturnEnum(NativeRcl.rcl_shutdown(ref global_context));
         Ros2csLogger.GetInstance().LogInfo("Ros2cs shutdown");
 
         foreach (var node in nodes)
@@ -58,7 +58,7 @@ namespace ROS2
       {
         Ros2csLogger.GetInstance().LogInfo("Ros2cs destructor called");
         Ros2cs.Shutdown();
-        NativeMethods.rcl_context_fini(ref global_context);
+        NativeRcl.rcl_context_fini(ref global_context);
       }
     }
 
@@ -167,11 +167,6 @@ namespace ROS2
           subscription.TakeMessage();
         }
       }
-    }
-
-    public static String GetRMWImplementationID()
-    {
-      return MarshallingHelpers.PtrToString(NativeMethods.rmw_get_implementation_identifier());
     }
   }
 }

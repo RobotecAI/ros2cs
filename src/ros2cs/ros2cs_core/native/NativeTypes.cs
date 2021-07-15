@@ -3,9 +3,17 @@ using System.Runtime.InteropServices;
 
 namespace ROS2
 {
+  /// <summary>
+  /// A set of structures to mimic rcl structs and be able to set fields without additional native calls
+  /// <description>
+  /// TODO: this is a bit dangerous in that if structures change in a new ros2 version we can have
+  /// a crash source. Consider removing in favor of handling all manipulation inside the native library,
+  /// where structure changes will use defaults (new fields added) or produce compile-time errors (fields changed).
+  /// </description>
+  /// </summary>
+
     #pragma warning disable 0169
 
-    // rcl
     public struct rcl_allocator_t
     {
         public IntPtr allocate;
@@ -78,54 +86,6 @@ namespace ROS2
         private IntPtr get_now;
         private IntPtr data;
         rcl_allocator_t allocator;
-    }
-
-    // rmw
-    public struct rmw_qos_profile_t
-    {
-        public rmw_qos_history_policy_t history;
-        public ulong depth;
-        public rmw_qos_reliability_policy_t reliability;
-        public rmw_qos_durability_policy_t durability;
-        public rmw_time_t deadline;
-        public rmw_time_t lifespan;
-        public rmw_qos_liveliness_policy_t liveliness;
-        public rmw_time_t liveliness_lease_duration;
-        public byte avoid_ros_namespace_conventions;
-    }
-
-    public struct rmw_time_t
-    {
-        public ulong sec;
-        public ulong nsec;
-    }
-
-    public enum rmw_qos_history_policy_t
-    {
-        RMW_QOS_POLICY_HISTORY_SYSTEM_DEFAULT,
-        RMW_QOS_POLICY_HISTORY_KEEP_LAST,
-        RMW_QOS_POLICY_HISTORY_KEEP_ALL
-    }
-
-    public enum rmw_qos_reliability_policy_t
-    {
-        RMW_QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT,
-        RMW_QOS_POLICY_RELIABILITY_RELIABLE,
-        RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT
-    }
-
-    public enum rmw_qos_durability_policy_t
-    {
-        RMW_QOS_POLICY_DURABILITY_SYSTEM_DEFAULT,
-        RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL,
-        RMW_QOS_POLICY_DURABILITY_VOLATILE
-    }
-
-    public enum rmw_qos_liveliness_policy_t
-    {
-        RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT,
-        RMW_QOS_POLICY_LIVELINESS_AUTOMATIC,
-        RMW_QOS_POLICY_LIVELINESS_MANUAL_BY_NODE
     }
 
 #pragma warning restore 0169

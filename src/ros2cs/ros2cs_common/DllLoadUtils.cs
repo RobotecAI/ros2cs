@@ -8,18 +8,6 @@ namespace ROS2 {
       public static string preloadLibraryName = "";
     }
 
-    public class UnsatisfiedLinkError : System.Exception {
-      public UnsatisfiedLinkError () : base () { }
-      public UnsatisfiedLinkError (string message) : base (message) { }
-      public UnsatisfiedLinkError (string message, System.Exception inner) : base (message, inner) { }
-    }
-
-    public class UnknownPlatformError : System.Exception {
-      public UnknownPlatformError () : base () { }
-      public UnknownPlatformError (string message) : base (message) { }
-      public UnknownPlatformError (string message, System.Exception inner) : base (message, inner) { }
-    }
-
     public enum Platform {
       Unix,
       MacOSX,

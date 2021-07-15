@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace ROS2
 {
-    public static class Utils
+    internal static class Utils
     {
         internal static void CheckReturnEnum(int ret)
         {
@@ -21,29 +22,26 @@ namespace ROS2
             }
         }
 
-        public static string GetRclErrorString()
+        internal static string GetRclErrorString()
         {
-            IntPtr errorStringPtr = NativeMethods.rclcs_get_error_string();
-            string errorString = MarshallingHelpers.PtrToString(errorStringPtr);
-            NativeMethods.rclcs_dispose_error_string(errorStringPtr);
+            IntPtr errorStringPtr = NativeRclInterface.rclcs_get_error_string();
+            string errorString = PtrToString(errorStringPtr);
+            NativeRclInterface.rclcs_dispose_error_string(errorStringPtr);
             return errorString;
         }
 
-        public static string PopRclErrorString()
+        internal static string PopRclErrorString()
         {
             string errorString = GetRclErrorString();
-            NativeMethods.rcl_reset_error();
+            NativeRcl.rcl_reset_error();
             return errorString;
         }
 
-        public static ulong TimeoutSecToNsec(double timeoutSec)
+        internal static string PtrToString(IntPtr p)
         {
-            const double S_TO_NS = 1000 * 1000 * 1000;
-            if(timeoutSec < 0)
-            {
-                throw new RuntimeError("Negative timeouts are not allowed, timeout was " + timeoutSec + " seconds.");
-            }
-            return (ulong)(timeoutSec * S_TO_NS);
+          if (p == IntPtr.Zero)
+            return null;
+          return Marshal.PtrToStringAnsi(p);
         }
     }
 }

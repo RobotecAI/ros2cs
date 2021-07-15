@@ -33,6 +33,7 @@ from rosidl_cmake import convert_camel_case_to_lower_case_underscore
 message_class = message.structure.namespaced_type.name
 message_class_lower = convert_camel_case_to_lower_case_underscore(message_class)
 c_full_name = idl_type_to_c(message.structure.namespaced_type)
+internals_interface = "MessageInternals"
 parent_interface = "Message"
 header_type = "std_msgs.msg.Header"
 for member in message.structure.members:
@@ -45,7 +46,7 @@ namespace @(ns)
 {
 @[end for]@
 // message class
-public class @(message_class) : @(parent_interface)
+public class @(message_class) : @(internals_interface), @(parent_interface)
 {
   private IntPtr _handle;
   private bool disposed;
@@ -125,24 +126,24 @@ public class @(message_class) : @(parent_interface)
 @[  elif isinstance(member.type, (AbstractSequence, Array))]@
 @[    if isinstance(member.type.value_type, BasicType)]@
   [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-  public delegate IntPtr NativeReadField@(get_field_name(member.type, member.name, message_class))Type(
+  internal delegate IntPtr NativeReadField@(get_field_name(member.type, member.name, message_class))Type(
     out int array_size,
     IntPtr messageHandle);
 
   [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-  public delegate bool NativeWriteField@(get_field_name(member.type, member.name, message_class))Type(
+  internal delegate bool NativeWriteField@(get_field_name(member.type, member.name, message_class))Type(
       [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.@(get_marshal_type(member.type.value_type)), SizeParamIndex = 1)]
       @(get_dotnet_type(member.type)) values,
       int array_size,
       IntPtr messageHandle);
 @[    elif isinstance(member.type.value_type, AbstractString)]@
   [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-  public delegate IntPtr NativeReadField@(get_field_name(member.type, member.name, message_class))Type(
+  internal delegate IntPtr NativeReadField@(get_field_name(member.type, member.name, message_class))Type(
     int index,
     IntPtr messageHandle);
 
   [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-  public delegate bool NativeWriteField@(get_field_name(member.type, member.name, message_class))Type(
+  internal delegate bool NativeWriteField@(get_field_name(member.type, member.name, message_class))Type(
       [MarshalAs (UnmanagedType.LPStr)] string value,
       int index,
       IntPtr messageHandle);

@@ -17,7 +17,7 @@ find_package(rosidl_typesupport_interface REQUIRED)
 find_package(ament_cmake_export_assemblies REQUIRED)
 find_package(dotnet_cmake_module REQUIRED)
 find_package(DotNETExtra REQUIRED)
-find_package(ros2cs_core REQUIRED)
+find_package(ros2cs_common REQUIRED)
 
 # Get a list of typesupport implementations from valid rmw implementations.
 rosidl_generator_cs_get_typesupports(_typesupport_impls)
@@ -287,7 +287,7 @@ endif()
 set(_assembly_deps_dll "")
 set(_assembly_deps_nuget "")
 
-foreach(_assembly_dep ${ros2cs_core_ASSEMBLIES_NUGET})
+foreach(_assembly_dep ${ros2cs_common_ASSEMBLIES_NUGET})
   list(APPEND _assembly_deps_nuget "${_assembly_dep}")
   get_filename_component(_assembly_filename ${_assembly_dep} NAME_WE)
 endforeach()
@@ -300,7 +300,7 @@ foreach(_pkg_name ${rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES})
   endforeach()
 endforeach()
 
-foreach(_assembly_dep ${ros2cs_core_ASSEMBLIES_DLL})
+foreach(_assembly_dep ${ros2cs_common_ASSEMBLIES_DLL})
   list(APPEND _assembly_deps_dll "${_assembly_dep}")
 endforeach()
 

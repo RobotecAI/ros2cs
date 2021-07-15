@@ -2,132 +2,66 @@ using System;
 
 namespace ROS2
 {
-    public enum QosProfiles
+  public enum QosPresetProfile
+  {
+    SENSOR_DATA,
+    PARAMETERS,
+    DEFAULT,
+    SERVICES_DEFAULT,
+    PARAMETER_EVENTS,
+    SYSTEM_DEFAULT
+  }
+
+  public enum HistoryPolicy
+  {
+    QOS_POLICY_HISTORY_SYSTEM_DEFAULT,
+    QOS_POLICY_HISTORY_KEEP_LAST,
+    QOS_POLICY_HISTORY_KEEP_ALL
+  }
+
+  public enum ReliabilityPolicy
+  {
+    QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT,
+    QOS_POLICY_RELIABILITY_RELIABLE,
+    QOS_POLICY_RELIABILITY_BEST_EFFORT
+  }
+
+  public enum DurabilityPolicy
+  {
+    QOS_POLICY_DURABILITY_SYSTEM_DEFAULT,
+    QOS_POLICY_DURABILITY_TRANSIENT_LOCAL,
+    QOS_POLICY_DURABILITY_VOLATILE
+  }
+
+  public enum LivelinessPolicy
+  {
+    QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT,
+    QOS_POLICY_LIVELINESS_AUTOMATIC,
+    QOS_POLICY_LIVELINESS_MANUAL_BY_TOPIC
+  }
+
+  public class QualityOfServiceProfile
+  {
+    internal IntPtr handle;
+
+    public QualityOfServiceProfile(QosPresetProfile preset_profile = QosPresetProfile.DEFAULT)
     {
-       SENSOR_DATA,
-       PARAMETERS,
-       DEFAULT,
-       SERVICES_DEFAULT,
-       PARAMETER_EVENTS,
-       SYSTEM_DEFAULT
+      handle = NativeRmwInterface.rmw_native_interface_create_qos_profile((int)preset_profile);
     }
 
-    //TODO - allow for detailed manipulation - expose rmw_qos_profile_t
-    public class QualityOfServiceProfile
+    public void SetHistory(HistoryPolicy policy, int depth)
     {
-        internal rmw_qos_profile_t handle;
-        public QosProfiles Profile;
-
-        //TODO - once the upgrade is there for FastRTPS, use liveliness as well
-        public QualityOfServiceProfile(QosProfiles profile)
-        {
-            handle = new rmw_qos_profile_t();
-            handle.liveliness = rmw_qos_liveliness_policy_t.RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT;
-            handle.liveliness_lease_duration.sec = 0;
-            handle.liveliness_lease_duration.nsec = 0;
-
-            SetProfile(profile);
-        }
-
-        public void SetProfile(QosProfiles profile)
-        {
-            Profile = profile;
-            switch(profile)
-            {
-                case QosProfiles.SENSOR_DATA:
-                    SetProfileSensorData();
-                    break;
-                case QosProfiles.PARAMETERS:
-                    SetProfileParameters();
-                    break;
-                case QosProfiles.DEFAULT:
-                    SetProfileDefault();
-                    break;
-                case QosProfiles.SERVICES_DEFAULT:
-                    SetProfileServicesDefault();
-                    break;
-                case QosProfiles.PARAMETER_EVENTS:
-                    SetProfileParameterEvents();
-                    break;
-                case QosProfiles.SYSTEM_DEFAULT:
-                    SetProfileSystemDefault();
-                    break;
-                default:
-                    break;
-            }
-            SetProfileDefault();
-        }
-
-        public void SetLifespan(ulong sec, ulong nsec)
-        {
-            handle.lifespan.sec = sec;
-            handle.lifespan.nsec = nsec;
-        }
-
-        public void SetDeadline(ulong sec, ulong nsec)
-        {
-            handle.deadline.sec = sec;
-            handle.deadline.nsec = nsec;
-        }
-
-        public void SetLivelinessLeaseDuration(ulong sec, ulong nsec)
-        {
-            handle.liveliness_lease_duration.sec = sec;
-            handle.liveliness_lease_duration.nsec = nsec;
-        }
-
-        public void SetTransientLocal(int depth = 10)
-        {
-            handle.depth = (ulong)depth;
-            handle.durability = rmw_qos_durability_policy_t.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
-        }
-
-        private void SetProfileSensorData()
-        {
-            handle.history = rmw_qos_history_policy_t.RMW_QOS_POLICY_HISTORY_KEEP_LAST;
-            handle.depth = 5;
-            handle.reliability = rmw_qos_reliability_policy_t.RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT;
-            handle.durability = rmw_qos_durability_policy_t.RMW_QOS_POLICY_DURABILITY_VOLATILE;
-        }
-
-        private void SetProfileParameters()
-        {
-            handle.history = rmw_qos_history_policy_t.RMW_QOS_POLICY_HISTORY_KEEP_LAST;
-            handle.depth = 1000;
-            handle.reliability = rmw_qos_reliability_policy_t.RMW_QOS_POLICY_RELIABILITY_RELIABLE;
-            handle.durability = rmw_qos_durability_policy_t.RMW_QOS_POLICY_DURABILITY_VOLATILE;
-        }
-
-        private void SetProfileDefault()
-        {
-            handle.history = rmw_qos_history_policy_t.RMW_QOS_POLICY_HISTORY_KEEP_LAST;
-            handle.depth = 10;
-            handle.reliability = rmw_qos_reliability_policy_t.RMW_QOS_POLICY_RELIABILITY_RELIABLE;
-            handle.durability = rmw_qos_durability_policy_t.RMW_QOS_POLICY_DURABILITY_VOLATILE;
-        }
-
-        private void SetProfileServicesDefault()
-        {
-            handle.history = rmw_qos_history_policy_t.RMW_QOS_POLICY_HISTORY_KEEP_LAST;
-            handle.depth = 10;
-            handle.reliability = rmw_qos_reliability_policy_t.RMW_QOS_POLICY_RELIABILITY_RELIABLE;
-            handle.durability = rmw_qos_durability_policy_t.RMW_QOS_POLICY_DURABILITY_VOLATILE;
-        }
-
-        private void SetProfileParameterEvents()
-        {
-            handle.history = rmw_qos_history_policy_t.RMW_QOS_POLICY_HISTORY_KEEP_LAST;
-            handle.depth = 1000;
-            handle.reliability = rmw_qos_reliability_policy_t.RMW_QOS_POLICY_RELIABILITY_RELIABLE;
-            handle.durability = rmw_qos_durability_policy_t.RMW_QOS_POLICY_DURABILITY_VOLATILE;
-        }
-
-        private void SetProfileSystemDefault()
-        {
-            handle.history = rmw_qos_history_policy_t.RMW_QOS_POLICY_HISTORY_KEEP_LAST;
-            handle.depth = 1000;
-            handle.reliability = rmw_qos_reliability_policy_t.RMW_QOS_POLICY_RELIABILITY_RELIABLE;
-            handle.durability = rmw_qos_durability_policy_t.RMW_QOS_POLICY_DURABILITY_VOLATILE;
-        }
+      NativeRmwInterface.rmw_native_interface_set_history(handle, (int)policy, depth);
     }
+
+    public void SetReliability(ReliabilityPolicy policy)
+    {
+      NativeRmwInterface.rmw_native_interface_set_reliability(handle, (int)policy);
+    }
+
+    public void SetDurability(DurabilityPolicy policy)
+    {
+      NativeRmwInterface.rmw_native_interface_set_durability(handle, (int)policy);
+    }
+  }
 }

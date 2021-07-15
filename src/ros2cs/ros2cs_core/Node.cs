@@ -37,9 +37,9 @@ namespace ROS2
           subscriptions = new HashSet<ISubscriptionBase>();
           publishers = new HashSet<IPublisherBase>();
 
-          nodeHandle = NativeMethods.rcl_get_zero_initialized_node();
-          defaultNodeOptions = NativeMethods.rclcs_node_create_default_options();
-          Utils.CheckReturnEnum(NativeMethods.rcl_node_init(ref nodeHandle, nodeName, nodeNamespace, ref context, defaultNodeOptions));
+          nodeHandle = NativeRcl.rcl_get_zero_initialized_node();
+          defaultNodeOptions = NativeRclInterface.rclcs_node_create_default_options();
+          Utils.CheckReturnEnum(NativeRcl.rcl_node_init(ref nodeHandle, nodeName, nodeNamespace, ref context, defaultNodeOptions));
           logger.LogInfo("Node initialized");
         }
 
@@ -71,8 +71,8 @@ namespace ROS2
               }
               publishers.Clear();
 
-              Utils.CheckReturnEnum(NativeMethods.rcl_node_fini(ref nodeHandle));
-              NativeMethods.rclcs_node_dispose_options(defaultNodeOptions);
+              Utils.CheckReturnEnum(NativeRcl.rcl_node_fini(ref nodeHandle));
+              NativeRclInterface.rclcs_node_dispose_options(defaultNodeOptions);
               disposed = true;
               logger.LogInfo("Node " + name + " destroyed");
             }

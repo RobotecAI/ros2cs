@@ -211,14 +211,14 @@ namespace ROS2.TestNativeMethods
         [Test]
         public void NodeGetNamespace()
         {
-            string nodeNameFromRcl = MarshallingHelpers.PtrToString(NativeMethods.rcl_node_get_name(ref node));
+            string nodeNameFromRcl = Utils.PtrToString(NativeMethods.rcl_node_get_name(ref node));
             Assert.That("node_test", Is.EqualTo(nodeNameFromRcl));
         }
 
         [Test]
         public void NodeGetName()
         {
-            string nodeNamespaceFromRcl = MarshallingHelpers.PtrToString(NativeMethods.rcl_node_get_namespace(ref node));
+            string nodeNamespaceFromRcl = Utils.PtrToString(NativeMethods.rcl_node_get_namespace(ref node));
             Assert.That("/ns", Is.EqualTo(nodeNamespaceFromRcl));
         }
 
@@ -422,7 +422,8 @@ namespace ROS2.TestNativeMethods
             Assert.That(NativeMethods.rcl_subscription_is_valid(ref subscription), Is.True);
             TestUtils.AssertRetOk(NativeMethods.rcl_wait_set_add_subscription(ref waitSet, ref subscription, UIntPtr.Zero));
 
-            RCLReturnEnum ret = (RCLReturnEnum)NativeMethods.rcl_wait(ref waitSet, Utils.TimeoutSecToNsec(0.01));
+            ulong timeout_ns = 10*1000*1000;
+            RCLReturnEnum ret = (RCLReturnEnum)NativeMethods.rcl_wait(ref waitSet, timeout_ns);
             Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_TIMEOUT));
         }
     }

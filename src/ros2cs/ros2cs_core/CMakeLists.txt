@@ -10,6 +10,7 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra)
 endif()
 
+find_package(ros2cs_common REQUIRED)
 find_package(ament_cmake_export_assemblies REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(rcl REQUIRED)
@@ -41,7 +42,8 @@ endfunction()
 
 add_library(
   ros2cs_native SHARED
-  native/rclcs.c
+  native/rcl_native_interface.c
+  native/rmw_native_interface.c
 )
 
 ament_target_dependencies(ros2cs_native
@@ -59,7 +61,6 @@ configure_csharp_c_extension_library(ros2cs_native)
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
 
 set(CS_INTERFACES
-  interfaces/Interfaces.cs
   interfaces/INode.cs
   interfaces/IPublisher.cs
   interfaces/ISubscription.cs
@@ -67,14 +68,13 @@ set(CS_INTERFACES
 
 set(CS_NATIVE
   native/RCLRet.cs
-  native/NativeMethods.cs
+  native/NativeRcl.cs
+  native/NativeRclInterface.cs
+  native/NativeRmwInterface.cs
   native/NativeTypes.cs
 )
 
 set(CS_UTILS
-  utils/MarshallingHelpers.cs
-  utils/DllLoadUtils.cs
-  utils/Exceptions.cs
   utils/Utils.cs
 )
 
@@ -89,9 +89,13 @@ set(CS_SOURCES
   Ros2cs.cs
   Subscription.cs
   WaitSet.cs
-  Ros2csLogger.cs
   properties/AssemblyInfo.cs
 )
+
+set(_assembly_deps_dll "")
+foreach(_assembly_dep ${ros2cs_common_ASSEMBLIES_DLL})
+  list(APPEND _assembly_deps_dll "${_assembly_dep}")
+endforeach()
 
 add_dotnet_library(${PROJECT_NAME}
 SOURCES
@@ -103,6 +107,7 @@ SOURCES
 install_dotnet(${PROJECT_NAME} DESTINATION lib/dotnet)
 ament_export_assemblies_dll("lib/dotnet/${PROJECT_NAME}.dll")
 
+ament_export_dependencies(ros2cs_common)
 ament_export_dependencies(ament_cmake)
 ament_export_dependencies(builtin_interfaces)
 ament_export_dependencies(rcl)
@@ -126,7 +131,7 @@ if(STANDALONE_BUILD)
     if("${${_library_name}_PATH}" STREQUAL "${_library_name}_PATH-NOTFOUND")
       message( FATAL_ERROR "Can't find third party dependency: ${_library_name}" )
     endif()
-    
+
     list(APPEND REQ_THIRD_PARTY_STANDALONE_LIBS ${${_library_name}_PATH})
   endmacro()
 
@@ -135,7 +140,7 @@ if(STANDALONE_BUILD)
       DESTINATION standalone
     )
   endmacro()
-  
+
   macro(get_standalone_dependencies _library_name)
     find_package(${_library_name} REQUIRED)
 
@@ -147,7 +152,7 @@ if(STANDALONE_BUILD)
         list(APPEND REQ_STANDALONE_LIBS ${rmw_dds_common_LIBRARIES__rosidl_typesupport_${rmw_impl}})
       endforeach()
     endif()
-    
+
     # Get cyclonedds DDSC
     if("${_library_name}" STREQUAL "CycloneDDS")
       if (WIN32)
@@ -157,10 +162,10 @@ if(STANDALONE_BUILD)
       endif()
       list(APPEND REQ_STANDALONE_LIBS ${DDSC_LIB_PATH})
     endif()
-    
+
     list(APPEND REQ_STANDALONE_LIBS ${${_library_name}_LIBRARIES})
   endmacro()
-    
+
   macro(install_standalone_dependencies)
     # Filter valid libraries
     list(FILTER REQ_STANDALONE_LIBS INCLUDE REGEX ".*(lib|dll|so)(\.[0-9])*$")
@@ -199,7 +204,7 @@ if(STANDALONE_BUILD)
           )
         endif()
       endforeach()
-      
+
       install(FILES ${_resolvedFiles}
         DESTINATION standalone
       )
@@ -248,7 +253,7 @@ if(STANDALONE_BUILD)
     endforeach()
     install_standalone_third_party()
   endif(WIN32)
-  
+
 endif()
 
 ament_package()

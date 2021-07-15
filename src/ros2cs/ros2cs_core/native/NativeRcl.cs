@@ -3,10 +3,14 @@ using System.Runtime.InteropServices;
 
 namespace ROS2
 {
-    internal static class NativeMethods
+    /// <summary>
+    /// An internal class to manage all (unmodified) native calls to rcl and rcutils
+    /// </summary>
+    internal static class NativeRcl
     {
         private static readonly DllLoadUtils dllLoadUtils = DllLoadUtilsFactory.GetDllLoadUtils();
         private static readonly IntPtr nativeRCL = dllLoadUtils.LoadLibraryNoSuffix("rcl");
+        private static readonly IntPtr nativeRCUtils = dllLoadUtils.LoadLibraryNoSuffix("rcutils");
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate rcl_context_t GetZeroInitializedContextType();
@@ -277,7 +281,7 @@ namespace ROS2
             "rcl_clock_get_now"),
             typeof(RclClockGetNow));
 
-        private static readonly IntPtr nativeRCUtils = dllLoadUtils.LoadLibraryNoSuffix("rcutils");
+        // rcutils
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate rcl_allocator_t RclGetDefaultAllocatorType();
@@ -296,115 +300,5 @@ namespace ROS2
             nativeRCUtils,
             "rcutils_reset_error"),
             typeof(ResetErrorType));
-
-        private static readonly IntPtr nativeROS2CS = dllLoadUtils.LoadLibrary("ros2cs");
-
-        internal delegate int RCLCSInitType(ref rcl_context_t context);
-        internal static RCLCSInitType
-            rclcs_init =
-            (RCLCSInitType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeROS2CS,
-            "rclcs_init"),
-            typeof(RCLCSInitType));
-
-        //TODO - load library rmw
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate IntPtr GetRMWIdentifierType();
-        internal static GetRMWIdentifierType
-            rmw_get_implementation_identifier =
-            (GetRMWIdentifierType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeROS2CS,
-            "rclcs_get_rmw_implementation_id"),
-            typeof(GetRMWIdentifierType));
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate IntPtr GetErrorStringType();
-        internal static GetErrorStringType
-            rclcs_get_error_string =
-            (GetErrorStringType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeROS2CS,
-            "rclcs_get_error_string"),
-            typeof(GetErrorStringType));
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate void DisposeErrorStringType(IntPtr error_c_string);
-        internal static DisposeErrorStringType
-            rclcs_dispose_error_string =
-            (DisposeErrorStringType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeROS2CS,
-            "rclcs_dispose_error_string"),
-            typeof(DisposeErrorStringType));
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate IntPtr NodeCreateDefaltOptionsType();
-        internal static NodeCreateDefaltOptionsType
-            rclcs_node_create_default_options =
-            (NodeCreateDefaltOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeROS2CS,
-            "rclcs_node_create_default_options"),
-            typeof(NodeCreateDefaltOptionsType));
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate void NodeDisposeOptionsType(IntPtr options);
-        internal static NodeDisposeOptionsType
-            rclcs_node_dispose_options =
-            (NodeDisposeOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeROS2CS,
-            "rclcs_node_dispose_options"),
-            typeof(NodeDisposeOptionsType));
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate IntPtr SubscriptionCreateOptionsType(rmw_qos_profile_t qos);
-        internal static SubscriptionCreateOptionsType
-            rclcs_subscription_create_options =
-            (SubscriptionCreateOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeROS2CS,
-            "rclcs_subscription_create_options"),
-            typeof(SubscriptionCreateOptionsType));
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate void SubscriptionDisposeOptionsType(IntPtr options);
-        internal static SubscriptionDisposeOptionsType
-            rclcs_subscription_dispose_options =
-            (SubscriptionDisposeOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeROS2CS,
-            "rclcs_subscription_dispose_options"),
-            typeof(SubscriptionDisposeOptionsType));
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate IntPtr PublisherCreateOptionsType(rmw_qos_profile_t qos);
-        internal static PublisherCreateOptionsType
-            rclcs_publisher_create_options =
-            (PublisherCreateOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeROS2CS,
-            "rclcs_publisher_create_options"),
-            typeof(PublisherCreateOptionsType));
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate void PublisherDisposeOptionsType(IntPtr options);
-        internal static PublisherDisposeOptionsType
-            rclcs_publisher_dispose_options =
-            (PublisherDisposeOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeROS2CS,
-            "rclcs_publisher_dispose_options"),
-            typeof(PublisherDisposeOptionsType));
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate IntPtr RclcsClockCreate(ref rcl_allocator_t allocator_handle);
-        internal static RclcsClockCreate
-            rclcs_ros_clock_create =
-            (RclcsClockCreate)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeROS2CS,
-            "rclcs_ros_clock_create"),
-            typeof(RclcsClockCreate));
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate void RclcsClockDispose(IntPtr clock_handle);
-        internal static RclcsClockDispose
-            rclcs_ros_clock_dispose =
-            (RclcsClockDispose)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-            nativeROS2CS,
-            "rclcs_ros_clock_dispose"),
-            typeof(RclcsClockDispose));
     }
 }

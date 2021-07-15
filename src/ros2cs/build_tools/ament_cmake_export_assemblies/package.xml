@@ -3,7 +3,7 @@
   <name>ament_cmake_export_assemblies</name>
   <version>0.0.0</version>
   <description>The ability to export .NET assemblies to downstream packages in the ament buildsystem in CMake.</description>
-  <maintainer email="esteve@apache.org">Esteve Fernandez</maintainer>
+  <maintainer email="adam.dabrowski@robotec.ai">Adam Dabrowski</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake_core</buildtool_depend>

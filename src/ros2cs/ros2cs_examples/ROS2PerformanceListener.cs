@@ -76,7 +76,7 @@ namespace ConsoleApplication
             RosTime timeStamp = new RosTime();
             int counter = 0;
 
-            QualityOfServiceProfile qos = new QualityOfServiceProfile(QosProfiles.SENSOR_DATA);
+            QualityOfServiceProfile qos = new QualityOfServiceProfile(QosPresetProfile.SENSOR_DATA);
             ISubscription<sensor_msgs.msg.PointCloud2> chatter_sub = node.CreateSubscription<sensor_msgs.msg.PointCloud2>(
               "perf_chatter",
               msg =>

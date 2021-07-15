@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using ROS2;
+using ROS2.Internal;
 
 @#######################################################################
 @# Handle message

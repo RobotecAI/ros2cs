@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.5)
 project(ros2cs_examples C)
 
 find_package(ament_cmake REQUIRED)
+find_package(ros2cs_common REQUIRED)
 find_package(ros2cs_core REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
@@ -17,6 +18,7 @@ set(CSHARP_TARGET_FRAMEWORK "netcoreapp3.1")
 find_package(DotNETExtra REQUIRED)
 
 set(_assemblies_dep_dlls
+    ${ros2cs_common_ASSEMBLIES_DLL}
     ${ros2cs_core_ASSEMBLIES_DLL}
     ${std_msgs_ASSEMBLIES_DLL}
     ${geometry_msgs_ASSEMBLIES_DLL}

@@ -180,7 +180,7 @@ namespace ROS2
       {
         RosTime time = new RosTime(this);
         long queryNowNanoseconds = 0;
-        NativeMethods.rcl_clock_get_now(handle, ref queryNowNanoseconds);
+        NativeRcl.rcl_clock_get_now(handle, ref queryNowNanoseconds);
         time.sec = (int)(queryNowNanoseconds / (long)1e9);
         time.nanosec = (uint)(queryNowNanoseconds - time.sec*((long)1e9));
         return time;
@@ -189,8 +189,8 @@ namespace ROS2
 
     public Clock()
     {
-      rcl_allocator_t allocator = NativeMethods.rcutils_get_default_allocator();
-      handle = NativeMethods.rclcs_ros_clock_create(ref allocator);
+      rcl_allocator_t allocator = NativeRcl.rcutils_get_default_allocator();
+      handle = NativeRclInterface.rclcs_ros_clock_create(ref allocator);
     }
 
     public RosTime CreateRosTime(double seconds)
@@ -207,7 +207,7 @@ namespace ROS2
     {
       if (!disposed)
       {
-        NativeMethods.rclcs_ros_clock_dispose(handle);
+        NativeRclInterface.rclcs_ros_clock_dispose(handle);
         disposed = true;
       }
     }

@@ -11,8 +11,8 @@ namespace ROS2
 
     static WaitSet()
     {
-      allocator = NativeMethods.rcutils_get_default_allocator();
-      handle = NativeMethods.rcl_get_zero_initialized_wait_set();
+      allocator = NativeRcl.rcutils_get_default_allocator();
+      handle = NativeRcl.rcl_get_zero_initialized_wait_set();
     }
 
     internal static void Wait(rcl_context_t context, List<ISubscriptionBase> subscriptions, double timeoutSec)
@@ -31,7 +31,7 @@ namespace ROS2
       ulong numberOfServices = 0;
       ulong numberOfEvents = 0;
 
-      Utils.CheckReturnEnum(NativeMethods.rcl_wait_set_init(
+      Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_init(
         ref handle,
         numberOfSubscriptions,
         numberOfGuardConditions,
@@ -42,7 +42,7 @@ namespace ROS2
         ref context,
         allocator));
 
-      Utils.CheckReturnEnum(NativeMethods.rcl_wait_set_clear(ref handle));
+      Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_clear(ref handle));
 
       ulong subscribtionsInWaitset = 0;
       foreach (ISubscriptionBase subscription in subscriptions)
@@ -55,16 +55,17 @@ namespace ROS2
         }
 
         rcl_subscription_t subscription_handle = subscription.Handle;
-        Utils.CheckReturnEnum(NativeMethods.rcl_wait_set_add_subscription(ref handle, ref subscription_handle, UIntPtr.Zero));
+        Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_add_subscription(ref handle, ref subscription_handle, UIntPtr.Zero));
         subscribtionsInWaitset++;
       }
 
-      int rcl_wait_ret = NativeMethods.rcl_wait(ref handle, Utils.TimeoutSecToNsec(timeoutSec));
+      ulong timeoutInNanoseconds = (ulong)(timeoutSec * 1000 * 1000 * 1000);
+      int rcl_wait_ret = NativeRcl.rcl_wait(ref handle, timeoutInNanoseconds);
       if (rcl_wait_ret != (int)RCLReturnEnum.RCL_RET_OK && rcl_wait_ret != (int)RCLReturnEnum.RCL_RET_TIMEOUT)
       { // Timeout return is normal
         Utils.CheckReturnEnum(rcl_wait_ret);
       }
-      Utils.CheckReturnEnum(NativeMethods.rcl_wait_set_fini(ref handle)); // wait_set is zero initialized again after this one
+      Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_fini(ref handle)); // wait_set is zero initialized again after this one
     }
   }
 }
