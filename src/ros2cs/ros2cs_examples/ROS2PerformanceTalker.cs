@@ -60,12 +60,13 @@ namespace ConsoleApplication
 
         public static void Main(string[] args)
         {
-            Console.WriteLine("Enter PC2 data size: ");
-            int messageSize = Convert.ToInt32(Console.ReadLine());
             Ros2cs.Init();
             INode node = Ros2cs.CreateNode("perf_talker");
             QualityOfServiceProfile qos = new QualityOfServiceProfile(QosPresetProfile.SENSOR_DATA);
             IPublisher<sensor_msgs.msg.PointCloud2> pc_pub = node.CreatePublisher<sensor_msgs.msg.PointCloud2>("perf_chatter", qos);
+
+            Console.WriteLine("Enter PC2 data size: ");
+            int messageSize = Convert.ToInt32(Console.ReadLine());
             sensor_msgs.msg.PointCloud2 msg = PrepMessage(messageSize);
 
             while (Ros2cs.Ok())
