@@ -10,13 +10,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-find_package(rmw REQUIRED)
 find_package(rosidl_generator_c REQUIRED)
 find_package(rosidl_typesupport_c REQUIRED)
 find_package(rosidl_typesupport_interface REQUIRED)
 find_package(ament_cmake_export_assemblies REQUIRED)
 find_package(dotnet_cmake_module REQUIRED)
-find_package(DotNETExtra REQUIRED)
+find_package(DotNETExtra REQUIRED) # add_dotnet_library
 find_package(ros2cs_common REQUIRED)
 
 # Get a list of typesupport implementations from valid rmw implementations.
@@ -40,16 +39,13 @@ if(NOT WIN32)
   endif()
 endif()
 
-#message("The ABS_IDL_FILES are ${rosidl_generate_interfaces_ABS_IDL_FILES}")
-
+# For each IDL file
 foreach(_idl_file ${rosidl_generate_interfaces_ABS_IDL_FILES})
   get_filename_component(_parent_folder "${_idl_file}" DIRECTORY)
   get_filename_component(_parent_folder "${_parent_folder}" NAME)
   get_filename_component(_msg_name "${_idl_file}" NAME_WE)
   get_filename_component(_ext "${_idl_file}" EXT)
   string_camel_case_to_lower_case_underscore("${_msg_name}" _module_name)
-
-  #message("Appending ${_output_path}/${_parent_folder}/_${_module_name}.cs")
 
   if(_parent_folder STREQUAL "msg")
     list(APPEND _generated_msg_cs_files
@@ -96,13 +92,16 @@ set(target_dependencies
   "${rosidl_generator_cs_TEMPLATE_DIR}/msg_typesupport.c.em"
   "${rosidl_generator_cs_TEMPLATE_DIR}/msg.cs.em"
   ${rosidl_generate_interfaces_ABS_IDL_FILES}
-  ${_dependency_files})
+  ${_dependency_files}
+)
+
 foreach(dep ${target_dependencies})
   if(NOT EXISTS "${dep}")
     message(FATAL_ERROR "Target dependency '${dep}' does not exist")
   endif()
 endforeach()
 
+# ROSIDL generator arguments
 set(generator_arguments_file "${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cs__arguments.json")
 rosidl_write_generator_arguments(
   "${generator_arguments_file}"
@@ -127,7 +126,6 @@ add_custom_command(
   VERBATIM
 )
 
-
 message(STATUS "Adding custom target")
 
 set(_target_suffix "__cs")
@@ -148,9 +146,6 @@ set_property(
   ${_generated_msg_cs_files} ${_generated_msg_c_files} ${_generated_msg_c_ts_files}
   PROPERTY GENERATED 1)
 
-#rosidl_target_interfaces(${_target_name_lib}
-#    ${rosidl_generate_interfaces_TARGET} rosidl_typesupport_c)
-
 foreach(_generated_msg_c_ts_file ${_generated_msg_c_ts_files})
   get_filename_component(_full_folder "${_generated_msg_c_ts_file}" DIRECTORY)
   get_filename_component(_package_folder "${_full_folder}" DIRECTORY)
@@ -163,10 +158,9 @@ foreach(_generated_msg_c_ts_file ${_generated_msg_c_ts_files})
 
   list(FIND _generated_msg_c_ts_files ${_generated_msg_c_ts_file} _file_index)
   list(GET _type_support_by_generated_msg_c_files ${_file_index} _typesupport_impl)
-  find_package(${_typesupport_impl} REQUIRED)
-  set(_generated_msg_c_common_file "${_full_folder}/${_base_msg_name}.c")
 
-  set(_dotnetext_suffix "__dotnetext")
+  find_package(${_typesupport_impl} REQUIRED)
+
   set(_target_name "${_package_name}_${_base_msg_name}__${_typesupport_impl}")
 
   string_camel_case_to_lower_case_underscore("${_module_name}" _header_name)
@@ -177,46 +171,27 @@ foreach(_generated_msg_c_ts_file ${_generated_msg_c_ts_files})
   )
 
   set(_destination_dir "${_output_path}/${_parent_folder}")
-
-  set_target_properties(${_target_name} PROPERTIES
-    COMPILE_FLAGS "${_extension_compile_flags}"
-    LIBRARY_OUTPUT_DIRECTORY "${_destination_dir}"
-    RUNTIME_OUTPUT_DIRECTORY "${_destination_dir}"
-    OUTPUT_NAME ${_target_name}_native
-  )
-
-  set_target_properties(${_target_name} PROPERTIES
-    COMPILE_FLAGS "${_extension_compile_flags}"
-    LIBRARY_OUTPUT_DIRECTORY_DEBUG "${_destination_dir}"
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG "${_destination_dir}"
-    OUTPUT_NAME ${_target_name}_native
-  )
-
-  set_target_properties(${_target_name} PROPERTIES
-    COMPILE_FLAGS "${_extension_compile_flags}"
-    LIBRARY_OUTPUT_DIRECTORY_RELEASE "${_destination_dir}"
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${_destination_dir}"
-    OUTPUT_NAME ${_target_name}_native
-  )
-
-  set_target_properties(${_target_name} PROPERTIES
-    COMPILE_FLAGS "${_extension_compile_flags}"
-    LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO "${_destination_dir}"
-    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${_destination_dir}"
-    OUTPUT_NAME ${_target_name}_native
-  )
-
-  set_target_properties(${_target_name} PROPERTIES
-    COMPILE_FLAGS "${_extension_compile_flags}"
-    LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL "${_destination_dir}"
-    RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${_destination_dir}"
-    OUTPUT_NAME ${_target_name}_native
-  )
-
   set(_extension_compile_flags "")
   if(NOT WIN32)
     set(_extension_compile_flags "-Wall -Wextra")
   endif()
+
+  set_target_properties(
+    ${_target_name}
+    PROPERTIES
+    COMPILE_FLAGS                           "${_extension_compile_flags}"
+    OUTPUT_NAME                             "${_target_name}_native"
+    RUNTIME_OUTPUT_DIRECTORY                ${_destination_dir}
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG          ${_destination_dir}
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE        ${_destination_dir}
+    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${_destination_dir}
+    RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL     ${_destination_dir}
+    LIBRARY_OUTPUT_DIRECTORY                ${_destination_dir}
+    LIBRARY_OUTPUT_DIRECTORY_DEBUG          ${_destination_dir}
+    LIBRARY_OUTPUT_DIRECTORY_RELEASE        ${_destination_dir}
+    LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO ${_destination_dir}
+    LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL     ${_destination_dir}
+  )
 
   list(APPEND _extension_dependencies ${_target_name})
 
@@ -230,14 +205,15 @@ foreach(_generated_msg_c_ts_file ${_generated_msg_c_ts_files})
   endif()
 
   message("Link libraries: ${PROJECT_NAME}__${_typesupport_impl}")
-  target_link_libraries(
-    ${_target_name}
+  target_link_libraries(${_target_name}
     ${PROJECT_NAME}__${_typesupport_impl}
     ${_extension_link_flags}
     ${PROJECT_NAME}__rosidl_generator_c
   )
+
   rosidl_target_interfaces(${_target_name}
-    ${PROJECT_NAME} rosidl_typesupport_c)
+    ${PROJECT_NAME} rosidl_typesupport_c
+  )
 
   target_include_directories(${_target_name}
     PUBLIC
@@ -247,9 +223,11 @@ foreach(_generated_msg_c_ts_file ${_generated_msg_c_ts_files})
 
   ament_target_dependencies(${_target_name}
     "rosidl_generator_c"
+    "rosidl_generator_cs"
     "rosidl_typesupport_c"
     "rosidl_typesupport_interface"
   )
+
   foreach(_pkg_name ${rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES})
     ament_target_dependencies(${_target_name}
       ${_pkg_name}
@@ -260,18 +238,12 @@ foreach(_generated_msg_c_ts_file ${_generated_msg_c_ts_files})
     ${rosidl_generate_interfaces_TARGET}__${_typesupport_impl}
   )
 
-  ament_target_dependencies(${_target_name}
-    "rosidl_generator_c"
-    "rosidl_generator_cs"
-  )
-
   if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
     install(TARGETS ${_target_name} EXPORT ${_target_name}
       ARCHIVE DESTINATION lib
       LIBRARY DESTINATION lib
       RUNTIME DESTINATION bin
     )
-
   endif()
 
 endforeach()
@@ -285,20 +257,6 @@ if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
 endif()
 
 set(_assembly_deps_dll "")
-set(_assembly_deps_nuget "")
-
-foreach(_assembly_dep ${ros2cs_common_ASSEMBLIES_NUGET})
-  list(APPEND _assembly_deps_nuget "${_assembly_dep}")
-  get_filename_component(_assembly_filename ${_assembly_dep} NAME_WE)
-endforeach()
-
-foreach(_pkg_name ${rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES})
-  find_package(${_pkg_name} REQUIRED)
-  foreach(_assembly_dep ${${_pkg_name}_ASSEMBLIES_NUGET})
-    list(APPEND _assembly_deps_nuget "${_assembly_dep}")
-    get_filename_component(_assembly_filename ${_assembly_dep} NAME_WE)
-  endforeach()
-endforeach()
 
 foreach(_assembly_dep ${ros2cs_common_ASSEMBLIES_DLL})
   list(APPEND _assembly_deps_dll "${_assembly_dep}")
@@ -311,7 +269,6 @@ foreach(_pkg_name ${rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES})
   endforeach()
 endforeach()
 
-#message("Assembly deps dll: ${_assembly_deps_dll}")
 add_dotnet_library(${PROJECT_NAME}_assembly
   SOURCES
   ${_generated_msg_cs_files}
@@ -319,7 +276,9 @@ add_dotnet_library(${PROJECT_NAME}_assembly
   ${_assembly_deps_dll}
 )
 
-add_dependencies("${PROJECT_NAME}_assembly" "${rosidl_generate_interfaces_TARGET}${_target_suffix}")
+add_dependencies(${PROJECT_NAME}_assembly
+  "${rosidl_generate_interfaces_TARGET}${_target_suffix}"
+)
 
 if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
   set(_install_assembly_dir "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}")

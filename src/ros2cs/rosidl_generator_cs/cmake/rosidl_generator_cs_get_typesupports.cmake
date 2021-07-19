@@ -9,6 +9,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 find_package(rmw_implementation_cmake REQUIRED)
 
 macro(accumulate_typesupports)
@@ -22,10 +23,9 @@ endmacro()
 macro(rosidl_generator_cs_get_typesupports TYPESUPPORT_IMPLS)
   set(TYPESUPPORT_IMPLS "")
   set(_typesupport_impls "")
-  #message("rosidl_generator_cs_get_typesupports")
   call_for_each_rmw_implementation(accumulate_typesupports)
+
   foreach(_typesupport_impl ${_typesupport_impls})
-    #message("rosidl_generator_cs_get_typesupports ${_typesupport_impl}")
     list_append_unique(TYPESUPPORT_IMPLS ${_typesupport_impl})
   endforeach()
 endmacro()
