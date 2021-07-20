@@ -1,9 +1,25 @@
+// Copyright 2019-2021 Robotec.ai
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 using System;
 using System.Diagnostics;
 using ROS2.Internal;
 
 namespace ROS2
 {
+  /// <summary> Publisher of a topic with a given type </summary>
+  /// <description> Publishers are created through INode.CreatePublisher </description>
   public class Publisher<T>: IPublisher<T> where T : Message, new ()
   {
     public string Topic { get { return topic; } }
@@ -15,6 +31,8 @@ namespace ROS2
     rcl_node_t nodeHandle;
     private bool disposed = false;
 
+    /// <summary> Internal constructor for Publsher. Use INode.CreatePublisher to construct </summary>
+    /// <see cref="INode.CreatePublisher"/>
     public Publisher(string pubTopic, Node node, QualityOfServiceProfile qos = null)
     {
       topic = pubTopic;
@@ -47,6 +65,7 @@ namespace ROS2
       DestroyPublisher();
     }
 
+    /// <summary> "Destructor" supporting disposable model </summary>
     private void DestroyPublisher()
     {
       if (!disposed)
@@ -58,6 +77,8 @@ namespace ROS2
       }
     }
 
+    /// <summary> Publish a message </summary>
+    /// <see cref="IPublisher.Publish"/>
     public void Publish(T msg)
     {
       if (!Ros2cs.Ok() || disposed)

@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>rosidl_generator_cs</name>
-  <version>1.0.0</version>
+  <version>2.0.0</version>
   <description>Generate the ROS interfaces in C#.</description>
   <maintainer email="adam.dabrowski@robotec.ai">Adam Dabrowski</maintainer>
   <license>Apache License 2.0</license>
