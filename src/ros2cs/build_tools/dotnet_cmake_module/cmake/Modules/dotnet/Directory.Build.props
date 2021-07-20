@@ -1,5 +1,0 @@
-<Project>
-  <PropertyGroup Condition="$(MSBuildProjectName.Contains('dotnetcore'))">
-    <BaseIntermediateOutputPath>obj_core\</BaseIntermediateOutputPath>
-  </PropertyGroup>
-</Project>

@@ -1,5 +1,0 @@
-Build tools have been originally developed by Esteve Fernandez (esteve@apache.org). Original repositories:
-https://github.com/esteve/ament_cmake_export_assemblies.git
-https://github.com/esteve/dotnet_cmake_module.git
-
-Changes were made to improve installation process and update target platforms.

@@ -23,3 +23,11 @@
     type: git
     url: https://github.com/ros2/test_interface_files.git
     version: galactic
+  external/build_tools/dotnet_cmake_module:
+    type: git
+    url: https://github.com/RobotecAI/dotnet_cmake_module
+    version: master
+  external/build_tools/ament_cmake_export_assemblies:
+    type: git
+    url: https://github.com/RobotecAI/ament_cmake_export_assemblies
+    version: master

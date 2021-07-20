@@ -1,1 +1,0 @@
-dotnet %~dp0\dotnet\@DOTNET_DLL_PATH@
