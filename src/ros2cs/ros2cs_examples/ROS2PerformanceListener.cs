@@ -102,7 +102,7 @@ namespace Examples
           RosTime timeNow = clock.Now;
           timeStamp.nanosec = msg.Header.Stamp.Nanosec;
           timeStamp.sec = msg.Header.Stamp.Sec;
-          var diff = (timeNow - timeStamp).Seconds;
+          var diff = timeNow.Seconds - timeStamp.Seconds;
 
           queue.Enqueue(diff);
           counter++;

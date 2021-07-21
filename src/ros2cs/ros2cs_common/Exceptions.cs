@@ -1,5 +1,5 @@
 // Copyright 2019-2021 Robotec.ai
-// Copyright 2019 Dyno Robotics
+// Copyright 2019 Dyno Robotics (by Samuel Lindgren samuel@dynorobotics.se)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
