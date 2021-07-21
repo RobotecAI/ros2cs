@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System;
-using ROS2;
 using System.Collections.Generic;
 
 namespace ROS2

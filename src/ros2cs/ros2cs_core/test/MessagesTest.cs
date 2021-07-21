@@ -1,11 +1,23 @@
-﻿using NUnit.Framework;
-using System;
-using System.Linq;
-using System.Collections.Generic;
+﻿// Copyright 2019 Dyno Robotics (by Samuel Lindgren samuel@dynorobotics.se)
+// Copyright 2019-2021 Robotec.ai
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using NUnit.Framework;
 
 namespace ROS2.Test
 {
-    [TestFixture()]
+    [TestFixture]
     public class MessagesTest
     {
         [Test]
@@ -163,41 +175,5 @@ namespace ROS2.Test
             Assert.That(getUnboundedOfUnbounded[0].String_values[0], Is.EqualTo("hello"));
             Assert.That(getUnboundedOfUnbounded[0].String_values[1], Is.EqualTo("world"));
         }
-
-        /*
-
-        // NOTE(samiam): does not work yet
-        [Test]
-        public void SetStaticArrayPrimitives()
-        {
-            test_msgs.msg.StaticArrayPrimitives msg = new test_msgs.msg.StaticArrayPrimitives();
-            List<bool> setBoolSequence = new List<bool>();
-            setBoolSequence.Add(true);
-            setBoolSequence.Add(false);
-            msg.bool_values = setBoolSequence;
-            List<bool> getBoolSequence = msg.bool_values;
-            Assert.That(getBoolSequence.Count, Is.EqualTo(3));
-            Assert.That(getBoolSequence[0], Is.True);
-            Assert.That(getBoolSequence[1], Is.False);
-
-            //List<int> setIntSequence = new List<int>();
-            //setIntSequence.Add(123);
-            //setIntSequence.Add(456);
-            //test_msgs.msg.StaticArrayPrimitives msg2 = new test_msgs.msg.StaticArrayPrimitives();
-            //msg2.int32_values = setIntSequence;
-            //List<int> getIntList = msg2.int32_values;
-            //Assert.That(getIntList.Count, Is.EqualTo(3));
-            //Assert.That(getIntList[0], Is.EqualTo(123));
-
-            //List<string> setStringList = new List<string>();
-            //setStringList.Add("Hello");
-            //setStringList.Add("world");
-            //test_msgs.msg.StaticArrayPrimitives msg3 = new test_msgs.msg.StaticArrayPrimitives();
-            //msg3.string_values = setStringList;
-            //List<string> getStringList = msg3.string_values;
-            //Assert.That(getStringList.Count, Is.EqualTo(3));
-            //Assert.That(getStringList[0], Is.EqualTo("Hello"));
-            //Assert.That(getStringList[1], Is.EqualTo("world"));
-        } */
     }
 }

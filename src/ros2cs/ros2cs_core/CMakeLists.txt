@@ -128,11 +128,6 @@ ament_export_dependencies(rcl)
 ament_export_dependencies(rosidl_generator_c)
 ament_export_dependencies(rosidl_typesupport_c)
 
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  ament_lint_auto_find_test_dependencies()
-endif()
-
 option(STANDALONE_BUILD "Deploy standalone libraries with build" ON)
 
 if(STANDALONE_BUILD)
@@ -268,6 +263,42 @@ if(STANDALONE_BUILD)
     install_standalone_third_party()
   endif(WIN32)
 
+endif()
+
+# Tests
+if(BUILD_TESTING)
+  find_package(std_msgs REQUIRED)
+  find_package(test_msgs REQUIRED)
+
+  set(DOTNET_OUTPUT_PATH
+    ${CSHARP_BUILDER_OUTPUT_PATH}/${CSHARP_TARGET_FRAMEWORK}/${DOTNET_CORE_RUNTIME}
+  )
+
+  set(ASSEMBLIES_DEP_DLLS
+      ${DOTNET_OUTPUT_PATH}"/ros2cs_core.dll"
+      ${ros2cs_common_ASSEMBLIES_DLL}
+      ${std_msgs_ASSEMBLIES_DLL}
+      ${test_msgs_ASSEMBLIES_DLL}
+      ${rosidl_generator_ASSEMBLIES_DLL}
+  )
+
+  set(TESTS_SRC
+    test/ClockTest.cs
+    test/CreateNodeTest.cs
+    test/InitShutdownTest.cs
+    test/LargeMessageTest.cs
+    test/MessagesTest.cs
+    test/NodeTest.cs
+    test/NativeMetodsTest.cs
+    test/SubscriptionTest.cs
+    test/TestUtils.cs
+  )
+
+  add_dotnet_test(ros2cs_tests
+    ${TESTS_SRC}
+    INCLUDE_DLLS
+    ${ASSEMBLIES_DEP_DLLS}
+  )
 endif()
 
 ament_package()
