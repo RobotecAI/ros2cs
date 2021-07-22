@@ -326,11 +326,12 @@ public class @(message_class) : @(internals_interface), @(parent_interface)
 
   public void WriteNativeMessage()
   {
-    if (_handle != IntPtr.Zero)
-    { //message object reused for subsequent publishing (fields could have changed, and we want to avoid double init on sequences)
-      native_destroy_native_message(_handle);
+    if (_handle == IntPtr.Zero)
+    { // message object reused for subsequent publishing.
+      // This could be problematic if sequences sizes changed, but me handle that by checking for it in the c implementation
+      _handle = native_create_native_message();
     }
-    _handle = native_create_native_message();
+
     WriteNativeMessage(Handle);
   }
 

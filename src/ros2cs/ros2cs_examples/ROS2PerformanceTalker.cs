@@ -83,12 +83,20 @@ namespace Examples
       Console.WriteLine("Enter PC2 data size: ");
       int messageSize = Convert.ToInt32(Console.ReadLine());
       sensor_msgs.msg.PointCloud2 msg = PrepMessage(messageSize);
+      // System.Random rand = new System.Random();
 
       while (Ros2cs.Ok())
       {
         var nowTime = clock.Now;
         msg.UpdateHeaderTime(nowTime.sec, nowTime.nanosec);
-        pc_pub.Publish(msg);
+
+        // Remove this benchmark if you want to measure maximum throughput for smallest messages
+        using (var bench = new Benchmark("Publish"))
+        {
+          // If we want to test changing sizes:
+          // msg = PrepMessage(rand.Next() / 1000);
+          pc_pub.Publish(msg);
+        }
       }
       Ros2cs.Shutdown();
     }

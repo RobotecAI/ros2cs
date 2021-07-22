@@ -29,6 +29,7 @@ set(CS_INTERFACES
   Exceptions.cs
   Ros2csLogger.cs
   MessageInternals.cs
+  Benchmark.cs
   properties/AssemblyInfo.cs
 )
 
