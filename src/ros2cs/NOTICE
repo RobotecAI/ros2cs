@@ -1,8 +1,0 @@
-This product includes software developed by
-Esteve Fernandez (esteve@apache.org)
-Samuel Lindgren (samuel@dynorobotics.se)
-Adam Dabrowski (adam.dabrowski@robotec.ai, adamdbrw@gmail.com)
-
-Originated from ros2_dotnet/ros2_dotnet, was later co-developed in adambrw/ros2_dotnet fork by Adam Dabrowski and Samuel Lidgren.
-Since then, a closed source version was developed by Robotec.ai, including major changes to all parts of the project. Now the project is
-released back into open source.
