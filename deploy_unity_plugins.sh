@@ -9,5 +9,5 @@ fi
 pluginDir=$1
 
 cp --verbose install/lib/dotnet/* ${pluginDir}
-cp --verbose install/standalone/*.so ${pluginDir}/Linux/x86_64/
+cp --verbose install/standalone/* ${pluginDir}/Linux/x86_64/
 cp --verbose install/lib/*.so ${pluginDir}/Linux/x86_64/
