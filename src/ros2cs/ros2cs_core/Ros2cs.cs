@@ -30,6 +30,7 @@ namespace ROS2
     private static readonly object mutex = new object();
     private static bool initialized = false;  // for most part equivalent to rcl::ok()
     private static rcl_context_t global_context;  // a simplification, we only use global default context
+    private static rcl_allocator_t default_allocator;
     private static List<INode> nodes = new List<INode>(); // kept to shutdown everything in order
 
     /// <summary> Globally initialize ros2 (rcl) </summary>
@@ -45,7 +46,9 @@ namespace ROS2
           return;
         }
 
-        Utils.CheckReturnEnum(NativeRclInterface.rclcs_init(ref global_context));
+        default_allocator = NativeRcl.rcutils_get_default_allocator();
+        global_context = NativeRcl.rcl_get_zero_initialized_context();
+        Utils.CheckReturnEnum(NativeRclInterface.rclcs_init(ref global_context, default_allocator));
         initialized = true;
       }
     }
@@ -64,8 +67,8 @@ namespace ROS2
         }
         initialized = false;
 
-        Utils.CheckReturnEnum(NativeRcl.rcl_shutdown(ref global_context));
         Ros2csLogger.GetInstance().LogInfo("Ros2cs shutdown");
+        Utils.CheckReturnEnum(NativeRcl.rcl_shutdown(ref global_context));
 
         foreach (var node in nodes)
         {
@@ -81,7 +84,7 @@ namespace ROS2
     /// </description>
     public static bool Ok()
     {
-      return initialized;
+      return initialized && NativeRcl.rcl_context_is_valid(ref global_context);
     }
 
     /// <summary> Helper class to handle Ros2cs finalization </summary>
@@ -110,7 +113,7 @@ namespace ROS2
     {
       lock (mutex)
       {
-        if (!initialized)
+        if (!Ok())
         {
           Ros2csLogger.GetInstance().LogError("Ros2cs is not initialized, cannot create node");
           throw new NotInitializedException();

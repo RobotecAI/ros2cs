@@ -28,7 +28,7 @@ namespace ROS2
     private static readonly DllLoadUtils dllLoadUtils = DllLoadUtilsFactory.GetDllLoadUtils();
     private static readonly IntPtr nativeROS2CS = dllLoadUtils.LoadLibrary("ros2cs");
 
-    internal delegate int RCLCSInitType(ref rcl_context_t context);
+    internal delegate int RCLCSInitType(ref rcl_context_t context, rcl_allocator_t allocator);
     internal static RCLCSInitType
         rclcs_init =
         (RCLCSInitType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
