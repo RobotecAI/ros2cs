@@ -27,17 +27,16 @@ endif()
 find_package(ros2cs_common REQUIRED)
 find_package(ament_cmake_export_assemblies REQUIRED)
 find_package(ament_cmake REQUIRED)
-find_package(rcl REQUIRED)
-find_package(rcl_interfaces REQUIRED)
-find_package(rmw REQUIRED)
-find_package(rcutils REQUIRED)
-find_package(rmw_implementation REQUIRED)
-find_package(rmw_implementation_cmake REQUIRED)
-find_package(rosidl_generator_c REQUIRED)
 find_package(dotnet_cmake_module REQUIRED)
 
 set(CSHARP_TARGET_FRAMEWORK "netcoreapp3.1")
 find_package(DotNETExtra REQUIRED)
+
+# Used by ros2cs_native
+find_package(rcl REQUIRED)
+find_package(rcutils REQUIRED)
+find_package(rmw REQUIRED)
+find_package(rosidl_generator_c REQUIRED)
 
 # Only build the library if a C typesupport exists
 get_rmw_typesupport(typesupport_impls "rmw_implementation" LANGUAGE "c")
@@ -61,12 +60,10 @@ add_library(
 )
 
 ament_target_dependencies(ros2cs_native
-  "builtin_interfaces"
   "rcl"
-  "rosidl_generator_c"
-  "rosidl_typesupport_c"
-  "rcl_yaml_param_parser"
   "rcutils"
+  "rmw"
+  "rosidl_generator_c"
 )
 ament_export_libraries(ros2cs_native)
 ament_export_targets(ros2cs_native)
@@ -123,10 +120,8 @@ ament_export_assemblies_dll("lib/dotnet/${PROJECT_NAME}.dll")
 
 ament_export_dependencies(ros2cs_common)
 ament_export_dependencies(ament_cmake)
-ament_export_dependencies(builtin_interfaces)
 ament_export_dependencies(rcl)
 ament_export_dependencies(rosidl_generator_c)
-ament_export_dependencies(rosidl_typesupport_c)
 
 option(STANDALONE_BUILD "Deploy standalone libraries with build" ON)
 
@@ -164,7 +159,7 @@ if(STANDALONE_BUILD)
 
     # Get cyclonedds DDSC
     if("${_library_name}" STREQUAL "CycloneDDS")
-      if (WIN32)
+      if(WIN32)
         get_target_property(DDSC_LIB_PATH CycloneDDS::ddsc IMPORTED_IMPLIB_RELWITHDEBINFO)
       elseif(UNIX)
         get_target_property(DDSC_LIB_PATH CycloneDDS::ddsc IMPORTED_LOCATION_NONE)
@@ -180,7 +175,7 @@ if(STANDALONE_BUILD)
     list(FILTER REQ_STANDALONE_LIBS INCLUDE REGEX ".*(lib|dll|so)(\.[0-9])*$")
     list(REMOVE_DUPLICATES REQ_STANDALONE_LIBS)
 
-    if (WIN32)
+    if(WIN32)
       foreach(lib_path ${REQ_STANDALONE_LIBS})
         string(REGEX REPLACE "\/(l|L)ib\/" "/bin/" bin_path ${lib_path})
         string(REGEX REPLACE "\.lib$" ".dll" dll_path ${bin_path})
@@ -202,7 +197,7 @@ if(STANDALONE_BUILD)
         get_filename_component(_resolvedFile "${lib_path}" REALPATH)
         string(REGEX REPLACE "so(\.[0-9]*)(\.[0-9]*)(\.[0-9]*)$" "so\\1" soversion_lib "${_resolvedFile}")
         get_filename_component(_resolved_soversion "${soversion_lib}" REALPATH)
-        list (APPEND _resolvedFiles "${_resolvedFile}")
+        list(APPEND _resolvedFiles "${_resolvedFile}")
 
         # If soversion file can be created, then install library with soversion name.
         if(NOT "${soversion_lib}" STREQUAL "${_resolved_soversion}")
@@ -261,8 +256,7 @@ if(STANDALONE_BUILD)
       get_standalone_third_party_dependencies(${third_party_lib})
     endforeach()
     install_standalone_third_party()
-  endif(WIN32)
-
+  endif()
 endif()
 
 # Tests

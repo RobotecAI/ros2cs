@@ -15,16 +15,11 @@
   <buildtool_export_depend>rosidl_cmake</buildtool_export_depend>
 
   <build_depend>ros2cs_common</build_depend>
-  <build_depend>rmw_implementation_cmake</build_depend>
   <build_depend>rcl</build_depend>
   <build_depend>rcutils</build_depend>
   <build_depend>rmw</build_depend>
+  <build_depend>rosidl_generator_c</build_depend>
 
-  <exec_depend>rosidl_parser</exec_depend>
-  <exec_depend>rmw_implementation</exec_depend>
-  <exec_depend>rmw_implementation_cmake</exec_depend>
-  <exec_depend>rosidl_generator_c</exec_depend>
-  <exec_depend>rosidl_parser</exec_depend>
   <exec_depend>rcl</exec_depend>
 
   <test_depend>ros2cs_common</test_depend>

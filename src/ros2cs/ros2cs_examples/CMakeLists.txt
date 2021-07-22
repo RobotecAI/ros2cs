@@ -20,10 +20,7 @@ find_package(ament_cmake REQUIRED)
 find_package(ros2cs_common REQUIRED)
 find_package(ros2cs_core REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(tf2_msgs REQUIRED)
-find_package(nav_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(dotnet_cmake_module REQUIRED)
 find_package(rosidl_generator_cs REQUIRED)
@@ -35,9 +32,6 @@ set(_assemblies_dep_dlls
     ${ros2cs_common_ASSEMBLIES_DLL}
     ${ros2cs_core_ASSEMBLIES_DLL}
     ${std_msgs_ASSEMBLIES_DLL}
-    ${geometry_msgs_ASSEMBLIES_DLL}
-    ${nav_msgs_ASSEMBLIES_DLL}
-    ${tf2_msgs_ASSEMBLIES_DLL}
     ${sensor_msgs_ASSEMBLIES_DLL}
     ${builtin_interfaces_ASSEMBLIES_DLL}
 )
