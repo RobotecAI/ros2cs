@@ -126,6 +126,7 @@ ament_export_dependencies(rosidl_generator_c)
 option(STANDALONE_BUILD "Deploy standalone libraries with build" ON)
 
 if(STANDALONE_BUILD)
+  set(ros2_distro "$ENV{ROS_DISTRO}")
   set(REQ_STANDALONE_LIBS "")
   set(REQ_THIRD_PARTY_STANDALONE_LIBS "")
   set(REQ_STANDALONE_DLLS "")
@@ -147,7 +148,7 @@ if(STANDALONE_BUILD)
 
   macro(get_standalone_dependencies _library_name)
     find_package(${_library_name} REQUIRED)
-
+    
     # Get rmw_dds_common typesupports for dds implementations
     if("${_library_name}" STREQUAL "rmw_dds_common")
       ament_index_get_resources(middleware_implementations "rmw_typesupport")
@@ -165,6 +166,21 @@ if(STANDALONE_BUILD)
         get_target_property(DDSC_LIB_PATH CycloneDDS::ddsc IMPORTED_LOCATION_NONE)
       endif()
       list(APPEND REQ_STANDALONE_LIBS ${DDSC_LIB_PATH})
+    endif()
+
+    # Get cyclonedds iceoryx dependency for ros2 galaxy (unix only)
+    if(UNIX AND ros2_distro STREQUAL "galactic")
+      if("${_library_name}" STREQUAL "iceoryx_binding_c" )
+        get_target_property(ICEORYX_LIB_PATH iceoryx_binding_c::iceoryx_binding_c IMPORTED_LOCATION_NONE)
+        list(APPEND REQ_STANDALONE_LIBS ${ICEORYX_LIB_PATH})
+      elseif("${_library_name}" STREQUAL "iceoryx_posh")
+        get_target_property(ICEORYX_POSH_LIB_PATH iceoryx_posh::iceoryx_posh IMPORTED_LOCATION_NONE)
+        list(APPEND REQ_STANDALONE_LIBS ${ICEORYX_POSH_LIB_PATH})
+      elseif("${_library_name}" STREQUAL "iceoryx_utils")
+        get_target_property(ICEORYX_UTILS_LIB_PATH iceoryx_utils::iceoryx_utils IMPORTED_LOCATION_NONE)
+        get_target_property(ICEORYX_PLATFORM_LIB_PATH iceoryx_utils::iceoryx_platform IMPORTED_LOCATION_NONE)
+        list(APPEND REQ_STANDALONE_LIBS ${ICEORYX_UTILS_LIB_PATH} ${ICEORYX_PLATFORM_LIB_PATH})
+      endif()
     endif()
 
     list(APPEND REQ_STANDALONE_LIBS ${${_library_name}_LIBRARIES})
@@ -185,11 +201,13 @@ if(STANDALONE_BUILD)
         DESTINATION standalone
       )
 
-      # There is an issue with resolving environment variable paths in runtime for "rcpputils" library on Windows OS.
+      # There is an issue with resolving environment variable paths in runtime for "rcpputils" library on ros2 foxy and Windows OS.
       # We replacing this library with our patched version. See "resources/rcpputils.diff".
-      install(FILES "${CMAKE_CURRENT_BINARY_DIR}/../../resources/Windows/x86_64/rcpputils.dll"
-        DESTINATION standalone
-      )
+      if(ros2_distro STREQUAL "foxy")
+        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/../../resources/foxy/Windows/x86_64/rcpputils.dll"
+          DESTINATION standalone
+        )
+      endif()
     elseif(UNIX)
       set(_resolvedFiles "")
       foreach(lib_path ${REQ_STANDALONE_LIBS})
@@ -222,10 +240,10 @@ if(STANDALONE_BUILD)
     rcpputils
     rcutils
     rmw
-    CycloneDDS
-    rmw_cyclonedds_cpp
     FastRTPS
     rmw_fastrtps_cpp
+    CycloneDDS
+    rmw_cyclonedds_cpp
     rmw_dds_common
     rmw_implementation
     rosidl_runtime_c
@@ -237,6 +255,10 @@ if(STANDALONE_BUILD)
     tracetools
     yaml
   )
+  
+  if(ros2_distro STREQUAL "galactic" AND UNIX)
+    list(APPEND ros2_standalone_libs iceoryx_binding_c iceoryx_posh iceoryx_utils)
+  endif()
 
   foreach(ros2_standalone_lib ${ros2_standalone_libs})
     get_standalone_dependencies(${ros2_standalone_lib})
