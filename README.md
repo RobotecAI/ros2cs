@@ -56,7 +56,7 @@ sudo apt-get update; \
 ### Building
 > A terminal with administrator privileges is required for **Windows** and **ros2 galactic**. This is because python packages installation requires a privilage for creating symlinks. More about this issue: [github issue](https://github.com/ament/ament_cmake/issues/350).
 
-> There is a bug with hardcoded include exports in some **ros2 galactic** packages on **Windows**. Easiest workaround is to create a `C:/ci/ws/install/include` directory in yout system. More about this bug and proposed workarounds: [github issue](https://github.com/ros2/rclcpp/issues/1688#issuecomment-858467147).
+> There is a bug with hardcoded include exports in some **ros2 galactic** packages on **Windows**. Easiest workaround is to create a `C:/ci/ws/install/include` directory in your system. More about this bug and proposed workarounds: [github issue](https://github.com/ros2/rclcpp/issues/1688#issuecomment-858467147).
 
 You need to source your ROS2 installation (e.g. `source /opt/ros/foxy/setup.bash` on Ubuntu) before you proceed, for each new open terminal. You can also include this command in your `~/.bashrc` file.
 
