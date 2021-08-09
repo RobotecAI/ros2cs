@@ -291,7 +291,7 @@ if(BUILD_TESTING)
   )
 
   set(ASSEMBLIES_DEP_DLLS
-      ${DOTNET_OUTPUT_PATH}"/ros2cs_core.dll"
+      "${DOTNET_OUTPUT_PATH}/ros2cs_core.dll"
       ${ros2cs_common_ASSEMBLIES_DLL}
       ${std_msgs_ASSEMBLIES_DLL}
       ${test_msgs_ASSEMBLIES_DLL}
