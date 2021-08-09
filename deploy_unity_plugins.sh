@@ -1,5 +1,7 @@
 #!/bin/bash
-#NOTE: modify the directory to where your Unity project is
+
+SCRIPT=$(readlink -f $0)
+SCRIPTPATH=`dirname $SCRIPT`
 
 if [ $# -eq 0 ]; then
   echo "Required argument: target plugins directory"
@@ -8,6 +10,7 @@ fi
 
 pluginDir=$1
 
-cp --verbose install/lib/dotnet/* ${pluginDir}
-cp --verbose install/standalone/* ${pluginDir}/Linux/x86_64/
-cp --verbose install/lib/*.so ${pluginDir}/Linux/x86_64/
+cp --verbose $SCRIPTPATH/install/lib/dotnet/* ${pluginDir}
+mkdir -p  ${pluginDir}/Linux/x86_64/
+cp --verbose $SCRIPTPATH/install/standalone/* ${pluginDir}/Linux/x86_64/
+cp --verbose $SCRIPTPATH/install/lib/*.so ${pluginDir}/Linux/x86_64/

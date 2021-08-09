@@ -15,8 +15,8 @@ Ros2cs is an independent part of Ros2 For Unity, which enables high-performance 
 ### Platforms
 
 Supported OSes: 
-- Ubuntu 20.04
-- Windows 10
+- Ubuntu 20.04  (bash)
+- Windows 10 (powershell)
 
 Supported ROS2 distributions:
 - Foxy
@@ -28,15 +28,17 @@ Ros2cs libraries can be built in two flavors:
 
 ### Prerequisites
 
-*  ROS2 installed on the system, along with `test-msgs` package (e.g. for Foxy: `ros-foxy-test-msgs`).
+#### Ubuntu
+
+*  ROS2 installed on the system, along with `test-msgs` and `fastrtps` packages
 *  vcstool package - [see here](https://github.com/dirk-thomas/vcstool)
-*  .NET core 3.1 - [see here](https://www.microsoft.com/net/learn/get-started)
+*  .NET core 3.1 sdk - [see here](https://www.microsoft.com/net/learn/get-started)
 
 The following script can be used to install the aforementioned prerequisites on Ubuntu 20.04:
 
 ```bash
 # Install tests-msgs for your ROS2 distribution
-apt install -y ros-${ROS_DISTRO}-test-msgs
+apt install -y ros-${ROS_DISTRO}-test-msgs ros-${ROS_DISTRO}-fastrtps ros-${ROS_DISTRO}-rmw-fastrtps-cpp
 
 # Install vcstool package
 curl -s https://packagecloud.io/install/repositories/dirk-thomas/vcstool/script.deb.sh | sudo bash
@@ -53,23 +55,34 @@ sudo apt-get update; \
   sudo apt-get install -y dotnet-sdk-3.1
 ```
 
+#### Windows
+
+*  ROS2 installed on the system
+*  vcstool package - [see here](https://github.com/dirk-thomas/vcstool)
+*  .NET 5.0 sdk - [see here](https://dotnet.microsoft.com/download/dotnet/5.0)
+*  xUnit testing framework (for tests only) - [see here](https://xunit.net/)
+
 ### Building
-> A terminal with administrator privileges is required for **Windows** and **ros2 galactic**. This is because python packages installation requires a privilage for creating symlinks. More about this issue: [github issue](https://github.com/ament/ament_cmake/issues/350).
 
-> There is a bug with hardcoded include exports in some **ros2 galactic** packages on **Windows**. Easiest workaround is to create a `C:/ci/ws/install/include` directory in your system. More about this bug and proposed workarounds: [github issue](https://github.com/ros2/rclcpp/issues/1688#issuecomment-858467147).
+> For **Windows**, [path length is limited to 260 characters](https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation). Clone your repo to `C:\dev` or a similar shallow path to avoid this issue during build.
 
-You need to source your ROS2 installation (e.g. `source /opt/ros/foxy/setup.bash` on Ubuntu) before you proceed, for each new open terminal. You can also include this command in your `~/.bashrc` file.
+> For **Windows**, a Visual Studio preconfigured powershell terminal must be used. Standard powershell prompt might not be configured properly to be used with MSVC compiler and Windows SDKs.  You should have Visual Studio already installed (ROS2 dependency) and you can find shortcut for `Developer PowerShell for VS` here: `C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio 2019\Visual Studio Tools`. 
 
+> A powershell terminal with administrator privileges is required for **Windows** and **ros2 galactic**. This is because python packages installation requires a privilage for creating symlinks. More about this issue: [github issue](https://github.com/ament/ament_cmake/issues/350).
+
+> There is a bug with hardcoded include exports in some **ros2 galactic** packages on **Windows**. Easiest workaround is to create a `C:\ci\ws\install\include` directory in your system. More about this bug and proposed workarounds: [github issue](https://github.com/ros2/rclcpp/issues/1688#issuecomment-858467147).
+
+You need to source your ROS2 installation (e.g. `source /opt/ros/foxy/setup.bash` on Ubuntu or `C:\dev\ros2_foxy\local_setup.ps1` on Windows) before you proceed, for each new open terminal. On Ubuntu, you can also include this command in your `~/.bashrc` file.
 
 *  Clone this project.
-*  Navigate to the top project folder and run the `get_repos.sh` script.
-   * It will use `vcstool` to download required ROS2 and custom message packages (if any).
-     By default, this will get repositories as set in ${ROS_DISTRO}.
-   * **Note that on Windows the command is a bit different**: `vcs import --input ros2_foxy.repos src`.
-*  Run `build.sh` script.
+*  Navigate to the top project folder and run the `get_repos.sh` (Ubuntu) or `get_repos.ps1` (Windows) script.
+   * You can run `get_repos` script with `--get-custom-messages` argument to fetch extra messages from `custom_messages.repos` file.
+   * It will use `vcstool` to download required ROS2 packages. By default, this will get repositories as set in ${ROS_DISTRO}.
+*  Run `build.sh` (Ubuntu) or `build.ps1` (Windows) script.
    * It invokes `colcon_build` with `--merge-install` argument to simplify libraries installation.
 * If you wish to test the build:
-  * Run `test.sh` script.
+  * Make sure your NuGet repositories can resolve `xUnit` dependency. You can call `dotnet nuget list source` to see your current sources for NuGet packages. Please note that `Microsoft Visual Studio Offline Packages` is usually insufficient. You can fix it by adding `nuget.org` repository: `dotnet nuget add source --name nuget.org https://api.nuget.org/v3/index.json`.
+  * Run `test.sh` (Ubuntu) or `test.ps1` (Windows) script.
   * Run a manual test with basic listener/publisher examples - `ros2cs_talker` and `ros2cs_listener`.
   * Run a manual performance test - `ros2cs_performance_talker` and `ros2cs_performance_listener`.
 
@@ -83,7 +96,6 @@ To run standalone application you must deploy it with libraries from:
 * on linux, both `install/lib` and `install/standalone`,
 * on windows, both `install/bin` and `install/standalone`.
 
-For convenience, deploy scripts (`deploy_unity_plugins.sh` for Linux and `deploy_unity_plugins.ps1`) for Windows are attached.
 
 By default, examples are ran with the overlay build, but you can follow the instruction below to run them with the standalone build (e.g. to test it).
 
@@ -103,4 +115,17 @@ LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`/../../standalone:`pwd`/.. ./ros2cs_talker
 
 ### Generating custom messages
 
-After cloning the project and importing .repos, you can simply put your message package next to other packages in the ros2 sub-folder. Then, build your project and you have all messages generated! You can also modify and use the `custom_message.repos` template to automate the process.
+After cloning the project and importing .repos, you can simply put your message package next to other packages in the `src/ros2` sub-folder. Then, build your project and you have all messages generated! You can also modify and use the `custom_message.repos` template to automate the process with `get_repos` script.
+
+## Running with Unity
+
+Although this project is a more general ros2 implementation in C# / .NET, it is primarly meant to be used with Unity3D. 
+See these [dedicated instructions](README_UNITY.md) on how to run it in a Unity3D project.
+
+## Troubleshooting
+
+### Tests are not working ('charmap' codec can't decode byte) on Windows
+
+Problem may occur on non english version of Windows. This error is caused by impossibility in decoding `dotnet` output by ament tools.
+
+**Fix**: Change your `dotnet` output to english by temporarily renaming your localization directory (`pl` to `pl.bak`, `fr` to `fr.bak` etc.) in your `dotnet` sdk directory.
