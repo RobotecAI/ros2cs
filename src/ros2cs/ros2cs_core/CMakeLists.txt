@@ -315,6 +315,11 @@ if(BUILD_TESTING)
     INCLUDE_DLLS
     ${ASSEMBLIES_DEP_DLLS}
   )
+
+  add_dependencies(ros2cs_tests 
+    ros2cs_core
+  )
+
 endif()
 
 ament_package()
