@@ -1,2 +1,2 @@
 #!/bin/bash
-colcon test --merge-install --packages-select ros2cs_core; colcon test-result --verbose
+colcon test --merge-install --packages-select ros2cs_tests; colcon test-result --verbose

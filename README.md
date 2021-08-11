@@ -79,9 +79,11 @@ You need to source your ROS2 installation (e.g. `source /opt/ros/foxy/setup.bash
    * You can run `get_repos` script with `--get-custom-messages` argument to fetch extra messages from `custom_messages.repos` file.
    * It will use `vcstool` to download required ROS2 packages. By default, this will get repositories as set in ${ROS_DISTRO}.
 *  Run `build.sh` (Ubuntu) or `build.ps1` (Windows) script.
+   * You can build tests by adding `--with-tests` argument to `build` command.
    * It invokes `colcon_build` with `--merge-install` argument to simplify libraries installation.
 * If you wish to test the build:
   * Make sure your NuGet repositories can resolve `xUnit` dependency. You can call `dotnet nuget list source` to see your current sources for NuGet packages. Please note that `Microsoft Visual Studio Offline Packages` is usually insufficient. You can fix it by adding `nuget.org` repository: `dotnet nuget add source --name nuget.org https://api.nuget.org/v3/index.json`.
+  * Make sure you have tests built (`build.sh --with-tests` (Linux) or `build.ps1 --with-tests`).
   * Run `test.sh` (Ubuntu) or `test.ps1` (Windows) script.
   * Run a manual test with basic listener/publisher examples - `ros2cs_talker` and `ros2cs_listener`.
   * Run a manual performance test - `ros2cs_performance_talker` and `ros2cs_performance_listener`.

@@ -4,14 +4,13 @@ $pluginDir=$args[0]
 function Print-Help {
 "
 Usage: 
-deploy_unity_plugins.ps1 [PLUGINS_DIR]
+deploy_unity_plugins.ps1 <PLUGINS_DIR>
 
 PLUGINS_DIR - Assets/Plugins/ directory of Unity project.
 "
-
 }
 
-if (([string]::IsNullOrEmpty($pluginDir)))
+if (([string]::IsNullOrEmpty($pluginDir)) -Or $args[0] -eq "--help" -Or $args[0] -eq "-h")
 {
     Print-Help
     exit

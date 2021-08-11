@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+  <name>ros2cs_tests</name>
+  <version>1.0.0</version>
+  <description>Tests for Ros2cs</description>
+  <maintainer email="michal.drwiega@robotec.ai">Michal Drwiega</maintainer>
+  <license>Apache License 2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>dotnet_cmake_module</buildtool_depend>
+
+  <buildtool_export_depend>ament_cmake</buildtool_export_depend>
+
+  <build_depend>ros2cs_core</build_depend>
+
+  <test_depend>ros2cs_core</test_depend>
+  <test_depend>std_msgs</test_depend>
+  <test_depend>test_msgs</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

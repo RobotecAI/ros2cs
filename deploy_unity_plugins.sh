@@ -3,8 +3,11 @@
 SCRIPT=$(readlink -f $0)
 SCRIPTPATH=`dirname $SCRIPT`
 
-if [ $# -eq 0 ]; then
-  echo "Required argument: target plugins directory"
+if [ $# -eq 0 ] || [ $1 = "-h" ] || [ $1 = "--help" ]; then
+  echo "Usage:" 
+  echo "deploy_unity_plugins.ps1 <PLUGINS_DIR>"
+  echo ""
+  echo "PLUGINS_DIR - Assets/Plugins/ directory of Unity project."
   exit 1
 fi
 
