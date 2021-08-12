@@ -5,7 +5,7 @@ MSG="Build started."
 if [ "$1" = "--with-tests" ]; then
     TESTS=1
     MSG="$MSG (with tests)"
-else [ "$1" = "-h" ] || [ "$1" = "--help" ]
+elif [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     echo "Usage: "
     echo "build.sh [--with-tests]"
     echo ""
