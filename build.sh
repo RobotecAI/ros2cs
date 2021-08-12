@@ -7,7 +7,7 @@ if [ "$1" = "--with-tests" ]; then
     MSG="$MSG (with tests)"
 else [ "$1" = "-h" ] || [ "$1" = "--help" ]
     echo "Usage: "
-    echo "deploy_unity_plugins.ps1 [--with-tests]"
+    echo "build.sh [--with-tests]"
     echo ""
     echo "Options:"
     echo "--with-tests - build with tests."

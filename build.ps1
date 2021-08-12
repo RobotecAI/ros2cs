@@ -1,7 +1,7 @@
 function Print-Help {
 "
 Usage: 
-deploy_unity_plugins.ps1 [--with-tests]
+build.ps1 [--with-tests]
 
 Options:
 --with-tests - build with tests.
