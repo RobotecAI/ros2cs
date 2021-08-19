@@ -3,7 +3,7 @@ Ros2cs
 
 A C# .NET library for ROS2, including C# implementation of rcl APIs, message generation, tests and examples.
 
-Ros2cs is also an independent part of Ros2 For Unity, which enables high-performance communication between simulation and ROS2 robot packages.
+Ros2cs is also an independent part of [Ros2 For Unity](https://github.com/RobotecAI/ros2-for-unity), which enables high-performance communication between simulation and ROS2 robot packages. Follow instructions there instead if you are intending to use ros2cs with Unity3D. 
 
 ### Features
 
@@ -112,3 +112,7 @@ After cloning the project and importing .repos, you can simply put your message 
 Problem may occur on non english version of Windows. This error is caused by impossibility in decoding `dotnet` output by ament tools.
 
 **Fix**: Change your `dotnet` output to english by temporarily renaming your localization directory (`pl` to `pl.bak`, `fr` to `fr.bak` etc.) in your `dotnet` sdk directory.
+
+## Acknowledgements 
+
+The project started as a fork of [ros2_dotnet](https://github.com/ros2-dotnet/ros2_dotnet) but moved away from its root through new features and design choices. Nevertheless, ros2cs is built on foundation of open-source efforts of Esteve Fernandez (esteve), Lennart Nachtigall (firesurfer), Samuel Lindgren (samiamlabs) and other contributors to ros2_dotnet project.
