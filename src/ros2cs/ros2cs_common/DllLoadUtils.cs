@@ -24,6 +24,7 @@ namespace ROS2
   public class GlobalVariables {
     public static bool preloadLibrary = false;
     public static string preloadLibraryName = "";
+    public static string absolutePath = "";
   }
 
   public enum Platform {
@@ -276,7 +277,7 @@ namespace ROS2
     public IntPtr LoadLibrary (string fileName) {
       if (GlobalVariables.preloadLibrary)
         CheckPreloadLibraries();
-      string libraryName = "lib" + fileName + "_native.so";
+      string libraryName = GlobalVariables.absolutePath + "lib" + fileName + "_native.so";
       IntPtr ptr = dlopen (libraryName, RTLD_NOW);
       if (ptr == IntPtr.Zero) {
         throw new UnsatisfiedLinkError (libraryName);
@@ -287,7 +288,7 @@ namespace ROS2
     public IntPtr LoadLibraryNoSuffix (string fileName) {
       if (GlobalVariables.preloadLibrary)
         CheckPreloadLibraries();
-      string libraryName = "lib" + fileName + ".so";
+      string libraryName = GlobalVariables.absolutePath + "lib" + fileName + ".so";
       IntPtr ptr = dlopen (libraryName, RTLD_NOW);
       if (ptr == IntPtr.Zero) {
         throw new UnsatisfiedLinkError (libraryName);

@@ -204,7 +204,7 @@ if(STANDALONE_BUILD)
       # There is an issue with resolving environment variable paths in runtime for "rcpputils" library on ros2 foxy and Windows OS.
       # We replacing this library with our patched version. See "resources/rcpputils.diff".
       if(ros2_distro STREQUAL "foxy")
-        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/../../resources/foxy/Windows/x86_64/rcpputils.dll"
+        install(FILES "${CMAKE_CURRENT_LIST_DIR}/../../../resources/foxy/Windows/x86_64/rcpputils.dll"
           DESTINATION standalone
         )
       endif()

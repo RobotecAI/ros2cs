@@ -3,7 +3,7 @@ Ros2cs
 
 A C# .NET library for ROS2, including C# implementation of rcl APIs, message generation, tests and examples.
 
-Ros2cs is an independent part of Ros2 For Unity, which enables high-performance communication between simulation and ROS2 robot packages.
+Ros2cs is also an independent part of Ros2 For Unity, which enables high-performance communication between simulation and ROS2 robot packages.
 
 ### Features
 
@@ -22,7 +22,7 @@ Supported ROS2 distributions:
 - Foxy
 - Galactic
 
-Ros2cs libraries can be built in two flavors:
+On Windows, ros2cs libraries can be built in two flavors:
 - standalone (no ROS2 installation required on target machine, e.g. your Unity3D simulation server). All required dependencies are installed and can be used e.g. as a complete set of Unity3D plugins.
 - overlay (assuming existing (supported) ROS2 installation on target machine). Only ros2cs libraries and generated messages are installed.
 
@@ -72,7 +72,7 @@ sudo apt-get update; \
 
 > There is a bug with hardcoded include exports in some **ros2 galactic** packages on **Windows**. Easiest workaround is to create a `C:\ci\ws\install\include` directory in your system. More about this bug and proposed workarounds: [github issue](https://github.com/ros2/rclcpp/issues/1688#issuecomment-858467147).
 
-You need to source your ROS2 installation (e.g. `source /opt/ros/foxy/setup.bash` on Ubuntu or `C:\dev\ros2_foxy\local_setup.ps1` on Windows) before you proceed, for each new open terminal. On Ubuntu, you can also include this command in your `~/.bashrc` file.
+You need to source your ROS2 installation (e.g. `source /opt/ros/foxy/setup.bash` on Ubuntu or `C:\dev\ros2_foxy\local_setup.ps1` on Windows) before you proceed, for each new open terminal. On Ubuntu, you can also include this command in your `~/.profile` file.
 
 *  Clone this project.
 *  Navigate to the top project folder and run the `get_repos.sh` (Ubuntu) or `get_repos.ps1` (Windows) script.
@@ -88,41 +88,22 @@ You need to source your ROS2 installation (e.g. `source /opt/ros/foxy/setup.bash
   * Run a manual test with basic listener/publisher examples - `ros2cs_talker` and `ros2cs_listener`.
   * Run a manual performance test - `ros2cs_performance_talker` and `ros2cs_performance_listener`.
 
-#### Standalone version
+#### Standalone version (Windows)
 
-By default, build process generates standalone libraries in `install/standalone` directory.
+On Windows, by default, build process generates standalone libraries in `install/standalone` directory.
 You can disable this feature by setting CMake option `STANDALONE_BUILD` to `OFF`.
 
-To run standalone application you must deploy it with libraries from:
-
-* on linux, both `install/lib` and `install/standalone`,
-* on windows, both `install/bin` and `install/standalone`.
-
+To run standalone application you must deploy it with libraries from both `install/bin` and `install/standalone`.
 
 By default, examples are ran with the overlay build, but you can follow the instruction below to run them with the standalone build (e.g. to test it).
 
 ##### Running examples with standalone build
 
-Libraries are loaded dynamically at runtime and need to be in a visible path. You should also modify OS environment variables so your executable will find all the required libraries:
-
-* on Linux: `LD_LIBRARY_PATH`,
-* on Windows: `PATH` (if executable lies in a different directory than libraries).
-
-Example for linux (make sure `ros2cs_examples` package is built):
-
-```bash
-cd install/lib/ros2cs_examples
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`/../../standalone:`pwd`/.. ./ros2cs_talker
-```
+Libraries are loaded dynamically at runtime and need to be in a visible path. You should also modify `PATH`  environment variable so your executable will find all the required libraries (if executable lies in a different directory than libraries).
 
 ### Generating custom messages
 
 After cloning the project and importing .repos, you can simply put your message package next to other packages in the `src/ros2` sub-folder. Then, build your project and you have all messages generated! You can also modify and use the `custom_message.repos` template to automate the process with `get_repos` script.
-
-## Running with Unity
-
-Although this project is a more general ros2 implementation in C# / .NET, it is primarly meant to be used with Unity3D. 
-See these [dedicated instructions](README_UNITY.md) on how to run it in a Unity3D project.
 
 ## Troubleshooting
 
