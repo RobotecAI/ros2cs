@@ -116,3 +116,5 @@ Problem may occur on non english version of Windows. This error is caused by imp
 ## Acknowledgements 
 
 The project started as a fork of [ros2_dotnet](https://github.com/ros2-dotnet/ros2_dotnet) but moved away from its root through new features and design choices. Nevertheless, ros2cs is built on foundation of open-source efforts of Esteve Fernandez (esteve), Lennart Nachtigall (firesurfer), Samuel Lindgren (samiamlabs) and other contributors to ros2_dotnet project.
+
+Open-source release of ros2cs was made possible through cooperation with Tier IV. Thanks to encouragement, support and requirements driven by Tier IV the project was significantly improved in terms of portability, stability, core structure and user-friendliness.
