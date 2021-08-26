@@ -33,7 +33,7 @@ On Windows, ros2cs libraries can be built in two flavors:
 
 Please follow the  OS-specific instructions for your build:
 
-- [Ubuntu 20.04 Instructions](README-UBTUNTU.md)
+- [Ubuntu 20.04 Instructions](README-UBUNTU.md)
 - [Windows 10 Instructions](README-WINDOWS.md)
 
 ## Testing
