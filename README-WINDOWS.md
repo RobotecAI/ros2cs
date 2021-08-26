@@ -50,3 +50,5 @@ Additionally all libraries need to be in a visible path, since they are loaded d
 Problem may occur on non english version of Windows. This error is caused by impossibility in decoding `dotnet` output by ament tools.
 
 **Fix**: Change your `dotnet` output to english by temporarily renaming your localization directory (`pl` to `pl.bak`, `fr` to `fr.bak` etc.) in your `dotnet` sdk directory.
+
+**If no solution of your problem is present in the section above, please make sure to check out `ROS2 For Unity` [Troubleshooting section](https://github.com/RobotecAI/ros2-for-unity/blob/master/README-WINDOWS.md#build-troubleshooting)**
