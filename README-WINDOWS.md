@@ -4,10 +4,10 @@
 
 ### Prerequisites
 
--  ROS2 installed on the system
--  vcstool package - [see here](https://github.com/dirk-thomas/vcstool)
--  .NET 5.0 sdk - [see here](https://dotnet.microsoft.com/download/dotnet/5.0)
--  xUnit testing framework (for tests only) - [see here](https://xunit.net/)
+*  ROS2 installed on the system (additionally you should go to [Building ROS2 section](https://docs.ros.org/en/foxy/Installation/Windows-Development-Setup.html) and check if all `pip` [Install dependencies](https://docs.ros.org/en/foxy/Installation/Windows-Development-Setup.html#install-dependencies) and [Developer tools](https://docs.ros.org/en/foxy/Installation/Windows-Development-Setup.html#install-developer-tools) are installed)
+*  vcstool package - [see here](https://github.com/dirk-thomas/vcstool)
+*  .NET 5.0 sdk - [see here](https://dotnet.microsoft.com/download/dotnet/5.0)
+*  For tests only: xUnit testing framework - [see here](https://xunit.net/)
 
 ### Important notices
 
@@ -25,13 +25,13 @@
 
 - Clone this project.
 - Source your ROS2 installation (`C:\dev\ros2_foxy\local_setup.ps1`)
-- Pull required repositories (`get_repos.ps1`)
+- Navigate to the top project folder and pull required repositories (`get_repos.ps1`)
   - You can run script with `--get-custom-messages` argument to fetch extra messages from `custom_messages.repos` file.
+  - It will use `vcstool` to download required ROS2 packages. By default, this will get repositories as set in `${ROS_DISTRO}`.
 - Build package (`build.ps1`)
+  - It invokes `colcon_build` with `--merge-install` argument to simplify libraries installat
   - You can build tests by adding `--with-tests` argument
-
-For more in-depth build instructions please refer to [Ros2 For Unity](https://github.com/RobotecAI/ros2-for-unity) repository.
-
+- To test your build please check main readme [Testing section](README.md#testing)
 
 ### Standalone version (Windows)
 

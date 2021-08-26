@@ -33,9 +33,10 @@ sudo apt-get update; \
 
 - Clone this project
 - Source your ROS2 installation (`source /opt/ros/foxy/setup.bash`)
-- Pull required repositories (`./get_repos.sh`)
+- Navigate to the top project folder and pull required repositories (`./get_repos.sh`)
+  - You can run `get_repos` script with `--get-custom-messages argument` to fetch extra messages from custom_messages.repos file.
+  - It will use `vcstool` to download required ROS2 packages. By default, this will get repositories as set in `${ROS_DISTRO}`.
 - Build package (`./build.sh`)
-
------
-
-For more in-depth build instructions and package usage examples please refer to [Ros2 For Unity](https://github.com/RobotecAI/ros2-for-unity) repository.
+  - It invokes `colcon_build` with `--merge-install` argument to simplify libraries installation.
+  - You can build tests by adding `--with-tests` argument to command.
+- To test your build please check main readme [Testing section](README.md#testing)
