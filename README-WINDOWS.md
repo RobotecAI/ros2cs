@@ -29,7 +29,7 @@
   - You can run script with `--get-custom-messages` argument to fetch extra messages from `custom_messages.repos` file.
   - It will use `vcstool` to download required ROS2 packages. By default, this will get repositories as set in `${ROS_DISTRO}`.
 - Build package (`build.ps1`)
-  - It invokes `colcon_build` with `--merge-install` argument to simplify libraries installat
+  - It invokes `colcon_build` with `--merge-install` argument to simplify libraries installation
   - You can build tests by adding `--with-tests` argument
 - To test your build please check main readme [Testing section](README.md#testing)
 
