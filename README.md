@@ -31,6 +31,12 @@ On Windows, ros2cs libraries can be built in two flavors:
 
 ## Building
 
+### Generating custom messages
+
+After cloning the project and importing .repos, you can simply put your message package next to other packages in the `src/ros2` sub-folder. Then, build your project and you have all messages generated. You can also modify and use the `custom_message.repos` template to automate the process with `get_repos` script.
+
+### Build instructions
+
 Please follow the  OS-specific instructions for your build:
 
 - [Ubuntu 20.04 Instructions](README-UBUNTU.md)
@@ -44,17 +50,6 @@ Make sure your NuGet repositories can resolve `xUnit` dependency. You can call `
 - Run OS-specific test script (`test.sh` - Linux; `test.ps1` - Windows)
 - Run a manual test with basic listener/publisher examples - `ros2cs_talker` and `ros2cs_listener`.
 - Run a manual performance test - `ros2cs_performance_talker` and `ros2cs_performance_listener`.
-
-## Usage
-
-### Generating custom messages
-
-After cloning the project and importing .repos, you can simply put your message package next to other packages in the `src/ros2` sub-folder. Then, build your project and you have all messages generated! You can also modify and use the `custom_message.repos` template to automate the process with `get_repos` script.
-
-### Using package with Unity3D simulation
-
-To run more advanced examples or develop applications with use of Unity3D simulation please follow instructions in [Ros2 For Unity](https://github.com/RobotecAI/ros2-for-unity) repository.
-
 
 ## Acknowledgements
 
