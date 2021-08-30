@@ -1,4 +1,4 @@
-# ROS2CS - Ubuntu 20.04
+# ros2cs - Ubuntu 20.04
 
 ## Building
 
