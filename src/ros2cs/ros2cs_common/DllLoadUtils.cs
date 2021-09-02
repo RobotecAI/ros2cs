@@ -274,26 +274,34 @@ namespace ROS2
       return res;
     }
 
-    public IntPtr LoadLibrary (string fileName) {
+    private IntPtr LoadLibraryByName(string libraryFileName) {
       if (GlobalVariables.preloadLibrary)
         CheckPreloadLibraries();
-      string libraryName = GlobalVariables.absolutePath + "lib" + fileName + "_native.so";
-      IntPtr ptr = dlopen (libraryName, RTLD_NOW);
+      string libraryPath = GlobalVariables.absolutePath + libraryFileName;
+      string dlopenSearchString = libraryPath;
+      IntPtr ptr = dlopen(dlopenSearchString, RTLD_NOW);
       if (ptr == IntPtr.Zero) {
-        throw new UnsatisfiedLinkError (libraryName);
+        if (!String.IsNullOrEmpty(GlobalVariables.absolutePath)) {
+          // Fallback - look for library in default paths
+          dlopenSearchString = libraryFileName;
+          ptr = dlopen(dlopenSearchString, RTLD_NOW);
+        }
+      }
+
+      if (ptr == IntPtr.Zero) {
+        throw new UnsatisfiedLinkError(dlopenSearchString);
       }
       return ptr;
     }
 
-    public IntPtr LoadLibraryNoSuffix (string fileName) {
-      if (GlobalVariables.preloadLibrary)
-        CheckPreloadLibraries();
-      string libraryName = GlobalVariables.absolutePath + "lib" + fileName + ".so";
-      IntPtr ptr = dlopen (libraryName, RTLD_NOW);
-      if (ptr == IntPtr.Zero) {
-        throw new UnsatisfiedLinkError (libraryName);
-      }
-      return ptr;
+    public IntPtr LoadLibrary(string fileName) {
+      string libraryName = "lib" + fileName + "_native.so";
+      return LoadLibraryByName(libraryName);
+    }
+
+    public IntPtr LoadLibraryNoSuffix(string fileName) {
+      string libraryName = "lib" + fileName + ".so";
+      return LoadLibraryByName(libraryName);
     }
   }
 
