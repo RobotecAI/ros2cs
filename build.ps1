@@ -1,23 +1,30 @@
-function Print-Help {
-"
-Usage: 
-build.ps1 [--with-tests]
 
-Options:
---with-tests - build with tests.
-"
-}
+<#
+.SYNOPSIS
+    Builds 'ros2cs'
+.DESCRIPTION
+    This script runs colcon build
+.PARAMETER with_tests
+    build with tests
+.PARAMETER standalone
+    standalone build
+#>
+Param (
+    [Parameter(Mandatory=$false)][switch]$with_tests=$false,
+    [Parameter(Mandatory=$false)][switch]$standalone=$false
+)
 
-$tests=0
 $msg="Build started."
-if ($args[0] -eq "--with-tests") {
-    $tests=1
+$tests_switch=0
+if($with_tests) {
     $msg+=" (with tests)"
-} elseif ($args[0] -eq "--help" -Or $args[0] -eq "-h") {
-    Print-Help
-    exit
+    $tests_switch=1
+}
+$standalone_switch=0
+if($standalone) {
+    $msg+=" (standalone)"
+    $standalone_switch=1
 }
 
-$tests_info=0
 Write-Host $msg -ForegroundColor Green
-colcon build --merge-install --event-handlers console_direct+ --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=$tests
+colcon build --merge-install --event-handlers console_direct+ --cmake-args -DSTANDALONE_BUILD=$standalone_switch -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=$tests_switch --no-warn-unused-cli
