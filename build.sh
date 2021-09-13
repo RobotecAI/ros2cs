@@ -50,5 +50,5 @@ colcon build \
 -DCMAKE_BUILD_TYPE=Release \
 -DSTANDALONE_BUILD=$STANDALONE \
 -DBUILD_TESTING=$TESTS \
--DCMAKE_SHARED_LINKER_FLAGS="-Wl,-rpath=." \
+-DCMAKE_SHARED_LINKER_FLAGS="-Wl,-rpath=.,--disable-new-dtags" \
 --no-warn-unused-cli

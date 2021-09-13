@@ -172,6 +172,10 @@ public class @(message_class) : @(internals_interface), @(parent_interface)
   static @(message_class)()
   {
     dllLoadUtils = DllLoadUtilsFactory.GetDllLoadUtils();
+    IntPtr messageLibraryTypesupport = dllLoadUtils.LoadLibraryNoSuffix("@(package_name)__rosidl_typesupport_c");
+    IntPtr messageLibraryGenerator = dllLoadUtils.LoadLibraryNoSuffix("@(package_name)__rosidl_generator_c");
+    IntPtr messageLibraryIntro = dllLoadUtils.LoadLibraryNoSuffix("@(package_name)__rosidl_typesupport_introspection_c");
+
     IntPtr nativelibrary = dllLoadUtils.LoadLibrary("@(package_name)_@(message_class_lower)__rosidl_typesupport_c");
     IntPtr native_get_typesupport_ptr = dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_get_type_support");
     @(message_class).native_get_typesupport = (NativeGetTypeSupportType)Marshal.GetDelegateForFunctionPointer(
