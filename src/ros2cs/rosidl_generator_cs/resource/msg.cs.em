@@ -46,7 +46,7 @@ public class @(message_class) : @(internals_interface), @(parent_interface)
 {
   private IntPtr _handle;
   private bool disposed;
-  private static readonly DllLoadUtils dllLoadUtils;
+  private static DllLoadUtils dllLoadUtils;
 
   // constant declarations
 @[for constant in message.constants]@
@@ -169,78 +169,89 @@ public class @(message_class) : @(internals_interface), @(parent_interface)
 @[  end if]@
 @[end for]@
 
-  static @(message_class)()
+  private static object globalInitMutex = new object();
+
+  // This is meant to load libraries when actually used for the first time (Instead of using a static constructor)
+  private static void InitializeDelegates()
   {
-    dllLoadUtils = DllLoadUtilsFactory.GetDllLoadUtils();
-    IntPtr messageLibraryTypesupport = dllLoadUtils.LoadLibraryNoSuffix("@(package_name)__rosidl_typesupport_c");
-    IntPtr messageLibraryGenerator = dllLoadUtils.LoadLibraryNoSuffix("@(package_name)__rosidl_generator_c");
-    IntPtr messageLibraryIntro = dllLoadUtils.LoadLibraryNoSuffix("@(package_name)__rosidl_typesupport_introspection_c");
+    lock (globalInitMutex)
+    {
+      if (dllLoadUtils != null)
+        return;
+      
+      dllLoadUtils = DllLoadUtilsFactory.GetDllLoadUtils();
+      IntPtr messageLibraryTypesupport = dllLoadUtils.LoadLibraryNoSuffix("@(package_name)__rosidl_typesupport_c");
+      IntPtr messageLibraryGenerator = dllLoadUtils.LoadLibraryNoSuffix("@(package_name)__rosidl_generator_c");
+      IntPtr messageLibraryIntro = dllLoadUtils.LoadLibraryNoSuffix("@(package_name)__rosidl_typesupport_introspection_c");
 
-    IntPtr nativelibrary = dllLoadUtils.LoadLibrary("@(package_name)_@(message_class_lower)__rosidl_typesupport_c");
-    IntPtr native_get_typesupport_ptr = dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_get_type_support");
-    @(message_class).native_get_typesupport = (NativeGetTypeSupportType)Marshal.GetDelegateForFunctionPointer(
-      native_get_typesupport_ptr, typeof(NativeGetTypeSupportType));
+      IntPtr nativelibrary = dllLoadUtils.LoadLibrary("@(package_name)_@(message_class_lower)__rosidl_typesupport_c");
+      IntPtr native_get_typesupport_ptr = dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_get_type_support");
+      @(message_class).native_get_typesupport = (NativeGetTypeSupportType)Marshal.GetDelegateForFunctionPointer(
+        native_get_typesupport_ptr, typeof(NativeGetTypeSupportType));
 
-    IntPtr native_create_native_message_ptr = dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_create_native_message");
-    @(message_class).native_create_native_message = (NativeCreateNativeMessageType)Marshal.GetDelegateForFunctionPointer(
-      native_create_native_message_ptr, typeof(NativeCreateNativeMessageType));
+      IntPtr native_create_native_message_ptr = dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_create_native_message");
+      @(message_class).native_create_native_message = (NativeCreateNativeMessageType)Marshal.GetDelegateForFunctionPointer(
+        native_create_native_message_ptr, typeof(NativeCreateNativeMessageType));
 
-    IntPtr native_destroy_native_message_ptr = dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_destroy_native_message");
-    @(message_class).native_destroy_native_message = (NativeDestroyNativeMessageType)Marshal.GetDelegateForFunctionPointer(
-      native_destroy_native_message_ptr, typeof(NativeDestroyNativeMessageType));
+      IntPtr native_destroy_native_message_ptr = dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_destroy_native_message");
+      @(message_class).native_destroy_native_message = (NativeDestroyNativeMessageType)Marshal.GetDelegateForFunctionPointer(
+        native_destroy_native_message_ptr, typeof(NativeDestroyNativeMessageType));
 
-@[for member in message.structure.members]@
-@[  if isinstance(member.type, (BasicType, AbstractGenericString)) or \
-       (isinstance(member.type, AbstractNestedType) and \
-        isinstance(member.type.value_type, (BasicType, AbstractString)))]@
-    IntPtr native_read_field_@(member.name)_ptr =
-      dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_read_field_@(member.name)");
-    @(message_class).native_read_field_@(member.name) =
-      (NativeReadField@(get_field_name(member.type, member.name, message_class))Type)Marshal.GetDelegateForFunctionPointer(
-      native_read_field_@(member.name)_ptr, typeof(NativeReadField@(get_field_name(member.type, member.name, message_class))Type));
+  @[for member in message.structure.members]@
+  @[  if isinstance(member.type, (BasicType, AbstractGenericString)) or \
+        (isinstance(member.type, AbstractNestedType) and \
+          isinstance(member.type.value_type, (BasicType, AbstractString)))]@
+      IntPtr native_read_field_@(member.name)_ptr =
+        dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_read_field_@(member.name)");
+      @(message_class).native_read_field_@(member.name) =
+        (NativeReadField@(get_field_name(member.type, member.name, message_class))Type)Marshal.GetDelegateForFunctionPointer(
+        native_read_field_@(member.name)_ptr, typeof(NativeReadField@(get_field_name(member.type, member.name, message_class))Type));
 
-    IntPtr native_write_field_@(member.name)_ptr =
-      dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_write_field_@(member.name)");
-    @(message_class).native_write_field_@(member.name) =
-      (NativeWriteField@(get_field_name(member.type, member.name, message_class))Type)Marshal.GetDelegateForFunctionPointer(
-      native_write_field_@(member.name)_ptr, typeof(NativeWriteField@(get_field_name(member.type, member.name, message_class))Type));
-@[  elif isinstance(member.type, (NamedType, NamespacedType))]@
-    IntPtr native_get_nested_message_handle_@(member.name)_ptr =
-      dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_get_nested_message_handle_@(member.name)");
-    @(message_class).native_get_nested_message_handle_@(member.name) =
-      (NativeGetNestedHandle@(get_field_name(member.type, member.name, message_class))Type)Marshal.GetDelegateForFunctionPointer(
+      IntPtr native_write_field_@(member.name)_ptr =
+        dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_write_field_@(member.name)");
+      @(message_class).native_write_field_@(member.name) =
+        (NativeWriteField@(get_field_name(member.type, member.name, message_class))Type)Marshal.GetDelegateForFunctionPointer(
+        native_write_field_@(member.name)_ptr, typeof(NativeWriteField@(get_field_name(member.type, member.name, message_class))Type));
+  @[  elif isinstance(member.type, (NamedType, NamespacedType))]@
+      IntPtr native_get_nested_message_handle_@(member.name)_ptr =
+        dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_get_nested_message_handle_@(member.name)");
+      @(message_class).native_get_nested_message_handle_@(member.name) =
+        (NativeGetNestedHandle@(get_field_name(member.type, member.name, message_class))Type)Marshal.GetDelegateForFunctionPointer(
+        native_get_nested_message_handle_@(member.name)_ptr, typeof(NativeGetNestedHandle@(get_field_name(member.type, member.name, message_class))Type));
+  @[  end if]@
+  @[  if isinstance(member.type, AbstractNestedType) and \
+        isinstance(member.type.value_type, (NamedType, NamespacedType, AbstractString))]@
+  @[    if isinstance(member.type.value_type, (NamedType, NamespacedType))]@
+
+      IntPtr native_get_nested_message_handle_@(member.name)_ptr =
+        dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_get_nested_message_handle_@(member.name)");
+      @(message_class).native_get_nested_message_handle_@(member.name) =
+        (NativeGetNestedHandle@(get_field_name(member.type, member.name, message_class))Type)Marshal.GetDelegateForFunctionPointer(
       native_get_nested_message_handle_@(member.name)_ptr, typeof(NativeGetNestedHandle@(get_field_name(member.type, member.name, message_class))Type));
-@[  end if]@
-@[  if isinstance(member.type, AbstractNestedType) and \
-       isinstance(member.type.value_type, (NamedType, NamespacedType, AbstractString))]@
-@[    if isinstance(member.type.value_type, (NamedType, NamespacedType))]@
+  @[    end if]@
 
-    IntPtr native_get_nested_message_handle_@(member.name)_ptr =
-      dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_get_nested_message_handle_@(member.name)");
-    @(message_class).native_get_nested_message_handle_@(member.name) =
-      (NativeGetNestedHandle@(get_field_name(member.type, member.name, message_class))Type)Marshal.GetDelegateForFunctionPointer(
-    native_get_nested_message_handle_@(member.name)_ptr, typeof(NativeGetNestedHandle@(get_field_name(member.type, member.name, message_class))Type));
-@[    end if]@
+      IntPtr native_get_array_size_@(member.name)_ptr =
+        dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_get_array_size_@(member.name)");
+      @(message_class).native_get_array_size_@(member.name) =
+        (NativeGetArraySize@(get_field_name(member.type, member.name, message_class))Type)Marshal.GetDelegateForFunctionPointer(
+      native_get_array_size_@(member.name)_ptr, typeof(NativeGetArraySize@(get_field_name(member.type, member.name, message_class))Type));
 
-    IntPtr native_get_array_size_@(member.name)_ptr =
-      dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_get_array_size_@(member.name)");
-    @(message_class).native_get_array_size_@(member.name) =
-      (NativeGetArraySize@(get_field_name(member.type, member.name, message_class))Type)Marshal.GetDelegateForFunctionPointer(
-    native_get_array_size_@(member.name)_ptr, typeof(NativeGetArraySize@(get_field_name(member.type, member.name, message_class))Type));
-
-    IntPtr native_init_sequence_@(member.name)_ptr =
-      dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_init_sequence_@(member.name)");
-    @(message_class).native_init_sequence_@(member.name) =
-      (NativeInitSequence@(get_field_name(member.type, member.name, message_class))Type)Marshal.GetDelegateForFunctionPointer(
-    native_init_sequence_@(member.name)_ptr, typeof(NativeInitSequence@(get_field_name(member.type, member.name, message_class))Type));
-@[  end if]@
-@[end for]@
+      IntPtr native_init_sequence_@(member.name)_ptr =
+        dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_init_sequence_@(member.name)");
+      @(message_class).native_init_sequence_@(member.name) =
+        (NativeInitSequence@(get_field_name(member.type, member.name, message_class))Type)Marshal.GetDelegateForFunctionPointer(
+      native_init_sequence_@(member.name)_ptr, typeof(NativeInitSequence@(get_field_name(member.type, member.name, message_class))Type));
+  @[  end if]@
+  @[end for]@
+    }
   }
 
   public IntPtr TypeSupportHandle
   {
     get
     {
+      if (native_get_typesupport == null)
+        InitializeDelegates();
       return native_get_typesupport();
     }
   }
@@ -251,7 +262,11 @@ public class @(message_class) : @(internals_interface), @(parent_interface)
     get
     {
       if (_handle == IntPtr.Zero)
+      {
+        if (native_create_native_message == null)
+          InitializeDelegates();
         _handle = native_create_native_message();
+      }
       return _handle;
     }
   }
