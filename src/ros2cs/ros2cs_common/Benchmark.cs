@@ -11,10 +11,13 @@ namespace ROS2
   ///   [code to benchmark]
   /// }
   /// </code>
-  public class Benchmark : IDisposable
+  public class Benchmark : IExtendedDisposable
   {
     private readonly Stopwatch timer = new Stopwatch();
     private readonly string benchmarkName;
+
+    public bool IsDisposed { get { return disposed; } }
+    private bool disposed = false;
 
     public Benchmark(string benchmarkName)
     {
@@ -24,8 +27,12 @@ namespace ROS2
 
     public void Dispose()
     {
-      timer.Stop();
-      Console.WriteLine($"{benchmarkName} {timer.ElapsedTicks} ticks ({timer.ElapsedMilliseconds} ms)");
+      if (!disposed)
+      {
+        timer.Stop();
+        Console.WriteLine($"{benchmarkName} {timer.ElapsedTicks} ticks ({timer.ElapsedMilliseconds} ms)");
+        disposed = true;
+      }
     }
   }
 }  // namespace ROS2

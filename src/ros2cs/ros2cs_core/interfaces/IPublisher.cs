@@ -19,7 +19,7 @@ namespace ROS2
   /// <summary> Non-generic base interface for all subscriptions </summary>
   /// <description> Use Ros2cs.CreatePublisher to construct.
   /// This interface is useful for managing publisher collections and disposal </description>
-  public interface IPublisherBase: IDisposable
+  public interface IPublisherBase: IExtendedDisposable
   {
     string Topic {get;}
   }

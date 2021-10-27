@@ -40,8 +40,10 @@ namespace ROS2
     private IntPtr defaultNodeOptions;
     private HashSet<ISubscriptionBase> subscriptions;
     private HashSet<IPublisherBase> publishers;
-    private bool disposed = false;
     private readonly object mutex = new object();
+    private bool disposed = false;
+
+    public bool IsDisposed { get { return disposed; } }
 
     /// <summary> Node constructor </summary>
     /// <description> Nodes are created through CreateNode method of Ros2cs class </description>

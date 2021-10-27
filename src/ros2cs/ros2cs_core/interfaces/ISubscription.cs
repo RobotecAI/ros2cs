@@ -18,7 +18,7 @@ namespace ROS2
 {
   /// <summary> Non-generic base interface for all subscriptions </summary>
   /// <description> Use Ros2cs.CreateSubscription to construct </description>
-  public interface ISubscriptionBase : IDisposable
+  public interface ISubscriptionBase : IExtendedDisposable
   {
     // TODO(adamdbrw) this should not be public - add an internal interface
     void TakeMessage();

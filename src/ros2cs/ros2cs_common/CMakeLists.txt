@@ -30,6 +30,7 @@ set(CS_INTERFACES
   Ros2csLogger.cs
   MessageInternals.cs
   Benchmark.cs
+  interfaces/IExtendedDisposable.cs
   properties/AssemblyInfo.cs
 )
 

@@ -27,10 +27,12 @@ namespace ROS2
     public string Topic { get { return topic; } }
     private string topic;
 
+    public bool IsDisposed { get { return disposed; } }
+    private bool disposed = false;
+
     private rcl_node_t nodeHandle;
     private readonly Action<T> callback;
     private IntPtr subscriptionOptions;
-    private bool disposed = false;
     private object mutex = new object();
 
     /// <summary> Tries to get a message from rcl/rmw layers. Calls the callback if successful </summary>

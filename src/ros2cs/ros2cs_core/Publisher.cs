@@ -31,6 +31,8 @@ namespace ROS2
     rcl_node_t nodeHandle;
     private bool disposed = false;
 
+    public bool IsDisposed { get { return disposed; } }
+
     /// <summary> Internal constructor for Publsher. Use INode.CreatePublisher to construct </summary>
     /// <see cref="INode.CreatePublisher"/>
     public Publisher(string pubTopic, Node node, QualityOfServiceProfile qos = null)
