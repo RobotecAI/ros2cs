@@ -33,10 +33,12 @@ namespace ROS2
   }
 
   /// <summary> A clock class which queries an internal rcl clock and exposes RosTime </summary>
-  public class Clock : IDisposable
+  public class Clock : IExtendedDisposable
   {
-    private bool disposed;
     internal IntPtr handle;
+    private bool disposed;
+
+    public bool IsDisposed { get { return disposed; } }
 
     /// <summary> Query current time </summary>
     /// <returns> Time in full seconds and nanoseconds </returns>

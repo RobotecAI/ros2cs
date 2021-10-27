@@ -16,16 +16,11 @@ using System;
 
 namespace ROS2
 {
-  /// <summary> Basic Message interface, only exposing Dispose method <summary>
-  public interface Message : IExtendedDisposable
+  /// <summary> Extended Disposable interface to enable dispose check </summary>
+  /// <description> Use instead of IDisposable </description>
+  public interface IExtendedDisposable : IDisposable
   {
+    bool IsDisposed { get; }
   }
 
-  /// <summary> Convenience interface to manipulate headers <summary>
-  public interface MessageWithHeader : Message
-  {
-    void SetHeaderFrame(string frameID);
-    string GetHeaderFrame();
-    void UpdateHeaderTime(int sec, uint nanosec);
-  }
-}  // namespace ROS2
+}

@@ -21,7 +21,7 @@ namespace ROS2
   /// <description> Is automatically disposed when Ros2cs.Shutdown is called.
   /// Can also be disposed through IDisposable interface. Ros2cs.RemoveNode should be called in such case </description>
   // TODO(adamdbrw) wrap disposing so that user does not need to handle anything
-  public interface INode: IDisposable
+  public interface INode: IExtendedDisposable
   {
     /// <summary> Node name as given in Ros2cs.CreateNode </summary>
     string Name {get;}

@@ -45,8 +45,10 @@ namespace @(ns)
 public class @(message_class) : @(internals_interface), @(parent_interface)
 {
   private IntPtr _handle;
-  private bool disposed;
   private static readonly DllLoadUtils dllLoadUtils;
+
+  public bool IsDisposed { get { return disposed; } }
+  private bool disposed;
 
   // constant declarations
 @[for constant in message.constants]@
