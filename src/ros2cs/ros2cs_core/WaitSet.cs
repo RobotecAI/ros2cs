@@ -77,6 +77,11 @@ namespace ROS2
           break;
         }
 
+        if (subscription.IsDisposed)
+        {
+          continue;
+        }
+
         rcl_subscription_t subscription_handle = subscription.Handle;
         Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_add_subscription(ref handle, ref subscription_handle, UIntPtr.Zero));
         subscribtionsInWaitset++;

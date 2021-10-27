@@ -14,6 +14,7 @@
 // limitations under the License.
 
 using NUnit.Framework;
+using System.Collections.Generic;
 
 namespace ROS2.Test
 {
@@ -61,6 +62,44 @@ namespace ROS2.Test
             Ros2cs.SpinOnce(node, 0.1);
 
             Assert.That(messageData, Is.EqualTo(42));
+        }
+
+        [Test]
+        public void DisposedSubscriptionHandling()
+        {
+            ISubscription<std_msgs.msg.Int32> subscriber =
+              node.CreateSubscription<std_msgs.msg.Int32>("subscription_test_topic", (msg) => { });
+            subscriber.Dispose();
+            Assert.DoesNotThrow( () => { Ros2cs.SpinOnce(node, 0.1); });
+        }
+
+        [Test]
+        public void MultipleDisposedSubscriptionsHandling()
+        {
+            int numberOfSubscribers = 10;
+            List<Subscription<std_msgs.msg.Int32>> subscriptions = new List<Subscription<std_msgs.msg.Int32>>();
+            for(int i = 0; i < numberOfSubscribers; i++)
+            {
+                subscriptions.Add(
+                    node.CreateSubscription<std_msgs.msg.Int32>("subscription_test_topic", (msg) => { }));
+            }
+            Ros2cs.SpinOnce(node, 0.1);
+            subscriptions.ForEach(delegate(Subscription<std_msgs.msg.Int32> subscription)
+            {
+                subscription.Dispose();
+            });
+            Assert.DoesNotThrow( () => { Ros2cs.SpinOnce(node, 0.1); });
+        }
+
+        [Test]
+        public void ReinitializeDisposedSubscriber()
+        {
+            ISubscription<std_msgs.msg.Int32> subscriber =
+              node.CreateSubscription<std_msgs.msg.Int32>("subscription_test_topic", (msg) => { });
+            subscriber.Dispose();
+            subscriber =
+              node.CreateSubscription<std_msgs.msg.Int32>("subscription_test_topic", (msg) => { });
+            Assert.DoesNotThrow( () => { Ros2cs.SpinOnce(node, 0.1); });
         }
 
         [Test]
