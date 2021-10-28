@@ -22,7 +22,7 @@ while [[ $# -gt 0 ]]; do
   key="$1"
   case $key in
     -t|--with-tests)
-      TESTS="$2"
+      TESTS=1
       MSG="$MSG (with tests)"
       shift # past argument
       ;;
