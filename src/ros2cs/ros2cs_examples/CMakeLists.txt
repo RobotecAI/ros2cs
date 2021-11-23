@@ -25,7 +25,6 @@ find_package(builtin_interfaces REQUIRED)
 find_package(dotnet_cmake_module REQUIRED)
 find_package(rosidl_generator_cs REQUIRED)
 
-set(CSHARP_TARGET_FRAMEWORK "netcoreapp3.1")
 find_package(DotNETExtra REQUIRED)
 
 set(_assemblies_dep_dlls
