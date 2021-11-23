@@ -6,6 +6,7 @@ if(BUILD_TESTING)
   find_package(ament_cmake REQUIRED)
   find_package(dotnet_cmake_module REQUIRED)
 
+  set(CSHARP_TARGET_FRAMEWORK "netcoreapp3.1")
   find_package(DotNETExtra REQUIRED)
 
   find_package(std_msgs REQUIRED)
