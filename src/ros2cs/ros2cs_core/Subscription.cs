@@ -33,6 +33,8 @@ namespace ROS2
     private rcl_node_t nodeHandle;
     private readonly Action<T> callback;
     private IntPtr subscriptionOptions;
+
+    public object Mutex { get { return mutex; } }
     private object mutex = new object();
 
     /// <summary> Tries to get a message from rcl/rmw layers. Calls the callback if successful </summary>
