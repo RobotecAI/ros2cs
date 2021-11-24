@@ -28,6 +28,9 @@ namespace ROS2
 
     // TODO(adamdbrw) this should not be public - add an internal interface
     rcl_subscription_t Handle {get;}
+
+    /// <summary> subscription mutex for internal use </summary>
+    object Mutex { get; }
   }
 
   /// <summary> Generic base interface for all subscriptions </summary>
