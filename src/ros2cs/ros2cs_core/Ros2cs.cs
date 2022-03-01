@@ -201,17 +201,6 @@ namespace ROS2
           return;
         }
 
-        if (timeoutSec < 0.0001d)
-        {
-          timeoutSec = 0.0001d;
-
-          if (!warned_once)
-          {
-            Ros2csLogger.GetInstance().LogWarning("Spin timeout too low. Changed to a minimum value of " + timeoutSec.ToString());
-            warned_once = true;
-          }
-        }
-
         // TODO - This can be optimized so that we cache the list and invalidate only with changes
         var allSubscriptions = new List<ISubscriptionBase>();
         foreach (INode node_interface in nodes)
