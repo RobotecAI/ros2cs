@@ -171,12 +171,41 @@ public class @(message_class) : @(internals_interface), @(parent_interface)
 @[  end if]@
 @[end for]@
 
+  // This is done to preload before ros2 rmw_implementation attempts to find custom message library (and fails without absolute path)
+  static private void MessageTypeSupportPreload()
+  {
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+    { //only affects Linux since on Windows PATH can be set effectively, dynamically
+        const string rmw_fastrtps = "rmw_fastrtps_cpp";
+        var rmw_implementation = Environment.GetEnvironmentVariable("RMW_IMPLEMENTATION");
+        if (rmw_implementation == null)
+        {
+          var ros_distro = Environment.GetEnvironmentVariable("ROS_DISTRO");
+          if (ros_distro == "galactic")
+          { // no preloads for CycloneDDS, default for galactic
+            return;
+          }
+          rmw_implementation = rmw_fastrtps; // default for all other distros
+        }
+
+        // TODO - generalize to Connext and other implementations
+        if (rmw_implementation == rmw_fastrtps)
+        { // TODO - get rcl level constants, e.g. rosidl_typesupport_fastrtps_c__identifier
+          // Load typesupport for fastrtps (_c depends on _cpp)
+          var loadUtils = DllLoadUtilsFactory.GetDllLoadUtils();
+          IntPtr messageLibraryTypesupportFastRTPS_CPP = loadUtils.LoadLibraryNoSuffix("@(package_name)__rosidl_typesupport_fastrtps_cpp");
+          IntPtr messageLibraryTypesupportFastRTPS_C = loadUtils.LoadLibraryNoSuffix("@(package_name)__rosidl_typesupport_fastrtps_c");
+      }
+    }
+  }
+
   static @(message_class)()
   {
     dllLoadUtils = DllLoadUtilsFactory.GetDllLoadUtils();
     IntPtr messageLibraryTypesupport = dllLoadUtils.LoadLibraryNoSuffix("@(package_name)__rosidl_typesupport_c");
     IntPtr messageLibraryGenerator = dllLoadUtils.LoadLibraryNoSuffix("@(package_name)__rosidl_generator_c");
     IntPtr messageLibraryIntro = dllLoadUtils.LoadLibraryNoSuffix("@(package_name)__rosidl_typesupport_introspection_c");
+    MessageTypeSupportPreload();
 
     IntPtr nativelibrary = dllLoadUtils.LoadLibrary("@(package_name)_@(message_class_lower)__rosidl_typesupport_c");
     IntPtr native_get_typesupport_ptr = dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_get_type_support");
