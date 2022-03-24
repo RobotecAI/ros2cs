@@ -382,7 +382,15 @@ public class @(message_class) : @(internals_interface), @(parent_interface)
     @(get_field_name(member.type, member.name, message_class)).WriteNativeMessage(native_get_nested_message_handle_@(member.name)(handle));
 @[  elif isinstance(member.type, AbstractNestedType) and isinstance(member.type.value_type, BasicType)]@
     {
+      @[    if message_class == "PointCloud2"]@
+      uint point_cloud_size = Height * Row_step;
+      if (point_cloud_size > Data.Length)
+        throw new System.InvalidOperationException("PointCloud2 data invalid: smaller than indicated by width and row step");
+      // special optimization for PointCloud2, where you can pass larger data[] array to avoid realocations, making use of message information about its size
+      bool success = native_write_field_@(member.name)(@(get_field_name(member.type, member.name, message_class)), (int)point_cloud_size, handle);
+      @[    else]@
       bool success = native_write_field_@(member.name)(@(get_field_name(member.type, member.name, message_class)), @(get_field_name(member.type, member.name, message_class)).Length, handle);
+      @[    end if]
       if (!success)
         throw new System.InvalidOperationException("Error writing field for @(member.name)");
     }
