@@ -127,6 +127,12 @@ option(STANDALONE_BUILD "Deploy standalone libraries with build" ON)
 
 set(ros2_distro "$ENV{ROS_DISTRO}")
 if(STANDALONE_BUILD)
+  find_program(PATCHELF "patchelf")
+  if(NOT PATCHELF AND UNIX)
+    message(FATAL_ERROR "'patchelf' executable not found. Linux standalone version requires 'patchelf' for patching 'runpath' of certain libraries. You can install it via 'sudo apt install patchelf'")
+  else()
+    message("'patchelf' found in ${PATCHELF}")
+  endif()
   set(REQ_STANDALONE_LIBS "")
   set(REQ_THIRD_PARTY_STANDALONE_LIBS "")
   set(REQ_STANDALONE_DLLS "")
@@ -221,6 +227,15 @@ if(STANDALONE_BUILD)
 
       install(FILES ${_resolvedFiles}
         DESTINATION standalone
+      )
+
+      # rpath for each standalone lib must be updated so all the libs will see each other
+      install(CODE 
+        "execute_process(COMMAND find ${CMAKE_INSTALL_PREFIX}/standalone -name *.so -exec patchelf --set-rpath $ORIGIN:. {} \;)"
+      )
+      # soversion files as well
+      install(CODE 
+        "execute_process(COMMAND find ${CMAKE_INSTALL_PREFIX}/standalone -name *.so.* -exec patchelf --set-rpath $ORIGIN:. {} \;)"
       )
     endif()
   endmacro()

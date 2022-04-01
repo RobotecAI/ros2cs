@@ -7,6 +7,7 @@
 - ROS2 installed on the system, along with `test-msgs`, `cyclonedds` and `fastrtps` packages
 - vcstool package - [see here](https://github.com/dirk-thomas/vcstool)
 - .NET core 3.1 sdk - [see here](https://www.microsoft.com/net/learn/get-started)
+- (optional) `patchelf` tool - for standalone version
 
 The following script can be used to install the aforementioned prerequisites on Ubuntu 20.04:
 
@@ -29,6 +30,12 @@ sudo apt-get update; \
   sudo apt-get install -y apt-transport-https && \
   sudo apt-get update && \
   sudo apt-get install -y dotnet-sdk-3.1
+```
+
+and optionally (for standalone version of `ros2-for-unit`):
+
+```bash
+sudo apt install patchelf
 ```
 
 ### Steps
