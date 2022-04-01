@@ -244,18 +244,16 @@ namespace ROS2
 
     //TODO (adamdbrw) Somewhat hacky solution to open (and dereference) the problematic library
     //that otherwise causes crashes in Unity Editor.
-    private bool libPreloaded = false;
+    private static bool libPreloaded = false;
     void CheckPreloadLibraries()
     {
         if (libPreloaded || GlobalVariables.preloadLibraryName == "")
             return;
+        Ros2csLogger.GetInstance().LogDebug("Preloading " + GlobalVariables.preloadLibraryName);
+        IntPtr libPtr = Load(GlobalVariables.preloadLibraryName);
 
-        IntPtr libPtr = dlopen(GlobalVariables.preloadLibraryName, RTLD_NOW | RTLD_DEEPBIND);
-        if (libPtr == IntPtr.Zero)
-            throw new InvalidOperationException("Zero pointer");
+        Ros2csLogger.GetInstance().LogDebug("Preloading " + GlobalVariables.preloadLibraryName + " successful.");
 
-        //Dereference the counter right away
-        FreeLibrary(libPtr); //TODO retval?
         libPreloaded = true;
     }
 
@@ -274,24 +272,29 @@ namespace ROS2
       return res;
     }
 
-    private IntPtr LoadLibraryByName(string libraryFileName) {
-      if (GlobalVariables.preloadLibrary)
-        CheckPreloadLibraries();
+    private IntPtr Load(string libraryFileName) {
       string libraryPath = GlobalVariables.absolutePath + libraryFileName;
       string dlopenSearchString = libraryPath;
       IntPtr ptr = dlopen(dlopenSearchString, RTLD_NOW);
       if (ptr == IntPtr.Zero) {
         if (!String.IsNullOrEmpty(GlobalVariables.absolutePath)) {
           // Fallback - look for library in default paths
+          Ros2csLogger.GetInstance().LogDebug("Could not find " + dlopenSearchString + ". Fallback to " + libraryFileName);
           dlopenSearchString = libraryFileName;
           ptr = dlopen(dlopenSearchString, RTLD_NOW);
         }
-      }
-
+      }      
       if (ptr == IntPtr.Zero) {
         throw new UnsatisfiedLinkError(dlopenSearchString);
       }
+      Ros2csLogger.GetInstance().LogDebug("Loaded library: " + dlopenSearchString);
       return ptr;
+    }
+
+    private IntPtr LoadLibraryByName(string libraryFileName) {
+      if (GlobalVariables.preloadLibrary)
+        CheckPreloadLibraries();
+      return Load(libraryFileName);
     }
 
     public IntPtr LoadLibrary(string fileName) {

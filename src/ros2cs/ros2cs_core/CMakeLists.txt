@@ -125,8 +125,8 @@ ament_export_dependencies(rosidl_generator_c)
 
 option(STANDALONE_BUILD "Deploy standalone libraries with build" ON)
 
+set(ros2_distro "$ENV{ROS_DISTRO}")
 if(STANDALONE_BUILD)
-  set(ros2_distro "$ENV{ROS_DISTRO}")
   set(REQ_STANDALONE_LIBS "")
   set(REQ_THIRD_PARTY_STANDALONE_LIBS "")
   set(REQ_STANDALONE_DLLS "")
@@ -200,14 +200,6 @@ if(STANDALONE_BUILD)
       install(FILES ${REQ_STANDALONE_DLLS}
         DESTINATION standalone
       )
-
-      # There is an issue with resolving environment variable paths in runtime for "rcpputils" library on ros2 foxy and Windows OS.
-      # We replacing this library with our patched version. See "resources/rcpputils.diff".
-      if(ros2_distro STREQUAL "foxy")
-        install(FILES "${CMAKE_CURRENT_LIST_DIR}/../../../resources/foxy/Windows/x86_64/rcpputils.dll"
-          DESTINATION standalone
-        )
-      endif()
     elseif(UNIX)
       set(_resolvedFiles "")
       foreach(lib_path ${REQ_STANDALONE_LIBS})
@@ -278,6 +270,20 @@ if(STANDALONE_BUILD)
       get_standalone_third_party_dependencies(${third_party_lib})
     endforeach()
     install_standalone_third_party()
+  endif()
+endif()
+
+# There is an issue with resolving environment variable paths in runtime for "rcpputils" library on ros2 foxy.
+# We replacing this library with our patched version. See "resources/rcpputils.diff".
+if(ros2_distro STREQUAL "foxy")
+  if(WIN32)
+    install(FILES "${CMAKE_CURRENT_LIST_DIR}/../../../resources/foxy/Windows/x86_64/rcpputils.dll"
+    DESTINATION resources
+    )
+  elseif(UNIX)
+    install(FILES "${CMAKE_CURRENT_LIST_DIR}/../../../resources/foxy/Linux/x86_64/librcpputils.so"
+      DESTINATION resources
+    )
   endif()
 endif()
 
