@@ -126,6 +126,21 @@ ament_export_dependencies(rosidl_generator_c)
 option(STANDALONE_BUILD "Deploy standalone libraries with build" ON)
 
 set(ros2_distro "$ENV{ROS_DISTRO}")
+
+# There is an issue with resolving environment variable paths in runtime for "rcpputils" library on ros2 foxy.
+# We replacing this library with our patched version. See "resources/rcpputils.diff".
+if(ros2_distro STREQUAL "foxy")
+  if(WIN32)
+    install(FILES "${CMAKE_CURRENT_LIST_DIR}/../../../resources/foxy/Windows/x86_64/rcpputils.dll"
+    DESTINATION resources
+    )
+  elseif(UNIX)
+    install(FILES "${CMAKE_CURRENT_LIST_DIR}/../../../resources/foxy/Linux/x86_64/librcpputils.so"
+      DESTINATION resources
+    )
+  endif()
+endif()
+
 if(STANDALONE_BUILD)
   find_program(PATCHELF "patchelf")
   if(NOT PATCHELF AND UNIX)
@@ -237,6 +252,10 @@ if(STANDALONE_BUILD)
       install(CODE 
         "execute_process(COMMAND find ${CMAKE_INSTALL_PREFIX}/standalone -name *.so.* -exec patchelf --set-rpath $ORIGIN:. {} \;)"
       )
+      # as well as custom resources
+      install(CODE 
+        "execute_process(COMMAND find ${CMAKE_INSTALL_PREFIX}/resources -name *.so -exec patchelf --set-rpath $ORIGIN:. {} \;)"
+      )
     endif()
   endmacro()
 
@@ -285,20 +304,6 @@ if(STANDALONE_BUILD)
       get_standalone_third_party_dependencies(${third_party_lib})
     endforeach()
     install_standalone_third_party()
-  endif()
-endif()
-
-# There is an issue with resolving environment variable paths in runtime for "rcpputils" library on ros2 foxy.
-# We replacing this library with our patched version. See "resources/rcpputils.diff".
-if(ros2_distro STREQUAL "foxy")
-  if(WIN32)
-    install(FILES "${CMAKE_CURRENT_LIST_DIR}/../../../resources/foxy/Windows/x86_64/rcpputils.dll"
-    DESTINATION resources
-    )
-  elseif(UNIX)
-    install(FILES "${CMAKE_CURRENT_LIST_DIR}/../../../resources/foxy/Linux/x86_64/librcpputils.so"
-      DESTINATION resources
-    )
   endif()
 endif()
 
