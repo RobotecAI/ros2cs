@@ -53,6 +53,11 @@ namespace ROS2
       }
     }
 
+    public static string GetRMWImplementation()
+    {
+      return Utils.PtrToString(NativeRmwInterface.rmw_get_implementation_identifier());
+    }
+
     /// <summary> Globally shutdown ros2 (rcl) </summary>
     /// <description> Can be called multiple times with no effects after the first one.
     /// Shutdowns ros2 and disposes all the nodes. Ok() function will return false after Shutdown is called.
