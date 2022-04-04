@@ -226,23 +226,34 @@ if(STANDALONE_BUILD)
       foreach(lib_path ${REQ_STANDALONE_LIBS})
         # Generate soversion files (.so.<major>). Some libs links to soversion symlinks which are not returned by find_package by default.
         get_filename_component(_resolvedFile "${lib_path}" REALPATH)
-        string(REGEX REPLACE "so(\.[0-9]*)(\.[0-9]*)(\.[0-9]*)$" "so\\1" soversion_lib "${_resolvedFile}")
-        get_filename_component(_resolved_soversion "${soversion_lib}" REALPATH)
         list(APPEND _resolvedFiles "${_resolvedFile}")
-
-        # If soversion file can be created, then install library with soversion name.
-        if(NOT "${soversion_lib}" STREQUAL "${_resolved_soversion}")
-          get_filename_component(soversion_lib_name "${soversion_lib}" NAME)
-          install(FILES ${_resolved_soversion}
-            DESTINATION standalone
-            RENAME ${soversion_lib_name}
-          )
-        endif()
       endforeach()
 
       install(FILES ${_resolvedFiles}
         DESTINATION standalone
       )
+
+      # Fix soversion files
+      foreach(_resolvedFile ${_resolvedFiles})
+        if("${_resolvedFile}" MATCHES "so(\.[0-9]*)+$")
+          # message("Soversion file detected ${_resolvedFile}")
+
+          # Get file path without so
+          string(FIND "${_resolvedFile}" ".so." _findPos)
+          string(SUBSTRING "${_resolvedFile}" 0 ${_findPos} _cutted)
+
+          set(_remainingPath "${_resolvedFile}")
+          while("${_remainingPath}" MATCHES "so(\.[0-9]*)+$")
+            string(FIND "${_remainingPath}" "." _lastDotPos REVERSE)
+            string(SUBSTRING "${_remainingPath}" 0 ${_lastDotPos} _tempPos)
+            get_filename_component(_libPathFilename "${_tempPos}" NAME)
+            get_filename_component(_resolvedFilename "${_resolvedFile}" NAME)
+            # message("ln -s ${_resolvedFilename} ${_libPathFilename}")
+            install(CODE "execute_process(COMMAND ln -s ${_resolvedFilename} ${_libPathFilename} WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/standalone ERROR_QUIET)")
+            set(_remainingPath "${_tempPos}")
+          endwhile()
+        endif()
+      endforeach()
 
       # rpath for each standalone lib must be updated so all the libs will see each other
       install(CODE 
