@@ -26,6 +26,15 @@ namespace ROS2
     private static readonly IntPtr nativeRMW = dllLoadUtils.LoadLibrary("ros2cs");
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate IntPtr RMWImplementationIdentifier();
+    internal static RMWImplementationIdentifier
+        rmw_get_implementation_identifier =
+        (RMWImplementationIdentifier)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRMW,
+        "rmw_get_implementation_identifier"),
+        typeof(RMWImplementationIdentifier));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr RMWNativeCreateQoSProfileIdentifierType(int preset_profile);
     internal static RMWNativeCreateQoSProfileIdentifierType
       rmw_native_interface_create_qos_profile =

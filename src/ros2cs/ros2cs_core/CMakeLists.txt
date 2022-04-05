@@ -126,7 +126,28 @@ ament_export_dependencies(rosidl_generator_c)
 option(STANDALONE_BUILD "Deploy standalone libraries with build" ON)
 
 set(ros2_distro "$ENV{ROS_DISTRO}")
+
+# There is an issue with resolving environment variable paths in runtime for "rcpputils" library on ros2 foxy.
+# We replacing this library with our patched version. See "resources/rcpputils.diff".
+if(ros2_distro STREQUAL "foxy")
+  if(WIN32)
+    install(FILES "${CMAKE_CURRENT_LIST_DIR}/../../../resources/foxy/Windows/x86_64/rcpputils.dll"
+    DESTINATION resources
+    )
+  elseif(UNIX)
+    install(FILES "${CMAKE_CURRENT_LIST_DIR}/../../../resources/foxy/Linux/x86_64/librcpputils.so"
+      DESTINATION resources
+    )
+  endif()
+endif()
+
 if(STANDALONE_BUILD)
+  find_program(PATCHELF "patchelf")
+  if(NOT PATCHELF AND UNIX)
+    message(FATAL_ERROR "'patchelf' executable not found. Linux standalone version requires 'patchelf' for patching 'runpath' of certain libraries. You can install it via 'sudo apt install patchelf'")
+  else()
+    message("'patchelf' found in ${PATCHELF}")
+  endif()
   set(REQ_STANDALONE_LIBS "")
   set(REQ_THIRD_PARTY_STANDALONE_LIBS "")
   set(REQ_STANDALONE_DLLS "")
@@ -205,22 +226,46 @@ if(STANDALONE_BUILD)
       foreach(lib_path ${REQ_STANDALONE_LIBS})
         # Generate soversion files (.so.<major>). Some libs links to soversion symlinks which are not returned by find_package by default.
         get_filename_component(_resolvedFile "${lib_path}" REALPATH)
-        string(REGEX REPLACE "so(\.[0-9]*)(\.[0-9]*)(\.[0-9]*)$" "so\\1" soversion_lib "${_resolvedFile}")
-        get_filename_component(_resolved_soversion "${soversion_lib}" REALPATH)
         list(APPEND _resolvedFiles "${_resolvedFile}")
-
-        # If soversion file can be created, then install library with soversion name.
-        if(NOT "${soversion_lib}" STREQUAL "${_resolved_soversion}")
-          get_filename_component(soversion_lib_name "${soversion_lib}" NAME)
-          install(FILES ${_resolved_soversion}
-            DESTINATION standalone
-            RENAME ${soversion_lib_name}
-          )
-        endif()
       endforeach()
 
       install(FILES ${_resolvedFiles}
         DESTINATION standalone
+      )
+
+      # Fix soversion files
+      foreach(_resolvedFile ${_resolvedFiles})
+        if("${_resolvedFile}" MATCHES "so(\.[0-9]*)+$")
+          # message("Soversion file detected ${_resolvedFile}")
+
+          # Get file path without so
+          string(FIND "${_resolvedFile}" ".so." _findPos)
+          string(SUBSTRING "${_resolvedFile}" 0 ${_findPos} _cutted)
+
+          set(_remainingPath "${_resolvedFile}")
+          while("${_remainingPath}" MATCHES "so(\.[0-9]*)+$")
+            string(FIND "${_remainingPath}" "." _lastDotPos REVERSE)
+            string(SUBSTRING "${_remainingPath}" 0 ${_lastDotPos} _tempPos)
+            get_filename_component(_libPathFilename "${_tempPos}" NAME)
+            get_filename_component(_resolvedFilename "${_resolvedFile}" NAME)
+            # message("ln -s ${_resolvedFilename} ${_libPathFilename}")
+            install(CODE "execute_process(COMMAND ln -s ${_resolvedFilename} ${_libPathFilename} WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/standalone ERROR_QUIET)")
+            set(_remainingPath "${_tempPos}")
+          endwhile()
+        endif()
+      endforeach()
+
+      # rpath for each standalone lib must be updated so all the libs will see each other
+      install(CODE 
+        "execute_process(COMMAND find ${CMAKE_INSTALL_PREFIX}/standalone -name *.so -exec patchelf --set-rpath $ORIGIN:. {} \;)"
+      )
+      # soversion files as well
+      install(CODE 
+        "execute_process(COMMAND find ${CMAKE_INSTALL_PREFIX}/standalone -name *.so.* -exec patchelf --set-rpath $ORIGIN:. {} \;)"
+      )
+      # as well as custom resources
+      install(CODE 
+        "execute_process(COMMAND find ${CMAKE_INSTALL_PREFIX}/resources -name *.so -exec patchelf --set-rpath $ORIGIN:. {} \;)"
       )
     endif()
   endmacro()
@@ -270,20 +315,6 @@ if(STANDALONE_BUILD)
       get_standalone_third_party_dependencies(${third_party_lib})
     endforeach()
     install_standalone_third_party()
-  endif()
-endif()
-
-# There is an issue with resolving environment variable paths in runtime for "rcpputils" library on ros2 foxy.
-# We replacing this library with our patched version. See "resources/rcpputils.diff".
-if(ros2_distro STREQUAL "foxy")
-  if(WIN32)
-    install(FILES "${CMAKE_CURRENT_LIST_DIR}/../../../resources/foxy/Windows/x86_64/rcpputils.dll"
-    DESTINATION resources
-    )
-  elseif(UNIX)
-    install(FILES "${CMAKE_CURRENT_LIST_DIR}/../../../resources/foxy/Linux/x86_64/librcpputils.so"
-      DESTINATION resources
-    )
   endif()
 endif()
 
