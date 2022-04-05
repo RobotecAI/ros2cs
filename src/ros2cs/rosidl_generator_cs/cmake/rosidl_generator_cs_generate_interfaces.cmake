@@ -213,9 +213,14 @@ foreach(_generated_msg_c_ts_file ${_generated_msg_c_ts_files})
     ${PROJECT_NAME}__rosidl_generator_c
   )
 
-  rosidl_target_interfaces(${_target_name}
-    ${PROJECT_NAME} rosidl_typesupport_c
-  )
+  set(ros2_distro "$ENV{ROS_DISTRO}")
+
+  if(ros2_distro STREQUAL "humble" OR ros2_distro STREQUAL "rolling")
+    rosidl_get_typesupport_target(c_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_c")
+    target_link_libraries(${_target_name} "${c_typesupport_target}")
+  else()
+    rosidl_target_interfaces(${_target_name} ${PROJECT_NAME} rosidl_typesupport_c)
+  endif()
 
   target_include_directories(${_target_name}
     PUBLIC
