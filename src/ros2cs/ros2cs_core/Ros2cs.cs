@@ -55,7 +55,7 @@ namespace ROS2
 
     public static string GetRMWImplementation()
     {
-      return Utils.PtrToString(NativeRmwInterface.rmw_get_implementation_identifier());
+      return Utils.PtrToString(NativeRmwInterface.rmw_native_interface_get_implementation_identifier());
     }
 
     /// <summary> Globally shutdown ros2 (rcl) </summary>

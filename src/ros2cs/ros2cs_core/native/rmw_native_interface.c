@@ -14,6 +14,7 @@
 
 #include <rmw/qos_profiles.h>
 #include <rmw/types.h>
+#include <rmw/rmw.h>
 #include <rcl/rcl.h>
 
 ROSIDL_GENERATOR_C_EXPORT
@@ -43,6 +44,12 @@ rmw_qos_profile_t * rmw_native_interface_create_qos_profile(int profile)
   }
 
   return preset_profile;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+const char* rmw_native_interface_get_implementation_identifier()
+{
+  return rmw_get_implementation_identifier();
 }
 
 ROSIDL_GENERATOR_C_EXPORT

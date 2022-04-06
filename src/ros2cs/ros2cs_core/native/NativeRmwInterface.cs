@@ -28,10 +28,10 @@ namespace ROS2
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr RMWImplementationIdentifier();
     internal static RMWImplementationIdentifier
-        rmw_get_implementation_identifier =
+        rmw_native_interface_get_implementation_identifier =
         (RMWImplementationIdentifier)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
         nativeRMW,
-        "rmw_get_implementation_identifier"),
+        "rmw_native_interface_get_implementation_identifier"),
         typeof(RMWImplementationIdentifier));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
