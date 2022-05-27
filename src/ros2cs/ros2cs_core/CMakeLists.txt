@@ -248,7 +248,7 @@ if(STANDALONE_BUILD)
       endif()
     endif()
 
-    # We skip python static libs on windows
+    # We skip python libs
     if(WIN32)
       foreach(entry ${${_library_name}_LIBRARIES})
         string(REGEX MATCH ".*libs\/python[0-9]*\.lib" _found ${entry})
@@ -257,7 +257,11 @@ if(STANDALONE_BUILD)
         endif()
       endforeach()
     else()
-      list(APPEND REQ_STANDALONE_LIBS ${${_library_name}_LIBRARIES})
+      foreach(entry ${${_library_name}_LIBRARIES})
+        string(REGEX MATCH ".*python[0-9]*\.[0-9]*\.so" _found ${entry})
+        if(_found STREQUAL "")
+          list(APPEND REQ_STANDALONE_LIBS ${entry})
+      endforeach()
     endif()
   endmacro()
 
