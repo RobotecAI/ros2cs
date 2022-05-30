@@ -10,7 +10,7 @@ display_usage() {
 }
 
 if [ -z "${ROS_DISTRO}" ]; then
-    echo "Source your ros2 distro first (Foxy and Galactic are supported)"
+    echo "Source your ros2 distro first (foxy, galactic, humble or rolling are supported)"
     exit 1
 fi
 

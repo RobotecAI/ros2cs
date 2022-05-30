@@ -15,22 +15,26 @@ Ros2cs is also an independent part of [Ros2 For Unity](https://github.com/Robote
 ### Platforms
 
 Supported OSes:
-- Ubuntu 20.04  (bash)
+- Ubuntu 22.04 (bash)
+- Ubuntu 20.04 (bash)
 - Windows 10 (powershell)
 
 Supported ROS2 distributions:
 - Foxy
 - Galactic
+- Humble
 
-On Windows, ros2cs libraries can be built in two flavors:
-- standalone (no ROS2 installation required on target machine, e.g. your Unity3D simulation server). All required dependencies are installed and can be used e.g. as a complete set of Unity3D plugins.
-- overlay (assuming existing (supported) ROS2 installation on target machine). Only ros2cs libraries and generated messages are installed.
+### Flavours
+
+`ros2cs` libraries can be built in two flavors:
+- _standalone_ (no ROS2 installation required on the target machine, e.g., your Unity3D simulation server). All required dependencies are installed and can be used e.g., as a complete set of Unity3D plugins.
+- _overlay_ (assuming existing (supported) ROS2 installation on the target machine). Only ros2cs libraries and generated messages are installed.
 
 ## Building
 
 ### Generating custom messages
 
-After cloning the project and importing .repos, you can simply put your message package next to other packages in the `src/ros2` sub-folder. Then, build your project and you have all messages generated. You can also modify and use the `custom_message.repos` template to automate the process with `get_repos` script.
+After cloning the project and importing .repos, you can simply put your message package next to other packages in the `src/ros2` sub-folder. Then, build your project, and you have all messages generated. You can also modify and use the `custom_message.repos` template to automate the process with the `get_repos` script.
 
 ### Build instructions
 
@@ -41,12 +45,40 @@ Please follow the  OS-specific instructions for your build:
 
 ## Testing
 
-Make sure your NuGet repositories can resolve `xUnit` dependency. You can call `dotnet nuget list source` to see your current sources for NuGet packages. Please note that `Microsoft Visual Studio Offline Packages` is usually insufficient. You can fix it by adding `nuget.org` repository: `dotnet nuget add source --name nuget.org https://api.nuget.org/v3/index.json`.
+Make sure your NuGet repositories can resolve `xUnit` dependency. You can call `dotnet nuget list source` to see your current sources for NuGet packages. Please note that `Microsoft Visual Studio Offline Packages` are usually insufficient. You can fix it by adding `nuget.org` repository: `dotnet nuget add source --name nuget.org https://api.nuget.org/v3/index.json`.
 
 - Make sure you built tests ( OS-specific build script with `--with-tests` flag).
-- Run OS-specific test script (`test.sh` - Linux; `test.ps1` - Windows)
-- Run a manual test with basic listener/publisher examples - `ros2cs_talker` and `ros2cs_listener`.
-- Run a manual performance test - `ros2cs_performance_talker` and `ros2cs_performance_listener`.
+- Run OS-specific test script:
+    - ubuntu:
+    ```bash
+    ./test.sh
+    ```
+    - windows:
+    ```powershell
+    test.sp1
+    ```
+- Run a manual test with basic listener/publisher examples (you have to source your ROS2 first):
+    - ubuntu
+    ```bash
+    ros2 run ros2cs_examples ros2cs_talker
+    ros2 run ros2cs_examples ros2cs_listener
+    ```
+    - windows
+    ```
+    ros2 run ros2cs_examples ros2cs_talker.exe
+    ros2 run ros2cs_examples ros2cs_listener.exe
+    ```
+- Run a manual performance test (you have to source your ROS2 first):
+    - ubuntu
+    ```bash
+    ros2 run ros2cs_examples ros2cs_performance_talker
+    ros2 run ros2cs_examples ros2cs_performance_listener
+    ```
+    - windows
+    ```
+    ros2 run ros2cs_examples ros2cs_performance_talker.exe
+    ros2 run ros2cs_examples ros2cs_performance_listener.exe
+    ```
 
 ## Acknowledgements
 

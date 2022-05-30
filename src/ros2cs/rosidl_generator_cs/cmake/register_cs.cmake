@@ -21,12 +21,12 @@ macro(rosidl_generator_cs_extras BIN GENERATOR_FILES TEMPLATE_DIR)
     "rosidl_generator_cs_generate_interfaces.cmake"
   )
 
-  normalize_path(BIN "${BIN}")
-  set(rosidl_generator_cs_BIN "${BIN}")
+  normalize_path(BIN_NORMALIZED "${BIN}")
+  set(rosidl_generator_cs_BIN "${BIN_NORMALIZED}")
 
-  normalize_path(GENERATOR_FILES "${GENERATOR_FILES}")
-  set(rosidl_generator_cs_GENERATOR_FILES "${GENERATOR_FILES}")
+  normalize_path(GENERATOR_FILES_NORMALIZED "${GENERATOR_FILES}")
+  set(rosidl_generator_cs_GENERATOR_FILES "${GENERATOR_FILES_NORMALIZED}")
 
-  normalize_path(TEMPLATE_DIR "${TEMPLATE_DIR}")
-  set(rosidl_generator_cs_TEMPLATE_DIR "${TEMPLATE_DIR}")
+  normalize_path(TEMPLATE_DIR_NORMALIZED "${TEMPLATE_DIR}")
+  set(rosidl_generator_cs_TEMPLATE_DIR "${TEMPLATE_DIR_NORMALIZED}")
 endmacro()

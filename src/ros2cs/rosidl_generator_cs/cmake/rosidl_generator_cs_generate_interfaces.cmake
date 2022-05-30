@@ -78,9 +78,9 @@ set(_dependencies "")
 foreach(_pkg_name ${rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES})
   foreach(_idl_file ${${_pkg_name}_INTERFACE_FILES})
     set(_abs_idl_file "${${_pkg_name}_DIR}/../${_idl_file}")
-    normalize_path(_abs_idl_file "${_abs_idl_file}")
-    list(APPEND _dependency_files "${_abs_idl_file}")
-    list(APPEND _dependencies "${_pkg_name}:${_abs_idl_file}")
+    normalize_path(_abs_idl_file_normalized "${_abs_idl_file}")
+    list(APPEND _dependency_files "${_abs_idl_file_normalized}")
+    list(APPEND _dependencies "${_pkg_name}:${_abs_idl_file_normalized}")
   endforeach()
 endforeach()
 
@@ -118,9 +118,18 @@ rosidl_write_generator_arguments(
 file(MAKE_DIRECTORY "${_output_path}")
 
 message(STATUS "Generating C# code for ROS interfaces ${_generated_msg_cs_files}")
+
+set(ros2_distro "$ENV{ROS_DISTRO}")
+if(ros2_distro STREQUAL "foxy" OR ros2_distro STREQUAL "galactic")
+  set(PYTHON_CMD ${PYTHON_EXECUTABLE})
+else()
+  set(PYTHON_CMD Python3::Interpreter)
+endif()
+
 add_custom_command(
   OUTPUT ${_generated_msg_cs_files} ${_generated_msg_c_files} ${_generated_msg_c_ts_files}
-  COMMAND ${PYTHON_EXECUTABLE} ${rosidl_generator_cs_BIN}
+  COMMAND ${PYTHON_CMD}
+  ARGS ${rosidl_generator_cs_BIN}
   --generator-arguments-file "${generator_arguments_file}"
   --typesupport-impls "${_typesupport_impls}"
   DEPENDS ${target_dependencies}
@@ -213,9 +222,14 @@ foreach(_generated_msg_c_ts_file ${_generated_msg_c_ts_files})
     ${PROJECT_NAME}__rosidl_generator_c
   )
 
-  rosidl_target_interfaces(${_target_name}
-    ${PROJECT_NAME} rosidl_typesupport_c
-  )
+  set(ros2_distro "$ENV{ROS_DISTRO}")
+
+  if(ros2_distro STREQUAL "humble" OR ros2_distro STREQUAL "rolling")
+    rosidl_get_typesupport_target(c_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_c")
+    target_link_libraries(${_target_name} "${c_typesupport_target}")
+  else()
+    rosidl_target_interfaces(${_target_name} ${PROJECT_NAME} rosidl_typesupport_c)
+  endif()
 
   target_include_directories(${_target_name}
     PUBLIC
