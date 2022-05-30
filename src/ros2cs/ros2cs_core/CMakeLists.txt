@@ -136,7 +136,7 @@ ament_export_dependencies(ament_cmake)
 ament_export_dependencies(rcl)
 ament_export_dependencies(rosidl_generator_c)
 
-option(STANDALONE_BUILD "Deploy standalone libraries with build" ON)
+option(STANDALONE_BUILD "Deploy standalone libraries with build" OFF)
 
 set(ros2_distro "$ENV{ROS_DISTRO}")
 
