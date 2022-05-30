@@ -6,7 +6,20 @@ if(BUILD_TESTING)
   find_package(ament_cmake REQUIRED)
   find_package(dotnet_cmake_module REQUIRED)
 
-  set(CSHARP_TARGET_FRAMEWORK "netcoreapp3.1")
+  if(UNIX)
+    find_program(LSB_RELEASE_EXEC lsb_release)
+    execute_process(COMMAND ${LSB_RELEASE_EXEC} -rs
+        OUTPUT_VARIABLE LSB_RELEASE_ID_SHORT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if("${LSB_RELEASE_ID_SHORT}" STREQUAL "22.04")
+      set(CSHARP_TARGET_FRAMEWORK "net6.0")
+    else()
+      set(CSHARP_TARGET_FRAMEWORK "netcoreapp3.1")
+    endif()
+  else()
+    set(CSHARP_TARGET_FRAMEWORK "netcoreapp3.1")
+  endif()
   find_package(DotNETExtra REQUIRED)
 
   find_package(std_msgs REQUIRED)
