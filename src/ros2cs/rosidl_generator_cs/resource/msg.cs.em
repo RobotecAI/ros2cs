@@ -174,7 +174,14 @@ public class @(message_class) : @(internals_interface), @(parent_interface)
   // This is done to preload before ros2 rmw_implementation attempts to find custom message library (and fails without absolute path)
   static private void MessageTypeSupportPreload()
   {
-    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+    // https://www.mono-project.com/docs/faq/technical/#how-to-detect-the-execution-platform
+    bool is_linux = false;
+    int p = (int) Environment.OSVersion.Platform;
+    if ((p == 4) || (p == 6) || (p == 128)) {
+            is_linux = true;
+    }
+    
+    if (is_linux)
     { //only affects Linux since on Windows PATH can be set effectively, dynamically
         const string rmw_fastrtps = "rmw_fastrtps_cpp";
         var rmw_implementation = Environment.GetEnvironmentVariable("RMW_IMPLEMENTATION");

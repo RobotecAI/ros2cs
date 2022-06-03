@@ -27,7 +27,7 @@ if(UNIX)
       OUTPUT_STRIP_TRAILING_WHITESPACE
   )
   if("${LSB_RELEASE_ID_SHORT}" STREQUAL "22.04")
-    set(CSHARP_TARGET_FRAMEWORK "net6.0")
+    set(CSHARP_TARGET_FRAMEWORK "netcoreapp3.1")
   else()
     set(CSHARP_TARGET_FRAMEWORK "netcoreapp3.1")
   endif()
