@@ -40,13 +40,11 @@ sudo apt-get update; \
 
 **Ubuntu 22.04 only**
 
-- .NET core 6.0 sdk - [see here](https://www.microsoft.com/net/learn/get-started)
+- mono - [see here](https://www.mono-project.com/)
 
 ```
 sudo apt-get update; \
-  sudo apt-get install -y apt-transport-https && \
-  sudo apt-get update && \
-  sudo apt-get install -y dotnet-sdk-6.0
+  sudo apt install mono-complete
 ```
 
 **Optional**
