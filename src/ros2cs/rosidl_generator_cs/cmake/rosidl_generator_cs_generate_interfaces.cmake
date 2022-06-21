@@ -117,7 +117,7 @@ rosidl_write_generator_arguments(
 
 file(MAKE_DIRECTORY "${_output_path}")
 
-message(STATUS "Generating C# code for ROS interfaces ${_generated_msg_cs_files}")
+message(VERBOSE "Generating C# code for ROS interfaces ${_generated_msg_cs_files}")
 add_custom_command(
   OUTPUT ${_generated_msg_cs_files} ${_generated_msg_c_files} ${_generated_msg_c_ts_files}
   COMMAND ${PYTHON_EXECUTABLE} ${rosidl_generator_cs_BIN}
@@ -128,7 +128,7 @@ add_custom_command(
   VERBATIM
 )
 
-message(STATUS "Adding custom target")
+message(VERBOSE "Adding custom target")
 
 set(_target_suffix "__cs")
 if(TARGET ${rosidl_generate_interfaces_TARGET}${_target_suffix})
@@ -206,7 +206,7 @@ foreach(_generated_msg_c_ts_file ${_generated_msg_c_ts_files})
     endif()
   endif()
 
-  message("Link libraries: ${PROJECT_NAME}__${_typesupport_impl}")
+  message(VERBOSE "Link libraries: ${PROJECT_NAME}__${_typesupport_impl}")
   target_link_libraries(${_target_name}
     ${PROJECT_NAME}__${_typesupport_impl}
     ${_extension_link_flags}
@@ -250,7 +250,7 @@ foreach(_generated_msg_c_ts_file ${_generated_msg_c_ts_files})
 
 endforeach()
 
-message("Install targets")
+message(VERBOSE "Install targets")
 if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
   install(TARGETS ${_target_name_lib} EXPORT ${_target_name}
     ARCHIVE DESTINATION lib
