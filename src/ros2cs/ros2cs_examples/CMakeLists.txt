@@ -32,13 +32,14 @@ if(UNIX)
       OUTPUT_STRIP_TRAILING_WHITESPACE
   )
   if("${LSB_RELEASE_ID_SHORT}" STREQUAL "22.04")
-    set(CSHARP_TARGET_FRAMEWORK "netcoreapp3.1")
+    set(CSBUILD_TOOL "Mono")
   else()
-    set(CSHARP_TARGET_FRAMEWORK "netcoreapp3.1")
+    set(CSBUILD_TOOL "DotNetCore")
   endif()
 else()
-  set(CSHARP_TARGET_FRAMEWORK "netcoreapp3.1")
+  set(CSBUILD_TOOL "DotNetCore")
 endif()
+
 find_package(DotNETExtra REQUIRED)
 
 set(_assemblies_dep_dlls
