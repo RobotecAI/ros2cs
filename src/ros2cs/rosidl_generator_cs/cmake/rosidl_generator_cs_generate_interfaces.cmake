@@ -132,6 +132,7 @@ add_custom_command(
   ARGS ${rosidl_generator_cs_BIN}
   --generator-arguments-file "${generator_arguments_file}"
   --typesupport-impls "${_typesupport_impls}"
+  --cs-build-tool "${CSBUILD_TOOL}"
   DEPENDS ${target_dependencies}
   COMMENT "Generating C# code for ROS interfaces"
   VERBATIM

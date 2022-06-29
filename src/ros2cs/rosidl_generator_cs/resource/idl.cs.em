@@ -39,7 +39,8 @@ TEMPLATE(
     get_dotnet_type=get_dotnet_type, get_field_name=get_field_name,
     constant_value_to_dotnet=constant_value_to_dotnet,
     get_c_type=get_c_type, get_marshal_type=get_marshal_type,
-    get_marshal_array_type=get_marshal_array_type
+    get_marshal_array_type=get_marshal_array_type,
+    get_csbuild_tool=get_csbuild_tool
     )
 }@
 

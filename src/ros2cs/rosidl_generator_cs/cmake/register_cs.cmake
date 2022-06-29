@@ -21,6 +21,21 @@ macro(rosidl_generator_cs_extras BIN GENERATOR_FILES TEMPLATE_DIR)
     "rosidl_generator_cs_generate_interfaces.cmake"
   )
 
+  if(UNIX)
+    find_program(LSB_RELEASE_EXEC lsb_release)
+    execute_process(COMMAND ${LSB_RELEASE_EXEC} -rs
+        OUTPUT_VARIABLE LSB_RELEASE_ID_SHORT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if("${LSB_RELEASE_ID_SHORT}" STREQUAL "22.04")
+      set(CSBUILD_TOOL "Mono")
+    else()
+      set(CSBUILD_TOOL "DotNetCore")
+    endif()
+  else()
+    set(CSBUILD_TOOL "DotNetCore")
+  endif()
+
   normalize_path(BIN_NORMALIZED "${BIN}")
   set(rosidl_generator_cs_BIN "${BIN_NORMALIZED}")
 
