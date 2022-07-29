@@ -4,6 +4,7 @@
 @# Context:
 @#  - package_name (string)
 @#  - interface_path (Path relative to the directory named after the package)
+@#  - service
 @#  - message (IdlMessage, with structure containing names, types and members)
 @#  - get_dotnet_type, escape_string, get_field_name - helper functions for cs translation of types
 @#######################################################################
@@ -28,6 +29,8 @@ from rosidl_cmake import convert_camel_case_to_lower_case_underscore
 @{
 message_class = message.structure.namespaced_type.name
 message_class_lower = convert_camel_case_to_lower_case_underscore(message_class)
+service_class = service.namespaced_type.name
+service_class_lower = convert_camel_case_to_lower_case_underscore(service_class)
 c_full_name = idl_type_to_c(message.structure.namespaced_type)
 internals_interface = "MessageInternals"
 parent_interface = "Message"
@@ -201,13 +204,15 @@ public class @(message_class) : @(internals_interface), @(parent_interface)
 
   static @(message_class)()
   {
+    Ros2csLogger logger = Ros2csLogger.GetInstance();
+
     dllLoadUtils = DllLoadUtilsFactory.GetDllLoadUtils();
     IntPtr messageLibraryTypesupport = dllLoadUtils.LoadLibraryNoSuffix("@(package_name)__rosidl_typesupport_c");
     IntPtr messageLibraryGenerator = dllLoadUtils.LoadLibraryNoSuffix("@(package_name)__rosidl_generator_c");
     IntPtr messageLibraryIntro = dllLoadUtils.LoadLibraryNoSuffix("@(package_name)__rosidl_typesupport_introspection_c");
     MessageTypeSupportPreload();
 
-    IntPtr nativelibrary = dllLoadUtils.LoadLibrary("@(package_name)_@(message_class_lower)__rosidl_typesupport_c");
+    IntPtr nativelibrary = dllLoadUtils.LoadLibrary("@(package_name)_@(service_class_lower)__rosidl_typesupport_c");
     IntPtr native_get_typesupport_ptr = dllLoadUtils.GetProcAddress(nativelibrary, "@(c_full_name)_native_get_type_support");
     @(message_class).native_get_typesupport = (NativeGetTypeSupportType)Marshal.GetDelegateForFunctionPointer(
       native_get_typesupport_ptr, typeof(NativeGetTypeSupportType));

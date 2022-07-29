@@ -40,6 +40,7 @@ namespace ROS2
     private IntPtr defaultNodeOptions;
     private HashSet<ISubscriptionBase> subscriptions;
     private HashSet<IPublisherBase> publishers;
+    private HashSet<IClientBase> clients;
     private readonly object mutex = new object();
     private bool disposed = false;
 
@@ -55,6 +56,7 @@ namespace ROS2
       string nodeNamespace = "/";
       subscriptions = new HashSet<ISubscriptionBase>();
       publishers = new HashSet<IPublisherBase>();
+      clients = new HashSet<IClientBase>();
 
       nodeHandle = NativeRcl.rcl_get_zero_initialized_node();
       defaultNodeOptions = NativeRclInterface.rclcs_node_create_default_options();
@@ -75,7 +77,7 @@ namespace ROS2
     }
 
     /// <summary> "Destructor" supporting IDisposable model </summary>
-    /// <description> Disposes all subscriptions and publishers before finilizing node </description>
+    /// <description> Disposes all subscriptions and publishers and clients before finilizing node </description>
     internal void DestroyNode()
     {
       lock (mutex)
@@ -94,6 +96,12 @@ namespace ROS2
           }
           publishers.Clear();
 
+          foreach(IClientBase client in clients)
+          {
+            client.Dispose();
+          }
+          clients.Clear();
+
           Utils.CheckReturnEnum(NativeRcl.rcl_node_fini(ref nodeHandle));
           NativeRclInterface.rclcs_node_dispose_options(defaultNodeOptions);
           disposed = true;
@@ -101,6 +109,40 @@ namespace ROS2
         }
       }
     }
+
+    /// <summary> Create a client for this node for a given topic, qos and message type </summary>
+    /// <see cref="INode.CreateClient"/>
+    public Client<T> CreateClient<T>(string topic, QualityOfServiceProfile qos = null) where T : Message, new()
+    {
+      lock (mutex)
+      {
+        if (disposed || !Ros2cs.Ok())
+        {
+          logger.LogWarning("Cannot create client as the class is already disposed or shutdown was called");
+          return null;
+        }
+
+        Client<T> client = new Client<T>(topic, this, qos);
+        clients.Add(client);
+        logger.LogInfo("Created Client for topic " + topic);
+        return client;
+      }
+    }
+    /// <summary> Remove a client </summary>
+    /// <see cref="INode.RemoveClient"/>
+    public bool RemoveClient(IClientBase client)
+    {
+      lock (mutex)
+      {
+        if (clients.Contains(client))
+        {
+          logger.LogInfo("Removing client for topic " + client.Topic);
+          return clients.Remove(client);
+        }
+        return false;
+      }
+    }
+
 
     /// <summary> Create a publisher for this node for a given topic, qos and message type </summary>
     /// <see cref="INode.CreatePublisher"/>
