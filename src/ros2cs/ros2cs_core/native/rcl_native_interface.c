@@ -86,6 +86,22 @@ void rclcs_publisher_dispose_options(rcl_publisher_options_t * publisher_options
 }
 
 ROSIDL_GENERATOR_C_EXPORT
+rcl_service_options_t *rclcs_client_create_options(rmw_qos_profile_t * qos)
+{
+  rcl_client_options_t *default_client_options_handle = (rcl_service_options_t *)malloc(sizeof(rcl_client_options_t));
+  *default_client_options_handle = rcl_client_get_default_options();
+  default_client_options_handle->qos = *qos;
+  return default_client_options_handle;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+void rclcs_client_dispose_options(rcl_client_options_t * client_options_handle)
+{
+  free(client_options_handle);
+}
+
+
+ROSIDL_GENERATOR_C_EXPORT
 char * rclcs_get_error_string()
 {
   rcl_error_string_t error_string = rcl_get_error_string();

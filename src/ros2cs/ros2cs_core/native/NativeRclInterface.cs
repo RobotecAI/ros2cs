@@ -109,6 +109,24 @@ namespace ROS2
         typeof(PublisherDisposeOptionsType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate IntPtr ClientCreateOptionsType(IntPtr qos);
+    internal static ClientCreateOptionsType
+        rclcs_client_create_options =
+        (ClientCreateOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_client_create_options"),
+        typeof(ClientCreateOptionsType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void ClientDisposeOptionsType(IntPtr options);
+    internal static ClientDisposeOptionsType
+        rclcs_client_dispose_options =
+        (ClientDisposeOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_client_dispose_options"),
+        typeof(ClientDisposeOptionsType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr RclcsClockCreate(ref rcl_allocator_t allocator_handle);
     internal static RclcsClockCreate
         rclcs_ros_clock_create =

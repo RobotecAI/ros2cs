@@ -46,13 +46,9 @@ def main(argv=sys.argv[1:]):
         '--typesupport-impls',
         required=True,
         help='All the available typesupport implementations')
-    parser.add_argument(
-        '--cs-build-tool',
-        required=True,
-        help='CS build tool to be used for compiling. Mono or DotNetCore')
     args = parser.parse_args(argv)
 
-    return generate_cs(args.generator_arguments_file, args.typesupport_impls.split(';'), args.cs_build_tool)
+    return generate_cs(args.generator_arguments_file, args.typesupport_impls.split(';'))
 
 
 if __name__ == '__main__':
