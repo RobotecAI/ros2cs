@@ -84,7 +84,7 @@ foreach(_idl_file ${rosidl_generate_interfaces_ABS_IDL_FILES})
   endif()
 endforeach()
 
-if(_generated_msg_c_files STREQUAL "")
+if( (_generated_msg_c_files STREQUAL "") AND (_generated_srv_c_files STREQUAL "") )
   return()
 endif()
 
@@ -282,7 +282,7 @@ foreach(_generated_srv_c_ts_file ${_generated_srv_c_ts_files})
   set(_srv_name "${_base_srv_name}${_full_extension_srv_name}")
 
   list(FIND _generated_srv_c_ts_files ${_generated_srv_c_ts_file} _file_index)
-  list(GET _type_support_by_generated_msg_c_files ${_file_index} _typesupport_impl)
+  list(GET _type_support_by_generated_srv_c_files ${_file_index} _typesupport_impl)
 
   find_package(${_typesupport_impl} REQUIRED)
 
@@ -415,7 +415,14 @@ if(NOT rosidl_generate_interfaces_SKIP_INSTALL)
     list(GET _generated_msg_cs_files 0 _msg_file)
     get_filename_component(_msg_package_dir "${_msg_file}" DIRECTORY)
     get_filename_component(_msg_package_dir "${_msg_package_dir}" DIRECTORY)
+    install_dotnet(${PROJECT_NAME}_assembly DESTINATION "lib/dotnet")
+    ament_export_assemblies_dll("lib/dotnet/${PROJECT_NAME}_assembly.dll")
+  endif()
 
+  if(NOT _generated_srv_cs_files STREQUAL "")
+    list(GET _generated_srv_cs_files 0 _msg_file)
+    get_filename_component(_msg_package_dir "${_msg_file}" DIRECTORY)
+    get_filename_component(_msg_package_dir "${_msg_package_dir}" DIRECTORY)
     install_dotnet(${PROJECT_NAME}_assembly DESTINATION "lib/dotnet")
     ament_export_assemblies_dll("lib/dotnet/${PROJECT_NAME}_assembly.dll")
   endif()

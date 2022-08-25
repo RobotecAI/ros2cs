@@ -17,12 +17,12 @@ using ROS2.Internal;
 
 namespace ROS2
 {
-  /// <summary> Subscription to a topic with a given type </summary>
-  /// <description> Subscriptions are created through INode interface (CreateSubscription) </description>
-  public class Subscription<T>: ISubscription<T> where T : Message, new ()
+  /// <summary> Service to a topic with a given type </summary>
+  /// <description> Services are created through INode interface (CreateService) </description>
+  public class Service<T>: IService<T> where T : Message, new ()
   {
-    public rcl_subscription_t Handle { get { return subscriptionHandle; } }
-    private rcl_subscription_t subscriptionHandle;
+    public rcl_service_t Handle { get { return serviceHandle; } }
+    private rcl_service_t serviceHandle;
 
     public string Topic { get { return topic; } }
     private string topic;
@@ -32,33 +32,44 @@ namespace ROS2
 
     private rcl_node_t nodeHandle;
     private readonly Action<T> callback;
-    private IntPtr subscriptionOptions;
+    private IntPtr serviceOptions;
 
     public object Mutex { get { return mutex; } }
     private object mutex = new object();
 
-    /// <summary> Tries to get a message from rcl/rmw layers. Calls the callback if successful </summary>
+    private rcl_rmw_request_id_t request_header;
+
+    /// <summary> Tries to send a response message to rcl/rmw layers. </summary>
+    // TODO(adamdbrw) this should not be public - add an internal interface
+    public void SendResp(IntPtr valp)
+    {
+      RCLReturnEnum ret;
+
+      ret = (RCLReturnEnum)NativeRcl.rcl_send_response(ref serviceHandle, ref request_header,  ref valp);
+    }
+
+    /// <summary> Tries to get a request message from rcl/rmw layers. Calls the callback if successful </summary>
     // TODO(adamdbrw) this should not be public - add an internal interface
     public void TakeMessage()
     {
       RCLReturnEnum ret;
       MessageInternals message;
+
       lock (mutex)
       {
         if (disposed || !Ros2cs.Ok())
         {
           return;
         }
-
         message = CreateMessage();
-        ret = (RCLReturnEnum)NativeRcl.rcl_take(ref subscriptionHandle, message.Handle, IntPtr.Zero, IntPtr.Zero);
+
+	ret = (RCLReturnEnum)NativeRcl.rcl_take_request(ref serviceHandle, ref request_header,  message.Handle);
       }
 
       bool gotMessage = ret == RCLReturnEnum.RCL_RET_OK;
 
       if (gotMessage)
       {
-Ros2csLogger.GetInstance().LogInfo("MYK ros2cs TakeMessage(subscription)");
         TriggerCallback(message);
       }
     }
@@ -77,14 +88,15 @@ Ros2csLogger.GetInstance().LogInfo("MYK ros2cs TakeMessage(subscription)");
       callback((T)message);
     }
 
-    /// <summary> Internal constructor for Subscription. Use INode.CreateSubscription to construct </summary>
-    /// <see cref="INode.CreateSubscription"/>
-    internal Subscription(string subTopic, Node node, Action<T> cb, QualityOfServiceProfile qos = null)
+    /// <summary> Internal constructor for Service. Use INode.CreateService to construct </summary>
+    /// <see cref="INode.CreateService"/>
+    internal Service(string subTopic, Node node, Action<T> cb, QualityOfServiceProfile qos = null)
     {
       callback = cb;
       nodeHandle = node.nodeHandle;
       topic = subTopic;
-      subscriptionHandle = NativeRcl.rcl_get_zero_initialized_subscription();
+      serviceHandle = NativeRcl.rcl_get_zero_initialized_service();
+      request_header = new rcl_rmw_request_id_t();
 
       QualityOfServiceProfile qualityOfServiceProfile = qos;
       if (qualityOfServiceProfile == null)
@@ -92,42 +104,42 @@ Ros2csLogger.GetInstance().LogInfo("MYK ros2cs TakeMessage(subscription)");
         qualityOfServiceProfile = new QualityOfServiceProfile();
       }
 
-      subscriptionOptions = NativeRclInterface.rclcs_subscription_create_options(qualityOfServiceProfile.handle);
+      serviceOptions = NativeRclInterface.rclcs_service_create_options(qualityOfServiceProfile.handle);
 
       T msg = new T();
       MessageInternals msgInternals = msg as MessageInternals;
       IntPtr typeSupportHandle = msgInternals.TypeSupportHandle;
       msg.Dispose();
 
-      Utils.CheckReturnEnum(NativeRcl.rcl_subscription_init(
-        ref subscriptionHandle,
+      Utils.CheckReturnEnum(NativeRcl.rcl_service_init(
+        ref serviceHandle,
         ref node.nodeHandle,
         typeSupportHandle,
         topic,
-        subscriptionOptions));
+        serviceOptions));
     }
 
-    ~Subscription()
+    ~Service()
     {
-      DestroySubscription();
+      DestroyService();
     }
 
     public void Dispose()
     {
-      DestroySubscription();
+      DestroyService();
     }
 
     /// <summary> "Destructor" supporting disposable model </summary>
-    private void DestroySubscription()
+    private void DestroyService()
     {
       lock (mutex)
       {
         if (!disposed)
         {
-          Utils.CheckReturnEnum(NativeRcl.rcl_subscription_fini(ref subscriptionHandle, ref nodeHandle));
-          NativeRclInterface.rclcs_node_dispose_options(subscriptionOptions);
+          Utils.CheckReturnEnum(NativeRcl.rcl_service_fini(ref serviceHandle, ref nodeHandle));
+          NativeRclInterface.rclcs_node_dispose_options(serviceOptions);
           disposed = true;
-          Ros2csLogger.GetInstance().LogInfo("Subscription destroyed");
+          Ros2csLogger.GetInstance().LogInfo("Service destroyed");
         }
       }
     }

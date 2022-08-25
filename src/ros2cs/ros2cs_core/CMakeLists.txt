@@ -75,6 +75,7 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
 set(CS_INTERFACES
   interfaces/INode.cs
   interfaces/IClient.cs
+  interfaces/IService.cs
   interfaces/IPublisher.cs
   interfaces/ISubscription.cs
 )
@@ -97,6 +98,7 @@ set(CS_SOURCES
   ${CS_UTILS}
   Clock.cs
   Client.cs
+  Service.cs
   Node.cs
   Publisher.cs
   QualityOfServiceProfile.cs

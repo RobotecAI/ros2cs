@@ -16,25 +16,25 @@
 using System;
 using System.Threading;
 using ROS2;
-using std_msgs;
-using sensor_msgs;
+using hello_interfaces;
 using example_interfaces;
 
-namespace Examples
+namespace Hello
 {
   /// <summary> A simple service client class to illustrate Ros2cs in action </summary>
-  public class ROS2Client
+  public class HelloClient
   {
     public static void Main(string[] args)
     {
-      Console.WriteLine("Client start");
+      Console.WriteLine("Hello Client start");
       Ros2cs.Init();
-      INode node = Ros2cs.CreateNode("talker");
-      Client<example_interfaces.srv.AddTwoInts_Request> my_client = node.CreateClient<example_interfaces.srv.AddTwoInts_Request>("add_two_ints");
+      INode node = Ros2cs.CreateNode("client");
+      Client<hello_interfaces.srv.AddThreeInts_Request> my_client = node.CreateClient<hello_interfaces.srv.AddThreeInts_Request>("add_three_ints");
 
-      example_interfaces.srv.AddTwoInts_Request msg = new example_interfaces.srv.AddTwoInts_Request();
-      msg.A = 7;
-      msg.B = 2;
+      hello_interfaces.srv.AddThreeInts_Request msg = new hello_interfaces.srv.AddThreeInts_Request();
+      msg.A = 4;
+      msg.B = 1;
+      msg.C = 3;
 
       my_client.WaitForService(msg);
 

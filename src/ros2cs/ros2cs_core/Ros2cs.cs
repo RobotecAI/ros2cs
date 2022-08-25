@@ -222,6 +222,22 @@ namespace ROS2
             allSubscriptions.Add(subscription);
           }
         }
+        // TODO - This can be optimized so that we cache the list and invalidate only with changes
+        var allServices = new List<IServiceBase>();
+        foreach (INode node_interface in nodes)
+        {
+          Node node = node_interface as Node;
+          if (node == null)
+            continue; //Rare situation in which we are disposing
+
+          foreach(IServiceBase service in node.Services)
+          {
+            if (service == null)
+              continue; //Rare situation in which we are disposing
+
+            allServices.Add(service);
+          }
+        }
 
         // TODO - investigate performance impact
         WaitSet.Wait(global_context, allSubscriptions, timeoutSec);
@@ -230,6 +246,11 @@ namespace ROS2
         foreach (var subscription in allSubscriptions)
         {
           subscription.TakeMessage();
+        }
+        ///WaitSet.Wait(global_context, allServices, timeoutSec);
+        foreach (var service in allServices)
+        {
+          service.TakeMessage();
         }
       }
     }

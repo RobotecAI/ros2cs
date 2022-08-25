@@ -36,11 +36,24 @@ namespace ROS2
         }
       }
     }
+
+    internal List<IServiceBase> Services
+    {
+      get
+      {
+        lock (mutex)
+        {
+          return services.ToList();
+        }
+      }
+    }
+
     internal rcl_node_t nodeHandle;
     private IntPtr defaultNodeOptions;
     private HashSet<ISubscriptionBase> subscriptions;
     private HashSet<IPublisherBase> publishers;
     private HashSet<IClientBase> clients;
+    private HashSet<IServiceBase> services;
     private readonly object mutex = new object();
     private bool disposed = false;
 
@@ -57,6 +70,7 @@ namespace ROS2
       subscriptions = new HashSet<ISubscriptionBase>();
       publishers = new HashSet<IPublisherBase>();
       clients = new HashSet<IClientBase>();
+      services = new HashSet<IServiceBase>();
 
       nodeHandle = NativeRcl.rcl_get_zero_initialized_node();
       defaultNodeOptions = NativeRclInterface.rclcs_node_create_default_options();
@@ -102,6 +116,12 @@ namespace ROS2
           }
           clients.Clear();
 
+          foreach(IServiceBase service in services)
+          {
+            service.Dispose();
+          }
+          services.Clear();
+
           Utils.CheckReturnEnum(NativeRcl.rcl_node_fini(ref nodeHandle));
           NativeRclInterface.rclcs_node_dispose_options(defaultNodeOptions);
           disposed = true;
@@ -143,6 +163,39 @@ namespace ROS2
       }
     }
 
+    /// <summary> Create a service for this node for a given topic, callback, qos and message type </summary>
+    /// <see cref="INode.CreateService"/>
+    public Service<T> CreateService<T>(string topic, Action<T> callback, QualityOfServiceProfile qos = null) where T : Message, new()
+    {
+      lock (mutex)
+      {
+        if (disposed || !Ros2cs.Ok())
+        {
+          logger.LogWarning("Cannot create service as the class is already disposed or shutdown was called");
+          return null;
+        }
+
+        Service<T> service = new Service<T>(topic, this, callback, qos);
+        services.Add(service);
+        logger.LogInfo("Created service for topic " + topic);
+        return service;
+      }
+    }
+
+    /// <summary> Remove a service </summary>
+    /// <see cref="INode.RemoveService"/>
+    public bool RemoveService(IServiceBase service)
+    {
+      lock (mutex)
+      {
+        if (services.Contains(service))
+        {
+          logger.LogInfo("Removing service for topic " + service.Topic);
+          return services.Remove(service);
+        }
+        return false;
+      }
+    }
 
     /// <summary> Create a publisher for this node for a given topic, qos and message type </summary>
     /// <see cref="INode.CreatePublisher"/>

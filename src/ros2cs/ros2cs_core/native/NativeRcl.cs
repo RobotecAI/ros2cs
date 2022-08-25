@@ -14,7 +14,6 @@
 
 using System;
 using System.Runtime.InteropServices;
-using example_interfaces;
 
 namespace ROS2
 {
@@ -26,7 +25,6 @@ namespace ROS2
     private static readonly DllLoadUtils dllLoadUtils = DllLoadUtilsFactory.GetDllLoadUtils();
     private static readonly IntPtr nativeRCL = dllLoadUtils.LoadLibraryNoSuffix("rcl");
     private static readonly IntPtr nativeRCUtils = dllLoadUtils.LoadLibraryNoSuffix("rcutils");
-    private static readonly IntPtr nativeRCUmyk = dllLoadUtils.LoadLibraryNoSuffix("rclcpp");
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate rcl_context_t GetZeroInitializedContextType();
@@ -183,7 +181,7 @@ namespace ROS2
         typeof(SendRequestType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int TakeResponceType(ref rcl_client_t client, ref rcl_rmw_request_id_t request_header, ref rcl_client_response responce_info);
+    internal delegate int TakeResponceType(ref rcl_client_t client, ref rcl_rmw_request_id_t request_header, ref IntPtr responce_info);
     internal static TakeResponceType
         rcl_take_response =
         (TakeResponceType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -200,6 +198,59 @@ namespace ROS2
         "rcl_service_server_is_available"),
         typeof(ServiceIsAvailableType));
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate IntPtr ServiceGetDefaultOptionsType();
+    internal static ServiceGetDefaultOptionsType
+        rcl_service_get_default_options =
+        (ServiceGetDefaultOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_service_get_default_options"),
+        typeof(ServiceGetDefaultOptionsType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate rcl_service_t GetZeroInitiazizedServiceType();
+    internal static GetZeroInitiazizedServiceType
+        rcl_get_zero_initialized_service =
+        (GetZeroInitiazizedServiceType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_get_zero_initialized_service"),
+        typeof(GetZeroInitiazizedServiceType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int ServiceInitType(ref rcl_service_t service, ref rcl_node_t node, IntPtr type_support_ptr, string topic_name, IntPtr service_options);
+    internal static ServiceInitType
+        rcl_service_init =
+        (ServiceInitType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_service_init"),
+        typeof(ServiceInitType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int ServiceFiniType(ref rcl_service_t client, ref rcl_node_t node);
+    internal static ServiceFiniType
+        rcl_service_fini =
+        (ServiceFiniType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_service_fini"),
+        typeof(ServiceFiniType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int TakeRequestType(ref rcl_service_t service, ref rcl_rmw_request_id_t request_header, IntPtr message_handle);
+    internal static TakeRequestType
+        rcl_take_request =
+        (TakeRequestType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_take_request"),
+        typeof(TakeRequestType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int SendResponceType( ref rcl_service_t service, ref rcl_rmw_request_id_t request_header, ref IntPtr responce_info);
+    internal static SendResponceType
+        rcl_send_response =
+        (SendResponceType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_send_response"),
+        typeof(SendResponceType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr PublisherGetDefaultOptionsType();

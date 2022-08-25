@@ -32,6 +32,6 @@ namespace ROS2
     /// <summary> Service a message </summary>
     /// <description> Message memory is copied into native structures and the message
     /// can be safely changed or disposed after this call </description>
-    long SendAndRecv(T msg);
+    IntPtr SendAndRecv(T msg);
   }
 }

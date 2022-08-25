@@ -80,6 +80,11 @@ namespace ROS2
     private IntPtr impl;
   }
 
+  public struct rcl_service_t
+  {
+    private IntPtr impl;
+  }
+
   [StructLayout(LayoutKind.Sequential)]
   public struct rcl_rmw_request_id_t
   {
@@ -97,6 +102,20 @@ namespace ROS2
     [MarshalAs(UnmanagedType.I8)]
     public long Sum;
   }
+
+  [StructLayout(LayoutKind.Sequential)]
+  public struct rcl_client_request
+  {
+    [MarshalAs(UnmanagedType.I8)]
+    public long A;
+    [MarshalAs(UnmanagedType.I8)]
+    public long B;
+  }
+
+
+
+
+
 
   public struct rcl_wait_set_t
   {

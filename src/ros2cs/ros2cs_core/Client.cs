@@ -34,8 +34,7 @@ namespace ROS2
     rcl_client_t serviceHandle;
     IntPtr serviceOptions = IntPtr.Zero;
     rcl_node_t nodeHandle;
-    rcl_client_response responce_info = new rcl_client_response();
-    rcl_rmw_request_id_t request_header = new rcl_rmw_request_id_t();
+    private rcl_rmw_request_id_t request_header = new rcl_rmw_request_id_t();
     private bool disposed = false;
 
     public bool IsDisposed { get { return disposed; } }
@@ -100,25 +99,23 @@ namespace ROS2
 
     /// <summary> Service a message </summary>
     /// <see cref="IService.SendAndRecv"/>
-    public long SendAndRecv(T msg)
+    public IntPtr SendAndRecv(T msg)
+    ///public long SendAndRecv(T msg)
     {
+      IntPtr respp = new IntPtr(0);
       if (!Ros2cs.Ok() || disposed)
       {
         logger.LogWarning("Cannot service as the class is already disposed or shutdown was called");
-        return(0);
+        return(respp);
       }
       MessageInternals msgInternals = msg as MessageInternals;
       msgInternals.WriteNativeMessage();
 
       /// send request
       Utils.CheckReturnEnum(NativeRcl.rcl_send_request(ref serviceHandle, msgInternals.Handle, ref sequence_number));
-      logger.LogInfo("result rcl_send_request() sequence_number = " + sequence_number);
-
       System.Threading.Thread.Sleep(1000);
-      Utils.CheckReturnEnum(NativeRcl.rcl_take_response(ref serviceHandle, ref request_header, ref responce_info));
-      logger.LogInfo("sum = " + responce_info.Sum );
-      logger.LogInfo("request_header.sequence_number = " + request_header.sequence_number);
-      return(responce_info.Sum);
+      Utils.CheckReturnEnum(NativeRcl.rcl_take_response(ref serviceHandle, ref request_header, ref respp));
+      return(respp);
     }
   }
 }
