@@ -35,3 +35,7 @@ repositories:
     type: git
     url: https://github.com/RobotecAI/ament_cmake_export_assemblies
     version: master
+  ros2/hello_interfaces:
+    type: git
+    url: https://github.com/miyakoshi-dev/hello_interfaces.git
+    version: master
