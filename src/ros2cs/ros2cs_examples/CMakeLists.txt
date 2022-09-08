@@ -21,6 +21,7 @@ find_package(ros2cs_common REQUIRED)
 find_package(ros2cs_core REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(example_interfaces REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(dotnet_cmake_module REQUIRED)
 find_package(rosidl_generator_cs REQUIRED)
@@ -47,6 +48,7 @@ set(_assemblies_dep_dlls
     ${ros2cs_core_ASSEMBLIES_DLL}
     ${std_msgs_ASSEMBLIES_DLL}
     ${sensor_msgs_ASSEMBLIES_DLL}
+    ${example_interfaces_ASSEMBLIES_DLL}
     ${builtin_interfaces_ASSEMBLIES_DLL}
 )
 
@@ -74,9 +76,23 @@ add_dotnet_executable(ros2cs_performance_listener
   ${_assemblies_dep_dlls}
 )
 
+add_dotnet_executable(ros2cs_client
+  ROS2Client.cs
+  INCLUDE_DLLS
+  ${_assemblies_dep_dlls}
+)
+
+add_dotnet_executable(ros2cs_service
+  ROS2Service.cs
+  INCLUDE_DLLS
+  ${_assemblies_dep_dlls}
+)
+
 install_dotnet(ros2cs_listener DESTINATION lib/${PROJECT_NAME}/dotnet)
 install_dotnet(ros2cs_talker DESTINATION lib/${PROJECT_NAME}/dotnet)
 install_dotnet(ros2cs_performance_talker DESTINATION lib/${PROJECT_NAME}/dotnet)
 install_dotnet(ros2cs_performance_listener DESTINATION lib/${PROJECT_NAME}/dotnet)
+install_dotnet(ros2cs_client DESTINATION lib/${PROJECT_NAME}/dotnet)
+install_dotnet(ros2cs_service DESTINATION lib/${PROJECT_NAME}/dotnet)
 
 ament_package()

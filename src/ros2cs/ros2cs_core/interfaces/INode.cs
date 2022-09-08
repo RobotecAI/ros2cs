@@ -26,6 +26,33 @@ namespace ROS2
     /// <summary> Node name as given in Ros2cs.CreateNode </summary>
     string Name {get;}
 
+    /// <summary> Create a service for this node for a given topic, qos and message type </summary>
+    /// <description> Can only be called in an initialized Ros2cs state. </description>
+    /// <param name="topic"> Topic for the service. Naming restrictions of ros2 apply and violation results in an exception </param>
+    /// <param name="qos"> Quality of Service settings. Not passing this parameter will result in default settings </param>
+    /// <returns> Service for the topic, which can be used to service messages </returns>
+    Client<T> CreateClient<T>(string topic, QualityOfServiceProfile qos = null) where T : Message, new();
+
+    /// <summary> Remove a service </summary>
+    /// <remarks> Note that this does not call Dispose on Service </remarks>
+    /// <param name="service"> Service created with earlier CreateClient call </param>
+    /// <returns> Whether removal actually took place. Safe to ignore </returns>
+    bool RemoveClient(IClientBase client);
+
+    /// <summary> Create a service for this node for a given topic, callback, qos and message type </summary>
+    /// <description> Can only be called in an initialized Ros2cs state. </description>
+    /// <param name="topic"> Topic to service to. Naming restrictions of ros2 apply and violation results in an exception </param>
+    /// <param name="callback"> Action to be called when message is received (through Spin or SpinOnce). Provide a lambda or a method </param>
+    /// <param name="qos"> Quality of Service settings. Not passing this parameter will result in default settings </param>
+    /// <returns> Service for the topic </returns>
+    Service<T> CreateService<T>(string topic, Action<T> callback, QualityOfServiceProfile qos = null) where T : Message, new();
+
+    /// <summary> Remove a service </summary>
+    /// <remarks> Note that this does not call Dispose on Service </remarks>
+    /// <param name="service"> Service created with earlier CreateService call </param>
+    /// <returns> Whether removal actually took place. Safe to ignore </returns>
+    bool RemoveService(IServiceBase service);
+
     /// <summary> Create a publisher for this node for a given topic, qos and message type </summary>
     /// <description> Can only be called in an initialized Ros2cs state. </description>
     /// <param name="topic"> Topic for the publisher. Naming restrictions of ros2 apply and violation results in an exception </param>

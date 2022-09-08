@@ -134,6 +134,124 @@ namespace ROS2
         "rcl_node_get_namespace"),
         typeof(NodeGetNamespaceType));
 
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate IntPtr ClientGetDefaultOptionsType();
+    internal static ClientGetDefaultOptionsType
+        rcl_client_get_default_options =
+        (ClientGetDefaultOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_client_get_default_options"),
+        typeof(ClientGetDefaultOptionsType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate rcl_client_t GetZeroInitiazizedClientType();
+    internal static GetZeroInitiazizedClientType
+        rcl_get_zero_initialized_client =
+        (GetZeroInitiazizedClientType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_get_zero_initialized_client"),
+        typeof(GetZeroInitiazizedClientType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int ClientInitType(ref rcl_client_t client, ref rcl_node_t node, IntPtr type_support_ptr, string topic_name, IntPtr client_options);
+    internal static ClientInitType
+        rcl_client_init =
+        (ClientInitType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_client_init"),
+        typeof(ClientInitType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int ClientFiniType(ref rcl_client_t client, ref rcl_node_t node);
+    internal static ClientFiniType
+        rcl_client_fini =
+        (ClientFiniType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_client_fini"),
+        typeof(ClientFiniType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int SendRequestType(ref rcl_client_t client, IntPtr message, ref long sequence_number);
+    internal static SendRequestType
+        rcl_send_request =
+        (SendRequestType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_send_request"),
+        typeof(SendRequestType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int TakeResponceType(ref rcl_client_t client, ref rcl_rmw_request_id_t request_header, ref IntPtr responce_info);
+    internal static TakeResponceType
+        rcl_take_response =
+        (TakeResponceType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_take_response"),
+        typeof(TakeResponceType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int ServiceIsAvailableType(ref rcl_node_t node, ref rcl_client_t client, ref bool is_available);
+    internal static ServiceIsAvailableType
+        rcl_service_server_is_available =
+        (ServiceIsAvailableType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_service_server_is_available"),
+        typeof(ServiceIsAvailableType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate IntPtr ServiceGetDefaultOptionsType();
+    internal static ServiceGetDefaultOptionsType
+        rcl_service_get_default_options =
+        (ServiceGetDefaultOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_service_get_default_options"),
+        typeof(ServiceGetDefaultOptionsType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate rcl_service_t GetZeroInitiazizedServiceType();
+    internal static GetZeroInitiazizedServiceType
+        rcl_get_zero_initialized_service =
+        (GetZeroInitiazizedServiceType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_get_zero_initialized_service"),
+        typeof(GetZeroInitiazizedServiceType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int ServiceInitType(ref rcl_service_t service, ref rcl_node_t node, IntPtr type_support_ptr, string topic_name, IntPtr service_options);
+    internal static ServiceInitType
+        rcl_service_init =
+        (ServiceInitType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_service_init"),
+        typeof(ServiceInitType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int ServiceFiniType(ref rcl_service_t client, ref rcl_node_t node);
+    internal static ServiceFiniType
+        rcl_service_fini =
+        (ServiceFiniType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_service_fini"),
+        typeof(ServiceFiniType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int TakeRequestType(ref rcl_service_t service, ref rcl_rmw_request_id_t request_header, IntPtr message_handle);
+    internal static TakeRequestType
+        rcl_take_request =
+        (TakeRequestType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_take_request"),
+        typeof(TakeRequestType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int SendResponceType( ref rcl_service_t service, ref rcl_rmw_request_id_t request_header, ref IntPtr responce_info);
+    internal static SendResponceType
+        rcl_send_response =
+        (SendResponceType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_send_response"),
+        typeof(SendResponceType));
+
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr PublisherGetDefaultOptionsType();
     internal static PublisherGetDefaultOptionsType
@@ -178,6 +296,9 @@ namespace ROS2
         nativeRCL,
         "rcl_publish"),
         typeof(PublishType));
+
+
+
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate rcl_subscription_t GetZeroInitializedSubcriptionType();
