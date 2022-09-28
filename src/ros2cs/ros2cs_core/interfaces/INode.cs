@@ -26,16 +26,16 @@ namespace ROS2
     /// <summary> Node name as given in Ros2cs.CreateNode </summary>
     string Name {get;}
 
-    /// <summary> Create a service for this node for a given topic, qos and message type </summary>
+    /// <summary> Create a client for this node for a given topic, qos and message type </summary>
     /// <description> Can only be called in an initialized Ros2cs state. </description>
-    /// <param name="topic"> Topic for the service. Naming restrictions of ros2 apply and violation results in an exception </param>
-    /// <param name="qos"> Quality of Service settings. Not passing this parameter will result in default settings </param>
-    /// <returns> Service for the topic, which can be used to service messages </returns>
+    /// <param name="topic"> Topic for the client. Naming restrictions of ros2 apply and violation results in an exception </param>
+    /// <param name="qos"> Quality of Client settings. Not passing this parameter will result in default settings </param>
+    /// <returns> Client for the topic, which can be used to client messages </returns>
     Client<T> CreateClient<T>(string topic, QualityOfServiceProfile qos = null) where T : Message, new();
 
-    /// <summary> Remove a service </summary>
-    /// <remarks> Note that this does not call Dispose on Service </remarks>
-    /// <param name="service"> Service created with earlier CreateClient call </param>
+    /// <summary> Remove a client </summary>
+    /// <remarks> Note that this does not call Dispose on Client </remarks>
+    /// <param name="client"> Client created with earlier CreateClient call </param>
     /// <returns> Whether removal actually took place. Safe to ignore </returns>
     bool RemoveClient(IClientBase client);
 

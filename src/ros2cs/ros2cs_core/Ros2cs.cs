@@ -247,7 +247,6 @@ namespace ROS2
         {
           subscription.TakeMessage();
         }
-        ///WaitSet.Wait(global_context, allServices, timeoutSec);
         foreach (var service in allServices)
         {
           service.TakeMessage();

@@ -134,7 +134,6 @@ namespace ROS2
         "rcl_node_get_namespace"),
         typeof(NodeGetNamespaceType));
 
-
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr ClientGetDefaultOptionsType();
     internal static ClientGetDefaultOptionsType
@@ -296,9 +295,6 @@ namespace ROS2
         nativeRCL,
         "rcl_publish"),
         typeof(PublishType));
-
-
-
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate rcl_subscription_t GetZeroInitializedSubcriptionType();

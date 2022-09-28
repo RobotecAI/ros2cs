@@ -27,17 +27,23 @@ namespace ROS2
   {
     public string Topic { get { return topic; } }
     private string topic;
-    public long sequence_number;
-    public bool wait_flag = false;
+
+    public long Sequence_number { get { return sequence_number; } }
+    private long sequence_number;
+
+    public bool IsWait_flag { get { return wait_flag; } }
+    private bool wait_flag;
 
     private Ros2csLogger logger = Ros2csLogger.GetInstance();
     rcl_client_t serviceHandle;
     IntPtr serviceOptions = IntPtr.Zero;
     rcl_node_t nodeHandle;
     private rcl_rmw_request_id_t request_header = new rcl_rmw_request_id_t();
-    private bool disposed = false;
 
     public bool IsDisposed { get { return disposed; } }
+    private bool disposed = false;
+
+    public static readonly int ST_RETRY_COUNT = 10;
 
     /// <summary> Internal constructor for Service. Use INode.CreateClient to construct </summary>
     /// <see cref="INode.CreateClient"/>
@@ -97,11 +103,12 @@ namespace ROS2
       }
     }
 
-    /// <summary> Service a message </summary>
+    /// <summary> Sending and receiving service messages </summary>
     /// <see cref="IService.SendAndRecv"/>
     public IntPtr SendAndRecv(T msg)
-    ///public long SendAndRecv(T msg)
     {
+      int ret;
+      int err_count = 0;
       IntPtr respp = new IntPtr(0);
       if (!Ros2cs.Ok() || disposed)
       {
@@ -113,8 +120,24 @@ namespace ROS2
 
       /// send request
       Utils.CheckReturnEnum(NativeRcl.rcl_send_request(ref serviceHandle, msgInternals.Handle, ref sequence_number));
-      System.Threading.Thread.Sleep(1000);
-      Utils.CheckReturnEnum(NativeRcl.rcl_take_response(ref serviceHandle, ref request_header, ref respp));
+
+      /// receive responce
+      while(true) {
+        ret = NativeRcl.rcl_take_response(ref serviceHandle, ref request_header, ref respp);
+        if ( (RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_OK ) {
+          break;
+        } else if ( (RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_CLIENT_TAKE_FAILED ) {
+          if ( err_count > ST_RETRY_COUNT ) {
+            Utils.CheckReturnEnum(ret);
+            break;
+          }
+          ++err_count;
+          System.Threading.Thread.Sleep(1000);
+        } else {
+          Utils.CheckReturnEnum(ret);
+          break;
+        }
+      }
       return(respp);
     }
   }
