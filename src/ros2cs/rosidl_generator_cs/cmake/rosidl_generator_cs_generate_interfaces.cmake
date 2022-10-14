@@ -136,9 +136,17 @@ rosidl_write_generator_arguments(
 file(MAKE_DIRECTORY "${_output_path}")
 
 message(STATUS "Generating C# code for ROS interfaces ${_generated_msg_cs_files} and ${_generated_srv_cs_files}")
+set(ros2_distro "$ENV{ROS_DISTRO}")
+if(ros2_distro STREQUAL "foxy" OR ros2_distro STREQUAL "galactic")
+  set(PYTHON_CMD ${PYTHON_EXECUTABLE})
+else()
+  set(PYTHON_CMD Python3::Interpreter)
+endif()
+
 add_custom_command(
   OUTPUT ${_generated_msg_cs_files} ${_generated_msg_c_files} ${_generated_msg_c_ts_files} ${_generated_srv_cs_files} ${_generated_srv_c_files} ${_generated_srv_c_ts_files}
-  COMMAND ${PYTHON_EXECUTABLE} ${rosidl_generator_cs_BIN}
+  COMMAND ${PYTHON_CMD}
+  ARGS ${rosidl_generator_cs_BIN}
   --generator-arguments-file "${generator_arguments_file}"
   --typesupport-impls "${_typesupport_impls}"
   --cs-build-tool "${CSBUILD_TOOL}"
@@ -235,9 +243,14 @@ foreach(_generated_msg_c_ts_file ${_generated_msg_c_ts_files})
     ${PROJECT_NAME}__rosidl_generator_c
   )
 
-  rosidl_target_interfaces(${_target_name}
-    ${PROJECT_NAME} rosidl_typesupport_c
-  )
+  set(ros2_distro "$ENV{ROS_DISTRO}")
+
+  if(ros2_distro STREQUAL "humble" OR ros2_distro STREQUAL "rolling")
+    rosidl_get_typesupport_target(c_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_c")
+    target_link_libraries(${_target_name} "${c_typesupport_target}")
+  else()
+    rosidl_target_interfaces(${_target_name} ${PROJECT_NAME} rosidl_typesupport_c)
+  endif()
 
   target_include_directories(${_target_name}
     PUBLIC
@@ -287,11 +300,7 @@ foreach(_generated_srv_c_ts_file ${_generated_srv_c_ts_files})
 
   find_package(${_typesupport_impl} REQUIRED)
 
-  set(_target_name "${_package_name}_${_base_srv_name}__${_typesupport_impl}")
-
-  if ( ${_target_name} STREQUAL "test_msgs_arrays__rosidl_typesupport_c" )
-    break()
-  endif()
+  set(_target_name "${_package_name}_srv_${_base_srv_name}__${_typesupport_impl}")
 
   string_camel_case_to_lower_case_underscore("${_module_name}" _header_name)
 
@@ -341,9 +350,14 @@ foreach(_generated_srv_c_ts_file ${_generated_srv_c_ts_files})
     ${PROJECT_NAME}__rosidl_generator_c
   )
 
-  rosidl_target_interfaces(${_target_name}
-    ${PROJECT_NAME} rosidl_typesupport_c
-  )
+  set(ros2_distro "$ENV{ROS_DISTRO}")
+
+  if(ros2_distro STREQUAL "humble" OR ros2_distro STREQUAL "rolling")
+    rosidl_get_typesupport_target(c_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_c")
+    target_link_libraries(${_target_name} "${c_typesupport_target}")
+  else()
+    rosidl_target_interfaces(${_target_name} ${PROJECT_NAME} rosidl_typesupport_c)
+  endif()
 
   target_include_directories(${_target_name}
     PUBLIC
