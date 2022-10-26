@@ -352,13 +352,27 @@ namespace ROS2
         typeof(GetZeroInitializedWaitSetType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int WaitSetResizeType(ref rcl_wait_set_t wait_set,
+                                            UIntPtr number_of_subscriptions,
+                                            UIntPtr number_of_guard_conditions,
+                                            UIntPtr number_of_timers,
+                                            UIntPtr number_of_clients,
+                                            UIntPtr number_of_services,
+                                            UIntPtr number_of_events);
+    internal static WaitSetResizeType rcl_wait_set_resize =
+        (WaitSetResizeType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_wait_set_resize"),
+        typeof(WaitSetResizeType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate int WaitSetInitType(ref rcl_wait_set_t wait_set,
-                                          ulong number_of_subscriptions,
-                                          ulong number_of_guard_conditions,
-                                          ulong number_of_timers,
-                                          ulong number_of_clients,
-                                          ulong number_of_services,
-                                          ulong number_of_events,
+                                          UIntPtr number_of_subscriptions,
+                                          UIntPtr number_of_guard_conditions,
+                                          UIntPtr number_of_timers,
+                                          UIntPtr number_of_clients,
+                                          UIntPtr number_of_services,
+                                          UIntPtr number_of_events,
                                           ref rcl_context_t context,
                                           rcl_allocator_t allocator);
     internal static WaitSetInitType
@@ -387,7 +401,7 @@ namespace ROS2
         typeof(WaitSetClearType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int WaitSetAddSubscriptionType(ref rcl_wait_set_t wait_set, ref rcl_subscription_t subscription, UIntPtr index);
+    internal delegate int WaitSetAddSubscriptionType(ref rcl_wait_set_t wait_set, ref rcl_subscription_t subscription, ref UIntPtr index);
     internal static WaitSetAddSubscriptionType
         rcl_wait_set_add_subscription =
         (WaitSetAddSubscriptionType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -396,7 +410,25 @@ namespace ROS2
         typeof(WaitSetAddSubscriptionType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int WaitType(ref rcl_wait_set_t wait_set, ulong timeout);
+    internal delegate int WaitSetAddClientType(ref rcl_wait_set_t wait_set, ref rcl_client_t client, ref UIntPtr index);
+    internal static WaitSetAddClientType
+        rcl_wait_set_add_client =
+        (WaitSetAddClientType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_wait_set_add_client"),
+        typeof(WaitSetAddClientType));
+    
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int WaitSetAddServiceType(ref rcl_wait_set_t wait_set, ref rcl_service_t service, ref UIntPtr index);
+    internal static WaitSetAddServiceType
+        rcl_wait_set_add_service =
+        (WaitSetAddServiceType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_wait_set_add_service"),
+        typeof(WaitSetAddServiceType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int WaitType(ref rcl_wait_set_t wait_set, long timeout);
     internal static WaitType
         rcl_wait =
         (WaitType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(

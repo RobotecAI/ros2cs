@@ -99,17 +99,17 @@ namespace ROS2
   public struct rcl_wait_set_t
   {
     private IntPtr subscriptions;
-    private UIntPtr size_of_subscriptions;
+    internal UIntPtr size_of_subscriptions;
     private IntPtr guard_conditions;
-    private UIntPtr size_of_guard_conditions;
+    internal UIntPtr size_of_guard_conditions;
     private IntPtr timers;
-    private UIntPtr size_of_timers;
+    internal UIntPtr size_of_timers;
     private IntPtr clients;
-    private UIntPtr size_of_clients;
+    internal UIntPtr size_of_clients;
     private IntPtr services;
-    private UIntPtr size_of_services;
+    internal UIntPtr size_of_services;
     private IntPtr events;
-    private UIntPtr size_of_events;
+    internal UIntPtr size_of_events;
     private IntPtr impl;
   }
 

@@ -427,13 +427,25 @@ namespace ROS2.TestNativeMethods
 
             rcl_allocator_t allocator = NativeRcl.rcutils_get_default_allocator();
             rcl_wait_set_t waitSet = NativeRcl.rcl_get_zero_initialized_wait_set();
-            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_init(ref waitSet, 1, 0, 0, 0, 0, 0, ref context, allocator));
+            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_init(
+                ref waitSet,
+                (UIntPtr)1,
+                (UIntPtr)0,
+                (UIntPtr)0,
+                (UIntPtr)0,
+                (UIntPtr)0,
+                (UIntPtr)0,
+                ref context,
+                allocator
+            ));
             TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_clear(ref waitSet));
 
             Assert.That(NativeRcl.rcl_subscription_is_valid(ref subscription), Is.True);
-            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_add_subscription(ref waitSet, ref subscription, UIntPtr.Zero));
+            UIntPtr index = (UIntPtr)42;
+            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_add_subscription(ref waitSet, ref subscription, ref index));
+            Assert.That(index.ToUInt64(), Is.EqualTo(0));
 
-            ulong timeout_ns = 10*1000*1000;
+            long timeout_ns = 10*1000*1000;
             var ret = (RCLReturnEnum)NativeRcl.rcl_wait(ref waitSet, timeout_ns);
             Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_TIMEOUT));
         }
@@ -474,7 +486,17 @@ namespace ROS2.TestNativeMethods
         {
             rcl_allocator_t allocator = NativeRcl.rcutils_get_default_allocator();
             rcl_wait_set_t waitSet = NativeRcl.rcl_get_zero_initialized_wait_set();
-            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_init(ref waitSet, 1, 0, 0, 0, 0, 0, ref context, allocator));
+            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_init(
+                ref waitSet,
+                (UIntPtr)1,
+                (UIntPtr)0,
+                (UIntPtr)0,
+                (UIntPtr)0,
+                (UIntPtr)0,
+                (UIntPtr)0,
+                ref context,
+                allocator
+            ));
             TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_fini(ref waitSet));
         }
 
@@ -483,7 +505,17 @@ namespace ROS2.TestNativeMethods
         {
             rcl_allocator_t allocator = NativeRcl.rcutils_get_default_allocator();
             rcl_wait_set_t waitSet = NativeRcl.rcl_get_zero_initialized_wait_set();
-            NativeRcl.rcl_wait_set_init(ref waitSet, 1, 0, 0, 0, 0, 0, ref context, allocator);
+            NativeRcl.rcl_wait_set_init(
+                ref waitSet,
+                (UIntPtr)1,
+                (UIntPtr)0,
+                (UIntPtr)0,
+                (UIntPtr)0,
+                (UIntPtr)0,
+                (UIntPtr)0,
+                ref context,
+                allocator
+            );
             TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_clear(ref waitSet));
             TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_fini(ref waitSet));
         }

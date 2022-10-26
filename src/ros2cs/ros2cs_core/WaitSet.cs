@@ -13,90 +13,181 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
 
 namespace ROS2
 {
-  /// <summary> Internal class wrapping rcl wait_set </summary>
-  /// <description> A simple implementation with a static class, allowing for a single waitset </description>
-  internal static class WaitSet
+  internal enum AddResult
   {
-    private static rcl_allocator_t allocator;
-    private static rcl_wait_set_t handle;
+    SUCCESS,
+    FULL,
+    DISPOSED
+  }
 
-    /// <summary> Static constructor which gets native defaults </summary>
-    static WaitSet()
+  internal class WaitSet
+  {
+    internal ulong SubscriptionCount {get { return Handle.size_of_subscriptions.ToUInt64(); }}
+
+    internal ulong ClientCount {get { return Handle.size_of_clients.ToUInt64(); }}
+
+    internal ulong ServiceCount {get { return Handle.size_of_services.ToUInt64(); }}
+
+    private rcl_wait_set_t Handle;
+
+    internal WaitSet(ref rcl_context_t context)
     {
-      allocator = NativeRcl.rcutils_get_default_allocator();
-      handle = NativeRcl.rcl_get_zero_initialized_wait_set();
+      Handle = NativeRcl.rcl_get_zero_initialized_wait_set();
+      Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_init(
+        ref Handle,
+        (UIntPtr)0,
+        (UIntPtr)0,
+        (UIntPtr)0,
+        (UIntPtr)0,
+        (UIntPtr)0,
+        (UIntPtr)0,
+        ref context,
+        NativeRcl.rcutils_get_default_allocator()));
     }
 
-    /// <summary> Prepare wait set based on a list of subscriptions and call rcl_wait  </summary>
-    /// <description> Handles initialization, clearing, populating and finalization in one go. WaitSet is
-    /// used in Spin methods of Ros2cs </description>
-    /// <param name="context"> Context for wait_set. Only subscriptions of nodes within context will be handled.
-    /// Current library implementation only uses a single global context </param>
-    /// <param name="subscriptions"> A list of subscriptions, can be from multiple nodes </param>
-    /// <param name="timeoutSec"> Timeout in seconds to limit rcl_wait in case no executables are ready </param>
-    internal static void Wait(rcl_context_t context, List<ISubscriptionBase> subscriptions, double timeoutSec)
+    ~WaitSet()
     {
-      ulong numberOfSubscriptions;
-      numberOfSubscriptions = (ulong)subscriptions.Count;
+      Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_fini(ref Handle));
+    }
 
-      if (numberOfSubscriptions == 0)
+    internal void Clear()
+    {
+      Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_clear(ref Handle));
+    }
+
+    internal void Resize(ulong subscriptionCount, ulong clientCount, ulong serviceCount)
+    {
+      Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_resize(
+      ref Handle,
+      (UIntPtr)subscriptionCount,
+      (UIntPtr)0,
+      (UIntPtr)0,
+      (UIntPtr)clientCount,
+      (UIntPtr)serviceCount,
+      (UIntPtr)0));
+    }
+
+    internal AddResult TryAddSubscription(ISubscriptionBase subscription, out ulong index)
+    {
+      UIntPtr native_index = default;
+      int ret;
+      lock (subscription.Mutex)
       {
-          return;
-      }
-
-      ulong numberOfGuardConditions = 0;
-      ulong numberOfTimers = 0;
-      ulong numberOfClients = 0;
-      ulong numberOfServices = 0;
-      ulong numberOfEvents = 0;
-
-      Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_init(
-        ref handle,
-        numberOfSubscriptions,
-        numberOfGuardConditions,
-        numberOfTimers,
-        numberOfClients,
-        numberOfServices,
-        numberOfEvents,
-        ref context,
-        allocator));
-
-      Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_clear(ref handle));
-
-      ulong subscribtionsInWaitset = 0;
-      foreach (ISubscriptionBase subscription in subscriptions)
-      {
-        // We only allocated for numberOfSubscriptions, so only add up to as many. Shouldn't happen.
-        if (subscribtionsInWaitset >= numberOfSubscriptions)
+        if (subscription.IsDisposed)
         {
-          // TODO - log warning
-          break;
+          index = default;
+          return AddResult.DISPOSED;
         }
 
-        object mutex = subscription.Mutex;
-        lock (mutex) {
-          if (subscription.IsDisposed)
-          {
-            continue;
-          }
+        rcl_subscription_t subscription_handle = subscription.Handle;
+        ret = NativeRcl.rcl_wait_set_add_subscription(
+          ref Handle,
+          ref subscription_handle,
+          ref native_index
+        );
+      }
 
-          rcl_subscription_t subscription_handle = subscription.Handle;
-          Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_add_subscription(ref handle, ref subscription_handle, UIntPtr.Zero));
+      if ((RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_WAIT_SET_FULL)
+      {
+        index = default;
+        return AddResult.FULL;
+      }
+      else
+      {
+        Utils.CheckReturnEnum(ret);
+        index = native_index.ToUInt64();
+        return AddResult.SUCCESS;
+      }
+    }
+
+    internal AddResult TryAddClient(IClientBase client, out ulong index)
+    {
+      UIntPtr native_index = default;
+      int ret;
+      lock (client.Mutex)
+      {
+        if (client.IsDisposed)
+        {
+          index = default;
+          return AddResult.DISPOSED;
         }
-        subscribtionsInWaitset++;
+
+        rcl_client_t client_handle = client.Handle;
+        ret = NativeRcl.rcl_wait_set_add_client(
+          ref Handle,
+          ref client_handle,
+          ref native_index
+        );
+      }
+      
+      if ((RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_WAIT_SET_FULL)
+      {
+        index = default;
+        return AddResult.FULL;
+      }
+      else
+      {
+        Utils.CheckReturnEnum(ret);
+        index = native_index.ToUInt64();
+        return AddResult.SUCCESS;
+      }
+    }
+
+    internal AddResult TryAddService(IServiceBase service, out ulong index)
+    {
+      UIntPtr native_index = default;
+      int ret;
+
+      lock (service.Mutex)
+      {
+        if (service.IsDisposed)
+        {
+          index = default;
+          return AddResult.DISPOSED;
+        }
+
+        rcl_service_t service_handle = service.Handle;
+        ret = NativeRcl.rcl_wait_set_add_service(
+          ref Handle,
+          ref service_handle,
+          ref native_index
+        );
       }
 
-      ulong timeoutInNanoseconds = (ulong)(timeoutSec * 1000 * 1000 * 1000);
-      int rcl_wait_ret = NativeRcl.rcl_wait(ref handle, timeoutInNanoseconds);
-      if (rcl_wait_ret != (int)RCLReturnEnum.RCL_RET_OK && rcl_wait_ret != (int)RCLReturnEnum.RCL_RET_TIMEOUT)
-      { // Timeout return is normal
-        Utils.CheckReturnEnum(rcl_wait_ret);
+
+      if ((RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_WAIT_SET_FULL)
+      {
+        index = default;
+        return AddResult.FULL;
       }
-      Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_fini(ref handle)); // wait_set is zero initialized again after this one
+      else
+      {
+        Utils.CheckReturnEnum(ret);
+        index = native_index.ToUInt64();
+        return AddResult.SUCCESS;
+      }
+    }
+
+    internal bool Wait()
+    {
+      return Wait(TimeSpan.FromTicks(-1));
+    }
+
+    internal bool Wait(TimeSpan timeout)
+    {
+      int ret = NativeRcl.rcl_wait(ref Handle, timeout.Ticks * 100);
+      if ((RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_TIMEOUT)
+      {
+        return false;
+      }
+      else
+      {
+        Utils.CheckReturnEnum(ret);
+        return true;
+      }
     }
   }
 }

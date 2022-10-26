@@ -25,6 +25,9 @@ namespace ROS2
   public class Client<T>: IClient<T> where T : Message, new ()
   {
     public string Topic { get { return topic; } }
+
+    public rcl_client_t Handle { get { return serviceHandle; } }
+
     private string topic;
 
     public long Sequence_number { get { return sequence_number; } }
@@ -32,6 +35,10 @@ namespace ROS2
 
     public bool IsWait_flag { get { return wait_flag; } }
     private bool wait_flag;
+
+    public object Mutex { get { return mutex; } }
+
+    private object mutex = new object();
 
     private Ros2csLogger logger = Ros2csLogger.GetInstance();
     rcl_client_t serviceHandle;

@@ -22,6 +22,10 @@ namespace ROS2
   public interface IClientBase: IExtendedDisposable
   {
     string Topic {get;}
+
+    rcl_client_t Handle {get;}
+
+    object Mutex { get; }
   }
 
   /// <summary> Generic base interface for all subscriptions </summary>
