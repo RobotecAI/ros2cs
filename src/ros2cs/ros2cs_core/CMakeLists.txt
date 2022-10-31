@@ -51,7 +51,6 @@ find_package(rcl REQUIRED)
 find_package(rcutils REQUIRED)
 find_package(rmw REQUIRED)
 find_package(rosidl_generator_c REQUIRED)
-find_package(example_interfaces REQUIRED)
 
 # Only build the library if a C typesupport exists
 get_rmw_typesupport(typesupport_impls "rmw_implementation" LANGUAGE "c")
@@ -126,7 +125,6 @@ set(_assembly_deps_dll "")
 foreach(_assembly_dep ${ros2cs_common_ASSEMBLIES_DLL})
   list(APPEND _assembly_deps_dll "${_assembly_dep}")
 endforeach()
-list(APPEND _assembly_deps_dll "${example_interfaces_ASSEMBLIES_DLL}")
 
 add_dotnet_library(${PROJECT_NAME}
 SOURCES

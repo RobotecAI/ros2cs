@@ -22,26 +22,26 @@ namespace Examples
   /// <summary> A simple service class to illustrate Ros2cs in action </summary>
   public class ROS2Service
   {
-    public static IService<example_interfaces.srv.AddTwoInts_Request> my_service;
+    public static IService<example_interfaces.srv.AddTwoInts_Request, example_interfaces.srv.AddTwoInts_Response> my_service;
 
     public static void Main(string[] args)
     {
       Console.WriteLine("Service start");
       Ros2cs.Init();
       INode node = Ros2cs.CreateNode("service");
-      my_service = node.CreateService<example_interfaces.srv.AddTwoInts_Request>(
-        "add_two_ints", msg => { recv_callback (msg);});
+      my_service = node.CreateService<example_interfaces.srv.AddTwoInts_Request, example_interfaces.srv.AddTwoInts_Response>(
+        "add_two_ints", recv_callback);
 
       Ros2cs.Spin(node);
       Ros2cs.Shutdown();
     }
 
-    public static void recv_callback ( example_interfaces.srv.AddTwoInts_Request msg )
+    public static example_interfaces.srv.AddTwoInts_Response recv_callback( example_interfaces.srv.AddTwoInts_Request msg )
     {
-      long sum = msg.A + msg.B;
       Console.WriteLine ("Incoming Service Request A=" + msg.A + " B=" + msg.B);
-      IntPtr psum = new IntPtr(sum);
-      my_service.SendResp(psum);
+      example_interfaces.srv.AddTwoInts_Response response = new example_interfaces.srv.AddTwoInts_Response();
+      response.Sum = msg.A + msg.B;
+      return response;
     }
   }
 }

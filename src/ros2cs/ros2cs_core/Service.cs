@@ -19,7 +19,9 @@ namespace ROS2
 {
   /// <summary> Service to a topic with a given type </summary>
   /// <description> Services are created through INode interface (CreateService) </description>
-  public class Service<T>: IService<T> where T : Message, new ()
+  public class Service<I, O>: IService<I, O>
+    where I : Message, new ()
+    where O : Message, new ()
   {
     public rcl_service_t Handle { get { return serviceHandle; } }
     private rcl_service_t serviceHandle;
@@ -31,7 +33,7 @@ namespace ROS2
     private bool disposed = false;
 
     private rcl_node_t nodeHandle;
-    private readonly Action<T> callback;
+    private readonly Func<I, O> callback;
     private IntPtr serviceOptions;
 
     public object Mutex { get { return mutex; } }
@@ -41,11 +43,13 @@ namespace ROS2
 
     /// <summary> Tries to send a response message to rcl/rmw layers. </summary>
     // TODO(adamdbrw) this should not be public - add an internal interface
-    public void SendResp(IntPtr valp)
+    private void SendResp(rcl_rmw_request_id_t header, O msg)
     {
       RCLReturnEnum ret;
+      MessageInternals msgInternals = msg as MessageInternals;
 
-      ret = (RCLReturnEnum)NativeRcl.rcl_send_response(ref serviceHandle, ref request_header,  ref valp);
+      msgInternals.WriteNativeMessage();
+      ret = (RCLReturnEnum)NativeRcl.rcl_send_response(ref serviceHandle, ref header, msgInternals.Handle);
     }
 
     /// <summary> Tries to get a request message from rcl/rmw layers. Calls the callback if successful </summary>
@@ -70,27 +74,28 @@ namespace ROS2
 
       if (gotMessage)
       {
-        TriggerCallback(message);
+        TriggerCallback(request_header, message);
       }
     }
 
     /// <summary> Construct a message of the subscription type </summary>
     private MessageInternals CreateMessage()
     {
-      return new T() as MessageInternals;
+      return new I() as MessageInternals;
     }
 
     /// <summary> Populates managed fields with native values and calls the callback with created message </summary>
     /// <param name="message"> Message that will be populated and returned through callback </param>
-    private void TriggerCallback(MessageInternals message)
+    private void TriggerCallback(rcl_rmw_request_id_t header, MessageInternals message)
     {
       message.ReadNativeMessage();
-      callback((T)message);
+      O response = callback((I)message);
+      SendResp(header, response);
     }
 
     /// <summary> Internal constructor for Service. Use INode.CreateService to construct </summary>
     /// <see cref="INode.CreateService"/>
-    internal Service(string subTopic, Node node, Action<T> cb, QualityOfServiceProfile qos = null)
+    internal Service(string subTopic, Node node, Func<I, O> cb, QualityOfServiceProfile qos = null)
     {
       callback = cb;
       nodeHandle = node.nodeHandle;
@@ -106,7 +111,7 @@ namespace ROS2
 
       serviceOptions = NativeRclInterface.rclcs_service_create_options(qualityOfServiceProfile.handle);
 
-      T msg = new T();
+      I msg = new I();
       MessageInternals msgInternals = msg as MessageInternals;
       IntPtr typeSupportHandle = msgInternals.TypeSupportHandle;
       msg.Dispose();

@@ -16,7 +16,6 @@ using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using ROS2.Internal;
-using example_interfaces;
 
 
 namespace ROS2

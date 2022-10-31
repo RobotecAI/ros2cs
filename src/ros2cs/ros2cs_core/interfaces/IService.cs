@@ -21,9 +21,6 @@ namespace ROS2
   public interface IServiceBase : IExtendedDisposable
   {
     // TODO(adamdbrw) this should not be public - add an internal interface
-    void SendResp(IntPtr valp);
-
-    // TODO(adamdbrw) this should not be public - add an internal interface
     void TakeMessage();
 
     /// <summary> topic name which was used when calling Ros2cs.CreateService </summary>
@@ -37,5 +34,9 @@ namespace ROS2
   }
 
   /// <summary> Generic base interface for all services </summary>
-  public interface IService<T>: IServiceBase where T: Message {}
+  public interface IService<I, O>: IServiceBase
+    where I: Message
+    where O: Message
+  {
+  }
 }

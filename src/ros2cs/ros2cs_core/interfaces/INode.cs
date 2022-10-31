@@ -45,7 +45,7 @@ namespace ROS2
     /// <param name="callback"> Action to be called when message is received (through Spin or SpinOnce). Provide a lambda or a method </param>
     /// <param name="qos"> Quality of Service settings. Not passing this parameter will result in default settings </param>
     /// <returns> Service for the topic </returns>
-    Service<T> CreateService<T>(string topic, Action<T> callback, QualityOfServiceProfile qos = null) where T : Message, new();
+    Service<I, O> CreateService<I, O>(string topic, Func<I, O> callback, QualityOfServiceProfile qos = null) where I : Message, new() where O : Message, new();
 
     /// <summary> Remove a service </summary>
     /// <remarks> Note that this does not call Dispose on Service </remarks>
