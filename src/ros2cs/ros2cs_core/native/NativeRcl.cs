@@ -180,7 +180,7 @@ namespace ROS2
         typeof(SendRequestType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int TakeResponceType(ref rcl_client_t client, ref rcl_rmw_request_id_t request_header, ref IntPtr responce_info);
+    internal delegate int TakeResponceType(ref rcl_client_t client, ref rcl_rmw_request_id_t request_header, IntPtr ros_response);
     internal static TakeResponceType
         rcl_take_response =
         (TakeResponceType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(

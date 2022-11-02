@@ -13,8 +13,10 @@
 // limitations under the License.
 
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 using ROS2.Internal;
 
 
@@ -22,7 +24,9 @@ namespace ROS2
 {
   /// <summary> Client of a topic with a given type </summary>
   /// <description> Services are created through INode.CreateClient </description>
-  public class Client<T>: IClient<T> where T : Message, new ()
+  public class Client<I, O>: IClient<I, O>
+    where I : Message, new()
+    where O : Message, new()
   {
     public string Topic { get { return topic; } }
 
@@ -30,21 +34,16 @@ namespace ROS2
 
     private string topic;
 
-    public long Sequence_number { get { return sequence_number; } }
-    private long sequence_number;
-
-    public bool IsWait_flag { get { return wait_flag; } }
-    private bool wait_flag;
-
     public object Mutex { get { return mutex; } }
 
     private object mutex = new object();
+
+    private Dictionary<long, Action<O>> Requests;
 
     private Ros2csLogger logger = Ros2csLogger.GetInstance();
     rcl_client_t serviceHandle;
     IntPtr serviceOptions = IntPtr.Zero;
     rcl_node_t nodeHandle;
-    private rcl_rmw_request_id_t request_header = new rcl_rmw_request_id_t();
 
     public bool IsDisposed { get { return disposed; } }
     private bool disposed = false;
@@ -62,9 +61,11 @@ namespace ROS2
       if (qualityOfServiceProfile == null)
         qualityOfServiceProfile = new QualityOfServiceProfile();
 
+      Requests = new Dictionary<long, Action<O>>();
+
       serviceOptions = NativeRclInterface.rclcs_client_create_options(qualityOfServiceProfile.handle);
 
-      IntPtr typeSupportHandle = MessageTypeSupportHelper.GetTypeSupportHandle<T>();
+      IntPtr typeSupportHandle = MessageTypeSupportHelper.GetTypeSupportHandle<I>();
 
       serviceHandle = NativeRcl.rcl_get_zero_initialized_client();
       Utils.CheckReturnEnum(NativeRcl.rcl_client_init(
@@ -98,53 +99,105 @@ namespace ROS2
     }
 
     /// <summary> Wait Service wakeup </summary>
-    /// <see cref="IService.WaitForService"/>
-    public void WaitForService(T msg)
+    public void WaitForService()
     {
-      while ( wait_flag == false)
+      bool wait_flag = false;
+      while (!wait_flag)
       {
-        NativeRcl.rcl_service_server_is_available(ref nodeHandle, ref serviceHandle, ref wait_flag);
+        int ret = NativeRcl.rcl_service_server_is_available(
+          ref nodeHandle,
+          ref serviceHandle,
+          ref wait_flag
+        );
+        Utils.CheckReturnEnum(ret);
         logger.LogInfo("Waiting for server startup");
         System.Threading.Thread.Sleep(1000);
       }
     }
 
-    /// <summary> Sending and receiving service messages </summary>
-    /// <see cref="IService.SendAndRecv"/>
-    public IntPtr SendAndRecv(T msg)
+    public void TakeMessage()
     {
-      int ret;
-      int err_count = 0;
-      IntPtr respp = new IntPtr(0);
-      if (!Ros2cs.Ok() || disposed)
+      MessageInternals msg = new O() as MessageInternals;
+
+      while (true)
       {
-        logger.LogWarning("Cannot service as the class is already disposed or shutdown was called");
-        return(respp);
-      }
-      MessageInternals msgInternals = msg as MessageInternals;
-      msgInternals.WriteNativeMessage();
-
-      /// send request
-      Utils.CheckReturnEnum(NativeRcl.rcl_send_request(ref serviceHandle, msgInternals.Handle, ref sequence_number));
-
-      /// receive responce
-      while(true) {
-        ret = NativeRcl.rcl_take_response(ref serviceHandle, ref request_header, ref respp);
-        if ( (RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_OK ) {
-          break;
-        } else if ( (RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_CLIENT_TAKE_FAILED ) {
-          if ( err_count > ST_RETRY_COUNT ) {
-            Utils.CheckReturnEnum(ret);
-            break;
-          }
-          ++err_count;
-          System.Threading.Thread.Sleep(1000);
-        } else {
-          Utils.CheckReturnEnum(ret);
+        rcl_rmw_request_id_t request_header = default;
+        int ret = NativeRcl.rcl_take_response(
+          ref serviceHandle,
+          ref request_header,
+          msg.Handle
+        );
+        if ((RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_CLIENT_TAKE_FAILED)
+        {
           break;
         }
+        else
+        {
+          Utils.CheckReturnEnum(ret);
+          HandleResponse(request_header.sequence_number, msg);
+          msg = new O() as MessageInternals;
+        }
       }
-      return(respp);
+    }
+
+    private void HandleResponse(long sequence_number, MessageInternals msg)
+    {
+      bool exists = default;
+      Action<O> action = default;
+      lock (Requests)
+      {
+        exists = Requests.Remove(sequence_number, out action);
+      }
+      Debug.Assert(exists, "received invalid sequence number");
+      msg.ReadNativeMessage();
+      action((O)msg);
+    }
+
+    private long SendRequest(I msg)
+    {
+      long sequence_number = default;
+      MessageInternals msgInternals = msg as MessageInternals;
+      msgInternals.WriteNativeMessage();
+      Utils.CheckReturnEnum(
+        NativeRcl.rcl_send_request(
+          ref serviceHandle,
+          msgInternals.Handle,
+          ref sequence_number
+        )
+      );
+      return sequence_number;
+    }
+
+    private void RegisterSource(TaskCompletionSource<O> source, long sequence_number)
+    {
+      lock (Requests)
+      {
+        Requests.Add(sequence_number, source.SetResult);
+      }
+    }
+
+    public Task<O> SendAndRecv(I msg)
+    {
+      if (!Ros2cs.Ok() || disposed)
+      {
+        throw new InvalidOperationException("Cannot service as the class is already disposed or shutdown was called");
+      }
+      long sequence_number = SendRequest(msg);
+      TaskCompletionSource<O> source = new TaskCompletionSource<O>();
+      RegisterSource(source, sequence_number);
+      return source.Task;
+    }
+
+    public Task<O> SendAndRecv(I msg, TaskCreationOptions options)
+    {
+      if (!Ros2cs.Ok() || disposed)
+      {
+        throw new InvalidOperationException("Cannot service as the class is already disposed or shutdown was called");
+      }
+      long sequence_number = SendRequest(msg);
+      TaskCompletionSource<O> source = new TaskCompletionSource<O>(options);
+      RegisterSource(source, sequence_number);
+      return source.Task;
     }
   }
 }

@@ -31,7 +31,7 @@ namespace ROS2
     /// <param name="topic"> Topic for the client. Naming restrictions of ros2 apply and violation results in an exception </param>
     /// <param name="qos"> Quality of Client settings. Not passing this parameter will result in default settings </param>
     /// <returns> Client for the topic, which can be used to client messages </returns>
-    Client<T> CreateClient<T>(string topic, QualityOfServiceProfile qos = null) where T : Message, new();
+    Client<I, O> CreateClient<I, O>(string topic, QualityOfServiceProfile qos = null) where I : Message, new() where O : Message, new();
 
     /// <summary> Remove a client </summary>
     /// <remarks> Note that this does not call Dispose on Client </remarks>

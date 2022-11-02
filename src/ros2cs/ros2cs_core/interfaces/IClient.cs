@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Threading.Tasks;
 
 namespace ROS2
 {
@@ -21,6 +22,9 @@ namespace ROS2
   /// This interface is useful for managing service collections and disposal </description>
   public interface IClientBase: IExtendedDisposable
   {
+    // TODO this should not be public - add an internal interface
+    void TakeMessage();
+
     string Topic {get;}
 
     rcl_client_t Handle {get;}
@@ -29,13 +33,16 @@ namespace ROS2
   }
 
   /// <summary> Generic base interface for all subscriptions </summary>
-  public interface IClient<T>: IClientBase
-      where T: Message
+  public interface IClient<I, O>: IClientBase
+      where I: Message
+      where O: Message
   {
-    void WaitForService(T msg);
+    void WaitForService();
     /// <summary> Service a message </summary>
     /// <description> Message memory is copied into native structures and the message
     /// can be safely changed or disposed after this call </description>
-    IntPtr SendAndRecv(T msg);
+    Task<O> SendAndRecv(I msg);
+
+    Task<O> SendAndRecv(I msg, TaskCreationOptions options);
   }
 }

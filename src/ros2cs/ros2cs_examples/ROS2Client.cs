@@ -14,7 +14,7 @@
 
 
 using System;
-using System.Threading;
+using System.Threading.Tasks;
 using ROS2;
 using std_msgs;
 using sensor_msgs;
@@ -30,18 +30,17 @@ namespace Examples
       Console.WriteLine("Client start");
       Ros2cs.Init();
       INode node = Ros2cs.CreateNode("talker");
-      Client<example_interfaces.srv.AddTwoInts_Request> my_client = node.CreateClient<example_interfaces.srv.AddTwoInts_Request>("add_two_ints");
+      Client<example_interfaces.srv.AddTwoInts_Request, example_interfaces.srv.AddTwoInts_Response> my_client = node.CreateClient<example_interfaces.srv.AddTwoInts_Request, example_interfaces.srv.AddTwoInts_Response>("add_two_ints");
 
       example_interfaces.srv.AddTwoInts_Request msg = new example_interfaces.srv.AddTwoInts_Request();
       msg.A = 7;
       msg.B = 2;
 
-      my_client.WaitForService(msg);
+      my_client.WaitForService();
 
-      IntPtr ptr;
-      ptr = my_client.SendAndRecv(msg);
-      int sum = (int)ptr;
-      Console.WriteLine("Sum = " + sum);
+      Task<example_interfaces.srv.AddTwoInts_Response> rsp = my_client.SendAndRecv(msg);
+      rsp.Wait();
+      Console.WriteLine("Sum = " + rsp.Result.Sum);
 
       Console.WriteLine("Client shutdown");
       Ros2cs.Shutdown();
