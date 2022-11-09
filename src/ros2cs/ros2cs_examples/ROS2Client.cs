@@ -14,7 +14,7 @@
 
 
 using System;
-using System.Threading.Tasks;
+using System.Threading;
 using ROS2;
 using std_msgs;
 using sensor_msgs;
@@ -36,7 +36,10 @@ namespace Examples
       msg.A = 7;
       msg.B = 2;
 
-      my_client.WaitForService();
+      while (!my_client.IsServiceAvailable())
+      {
+        Thread.Sleep(TimeSpan.FromSeconds(0.25));
+      }
 
       example_interfaces.srv.AddTwoInts_Response rsp = my_client.Call(msg);
       Console.WriteLine("Sum = " + rsp.Sum);

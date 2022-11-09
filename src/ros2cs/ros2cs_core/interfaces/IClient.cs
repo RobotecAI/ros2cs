@@ -37,7 +37,7 @@ namespace ROS2
       where I: Message
       where O: Message
   {
-    void WaitForService();
+    bool IsServiceAvailable();
     /// <summary> Service a message </summary>
     /// <description> Message memory is copied into native structures and the message
     /// can be safely changed or disposed after this call </description>

@@ -110,21 +110,15 @@ namespace ROS2
       }
     }
 
-    /// <summary> Wait Service wakeup </summary>
-    public void WaitForService()
+    public bool IsServiceAvailable()
     {
-      bool wait_flag = false;
-      while (!wait_flag)
-      {
-        int ret = NativeRcl.rcl_service_server_is_available(
-          ref nodeHandle,
-          ref serviceHandle,
-          ref wait_flag
-        );
-        Utils.CheckReturnEnum(ret);
-        logger.LogInfo("Waiting for server startup");
-        System.Threading.Thread.Sleep(1000);
-      }
+      bool available = false;
+      Utils.CheckReturnEnum(NativeRcl.rcl_service_server_is_available(
+        ref nodeHandle,
+        ref serviceHandle,
+        ref available
+      ));
+      return available;
     }
 
     public void TakeMessage()
