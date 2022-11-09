@@ -89,21 +89,24 @@ namespace ROS2
     /// <summary> "Destructor" supporting disposable model </summary>
     private void DestroyClient()
     {
-      if (!disposed)
+      lock (mutex)
       {
-        lock (Requests)
+        if (!disposed)
         {
-          foreach (var source in Requests.Values)
+          lock (Requests)
           {
-            bool success = source.TrySetException(new ObjectDisposedException("client has been disposed"));
-            Debug.Assert(success);
+            foreach (var source in Requests.Values)
+            {
+              bool success = source.TrySetException(new ObjectDisposedException("client has been disposed"));
+              Debug.Assert(success);
+            }
+            Requests.Clear();
           }
-          Requests.Clear();
+          Utils.CheckReturnEnum(NativeRcl.rcl_client_fini(ref serviceHandle, ref nodeHandle));
+          NativeRclInterface.rclcs_client_dispose_options(serviceOptions);
+          logger.LogInfo("Client destroyed");
+          disposed = true;
         }
-        Utils.CheckReturnEnum(NativeRcl.rcl_client_fini(ref serviceHandle, ref nodeHandle));
-        NativeRclInterface.rclcs_client_dispose_options(serviceOptions);
-        logger.LogInfo("Client destroyed");
-        disposed = true;
       }
     }
 
@@ -127,25 +130,24 @@ namespace ROS2
     public void TakeMessage()
     {
       MessageInternals msg = new O() as MessageInternals;
-
-      while (true)
+      rcl_rmw_request_id_t request_header = default;
+      int ret;
+      lock (mutex)
       {
-        rcl_rmw_request_id_t request_header = default;
-        int ret = NativeRcl.rcl_take_response(
+        if (disposed || !Ros2cs.Ok())
+        {
+          return;
+        }
+        ret = NativeRcl.rcl_take_response(
           ref serviceHandle,
           ref request_header,
           msg.Handle
         );
-        if ((RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_CLIENT_TAKE_FAILED)
-        {
-          break;
-        }
-        else
-        {
-          Utils.CheckReturnEnum(ret);
-          HandleResponse(request_header.sequence_number, msg);
-          msg = new O() as MessageInternals;
-        }
+      }
+      if ((RCLReturnEnum)ret != RCLReturnEnum.RCL_RET_CLIENT_TAKE_FAILED)
+      {
+        Utils.CheckReturnEnum(ret);
+        HandleResponse(request_header.sequence_number, msg);
       }
     }
 
