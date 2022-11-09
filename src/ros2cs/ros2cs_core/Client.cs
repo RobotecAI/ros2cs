@@ -191,7 +191,14 @@ namespace ROS2
       }
     }
 
-    public Task<O> SendAndRecv(I msg)
+    public O Call(I msg)
+    {
+      var task = CallAsync(msg);
+      task.Wait();
+      return task.Result;
+    }
+
+    public Task<O> CallAsync(I msg)
     {
       if (!Ros2cs.Ok() || disposed)
       {
@@ -203,7 +210,7 @@ namespace ROS2
       return source.Task;
     }
 
-    public Task<O> SendAndRecv(I msg, TaskCreationOptions options)
+    public Task<O> CallAsync(I msg, TaskCreationOptions options)
     {
       if (!Ros2cs.Ok() || disposed)
       {

@@ -38,9 +38,8 @@ namespace Examples
 
       my_client.WaitForService();
 
-      Task<example_interfaces.srv.AddTwoInts_Response> rsp = my_client.SendAndRecv(msg);
-      rsp.Wait();
-      Console.WriteLine("Sum = " + rsp.Result.Sum);
+      example_interfaces.srv.AddTwoInts_Response rsp = my_client.Call(msg);
+      Console.WriteLine("Sum = " + rsp.Sum);
 
       Console.WriteLine("Client shutdown");
       Ros2cs.Shutdown();

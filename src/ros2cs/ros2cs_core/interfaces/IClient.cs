@@ -41,8 +41,10 @@ namespace ROS2
     /// <summary> Service a message </summary>
     /// <description> Message memory is copied into native structures and the message
     /// can be safely changed or disposed after this call </description>
-    Task<O> SendAndRecv(I msg);
+    O Call(I msg);
 
-    Task<O> SendAndRecv(I msg, TaskCreationOptions options);
+    Task<O> CallAsync(I msg);
+
+    Task<O> CallAsync(I msg, TaskCreationOptions options);
   }
 }
