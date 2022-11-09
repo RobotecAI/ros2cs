@@ -13,10 +13,13 @@
   <buildtool_export_depend>ament_cmake</buildtool_export_depend>
 
   <build_depend>ros2cs_core</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>example_interfaces</build_depend>
 
   <test_depend>ros2cs_core</test_depend>
   <test_depend>std_msgs</test_depend>
   <test_depend>test_msgs</test_depend>
+  <test_depend>example_interfaces</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
