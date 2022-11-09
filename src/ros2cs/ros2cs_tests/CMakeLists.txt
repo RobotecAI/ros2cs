@@ -47,6 +47,7 @@ if(BUILD_TESTING)
     src/NodeTest.cs
     src/NativeMetodsTest.cs
     src/ClientTest.cs
+    src/ServiceTest.cs
     src/SubscriptionTest.cs
     src/TestUtils.cs
   )
