@@ -93,6 +93,20 @@ namespace ROS2.Test
         }
 
         [Test]
+        public void ClientWaitForService()
+        {
+            Assert.That(!Client.IsServiceAvailable());
+            {
+                using var service = Node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
+                    SERVICE_NAME,
+                    HandleRequest
+                );
+                Assert.That(Client.IsServiceAvailable());
+            }
+            Assert.That(!Client.IsServiceAvailable());
+        }
+
+        [Test]
         public void DisposedClientHandling()
         {
             Assert.That(!Client.IsDisposed);
