@@ -38,7 +38,7 @@ namespace ROS2
 
     private object mutex = new object();
 
-    private Dictionary<long, Action<O>> Requests;
+    private Dictionary<long, TaskCompletionSource<O>> Requests;
 
     private Ros2csLogger logger = Ros2csLogger.GetInstance();
     rcl_client_t serviceHandle;
@@ -61,7 +61,7 @@ namespace ROS2
       if (qualityOfServiceProfile == null)
         qualityOfServiceProfile = new QualityOfServiceProfile();
 
-      Requests = new Dictionary<long, Action<O>>();
+      Requests = new Dictionary<long, TaskCompletionSource<O>>();
 
       serviceOptions = NativeRclInterface.rclcs_client_create_options(qualityOfServiceProfile.handle);
 
@@ -91,6 +91,15 @@ namespace ROS2
     {
       if (!disposed)
       {
+        lock (Requests)
+        {
+          foreach (var source in Requests.Values)
+          {
+            bool success = source.TrySetException(new ObjectDisposedException("client has been disposed"));
+            Debug.Assert(success);
+          }
+          Requests.Clear();
+        }
         Utils.CheckReturnEnum(NativeRcl.rcl_client_fini(ref serviceHandle, ref nodeHandle));
         NativeRclInterface.rclcs_client_dispose_options(serviceOptions);
         logger.LogInfo("Client destroyed");
@@ -143,14 +152,20 @@ namespace ROS2
     private void HandleResponse(long sequence_number, MessageInternals msg)
     {
       bool exists = default;
-      Action<O> action = default;
+      TaskCompletionSource<O> source = default;
       lock (Requests)
       {
-        exists = Requests.Remove(sequence_number, out action);
+        exists = Requests.Remove(sequence_number, out source);
       }
-      Debug.Assert(exists, "received invalid sequence number");
-      msg.ReadNativeMessage();
-      action((O)msg);
+      if (exists)
+      {
+        msg.ReadNativeMessage();
+        source.SetResult((O)msg);
+      }
+      else
+      {
+        Debug.Print("received unknown sequence number or got disposed");
+      }
     }
 
     private long SendRequest(I msg)
@@ -172,7 +187,7 @@ namespace ROS2
     {
       lock (Requests)
       {
-        Requests.Add(sequence_number, source.SetResult);
+        Requests.Add(sequence_number, source);
       }
     }
 
