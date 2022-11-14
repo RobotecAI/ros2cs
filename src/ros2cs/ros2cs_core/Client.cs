@@ -59,7 +59,7 @@ namespace ROS2
 
       QualityOfServiceProfile qualityOfServiceProfile = qos;
       if (qualityOfServiceProfile == null)
-        qualityOfServiceProfile = new QualityOfServiceProfile();
+        qualityOfServiceProfile = new QualityOfServiceProfile(QosPresetProfile.SERVICES_DEFAULT);
 
       Requests = new Dictionary<long, TaskCompletionSource<O>>();
 

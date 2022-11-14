@@ -104,7 +104,7 @@ namespace ROS2
       QualityOfServiceProfile qualityOfServiceProfile = qos;
       if (qualityOfServiceProfile == null)
       {
-        qualityOfServiceProfile = new QualityOfServiceProfile();
+        qualityOfServiceProfile = new QualityOfServiceProfile(QosPresetProfile.SERVICES_DEFAULT);
       }
 
       serviceOptions = NativeRclInterface.rclcs_service_create_options(qualityOfServiceProfile.handle);
