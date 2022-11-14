@@ -15,43 +15,53 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Runtime.InteropServices;
 using System.Diagnostics;
 using ROS2.Internal;
 
 
 namespace ROS2
 {
-  /// <summary> Client of a topic with a given type </summary>
-  /// <description> Services are created through INode.CreateClient </description>
+  /// <summary>Client with a topic and Types for Messages</summary>
+  /// <remarks>Instances are created by <see cref="INode.CreateClient"/></remarks>
+  /// <typeparam name="I">Message Type to be send</typeparam>
+  /// <typeparam name="O">Message Type to be received</typeparam>
   public class Client<I, O>: IClient<I, O>
     where I : Message, new()
     where O : Message, new()
   {
+    /// <inheritdoc/>
     public string Topic { get { return topic; } }
 
     public rcl_client_t Handle { get { return serviceHandle; } }
 
     private string topic;
 
+    /// <inheritdoc/>
     public object Mutex { get { return mutex; } }
 
     private object mutex = new object();
 
+    /// <summary>
+    /// Mapping from request id without Response to <see cref="Task"/>
+    /// </summary>
     private Dictionary<long, TaskCompletionSource<O>> Requests;
 
     private Ros2csLogger logger = Ros2csLogger.GetInstance();
+
     rcl_client_t serviceHandle;
+
     IntPtr serviceOptions = IntPtr.Zero;
+
     rcl_node_t nodeHandle;
 
+    /// <inheritdoc/>
     public bool IsDisposed { get { return disposed; } }
     private bool disposed = false;
 
-    public static readonly int ST_RETRY_COUNT = 10;
-
-    /// <summary> Internal constructor for Service. Use INode.CreateClient to construct </summary>
-    /// <see cref="INode.CreateClient"/>
+    /// <summary>
+    /// Internal constructor for Client
+    /// </summary>
+    /// <remarks>Use <see cref="INode.CreateClient"/> to construct new Instances</remarks>
     public Client(string pubTopic, Node node, QualityOfServiceProfile qos = null)
     {
       topic = pubTopic;
@@ -110,6 +120,7 @@ namespace ROS2
       }
     }
 
+    /// <inheritdoc/>
     public bool IsServiceAvailable()
     {
       bool available = false;
@@ -121,6 +132,7 @@ namespace ROS2
       return available;
     }
 
+    /// <inheritdoc/>
     public void TakeMessage()
     {
       MessageInternals msg = new O() as MessageInternals;
@@ -141,11 +153,16 @@ namespace ROS2
       if ((RCLReturnEnum)ret != RCLReturnEnum.RCL_RET_CLIENT_TAKE_FAILED)
       {
         Utils.CheckReturnEnum(ret);
-        HandleResponse(request_header.sequence_number, msg);
+        ProcessResponse(request_header.sequence_number, msg);
       }
     }
 
-    private void HandleResponse(long sequence_number, MessageInternals msg)
+    /// <summary>
+    /// Populates managed fields with native values and finishes the corresponding <see cref="Task"/> 
+    /// </summary>
+    /// <param name="message">Message that will be populated and used as the task result</param>
+    /// <param name="header">sequence number received when sending the Request</param>
+    private void ProcessResponse(long sequence_number, MessageInternals msg)
     {
       bool exists = default;
       TaskCompletionSource<O> source = default;
@@ -164,6 +181,11 @@ namespace ROS2
       }
     }
 
+    /// <summary>
+    /// Send a Request to the Service
+    /// </summary>
+    /// <param name="msg">Message to be send</param>
+    /// <returns>sequence number of the Request</returns>
     private long SendRequest(I msg)
     {
       long sequence_number = default;
@@ -179,6 +201,11 @@ namespace ROS2
       return sequence_number;
     }
 
+    /// <summary>
+    /// Associate a task with a sequence number
+    /// </summary>
+    /// <param name="source">source used to controll the <see cref="Task"/></param>
+    /// <param name="sequence_number">sequence number received when sending the Request</param>
     private void RegisterSource(TaskCompletionSource<O> source, long sequence_number)
     {
       lock (Requests)
@@ -187,6 +214,7 @@ namespace ROS2
       }
     }
 
+    /// <inheritdoc/>
     public O Call(I msg)
     {
       var task = CallAsync(msg);
@@ -194,18 +222,13 @@ namespace ROS2
       return task.Result;
     }
 
+    /// <inheritdoc/>
     public Task<O> CallAsync(I msg)
     {
-      if (!Ros2cs.Ok() || disposed)
-      {
-        throw new InvalidOperationException("Cannot service as the class is already disposed or shutdown was called");
-      }
-      long sequence_number = SendRequest(msg);
-      TaskCompletionSource<O> source = new TaskCompletionSource<O>();
-      RegisterSource(source, sequence_number);
-      return source.Task;
+      return CallAsync(msg, TaskCreationOptions.None);
     }
 
+    /// <inheritdoc/>
     public Task<O> CallAsync(I msg, TaskCreationOptions options)
     {
       if (!Ros2cs.Ok() || disposed)

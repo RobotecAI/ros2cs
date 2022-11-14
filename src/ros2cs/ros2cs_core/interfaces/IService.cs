@@ -17,13 +17,19 @@ using System;
 namespace ROS2
 {
   /// <summary> Non-generic base interface for all subscriptions </summary>
-  /// <description> Use Ros2cs.CreateSubscription to construct </description>
+  /// <seealso cref="INode.CreateService"/>
   public interface IServiceBase : IExtendedDisposable
   {
+    /// <summary>
+    /// Tries to get a request message from rcl/rmw layers
+    /// </summary>
+    /// <remarks>Invokes the callback if successful</remarks>
     // TODO(adamdbrw) this should not be public - add an internal interface
     void TakeMessage();
 
-    /// <summary> topic name which was used when calling Ros2cs.CreateService </summary>
+    /// <summary>
+    /// topic name which was used when calling <see cref="INode.CreateService"/>
+    /// </summary>
     string Topic {get;}
 
     // TODO(adamdbrw) this should not be public - add an internal interface
@@ -34,6 +40,9 @@ namespace ROS2
   }
 
   /// <summary> Generic base interface for all services </summary>
+  /// <typeparam name="I">Message Type to be received</typeparam>
+  /// <typeparam name="O">Message Type to be send</typeparam>
+  /// <seealso cref="INode.CreateService"/>
   public interface IService<I, O>: IServiceBase
     where I: Message
     where O: Message

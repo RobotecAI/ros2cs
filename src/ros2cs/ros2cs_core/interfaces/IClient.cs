@@ -18,33 +18,60 @@ using System.Threading.Tasks;
 namespace ROS2
 {
   /// <summary> Non-generic base interface for all subscriptions </summary>
-  /// <description> Use Ros2cs.CreateClient to construct.
-  /// This interface is useful for managing service collections and disposal </description>
+  /// <seealso cref="INode.CreateClient"/>
   public interface IClientBase: IExtendedDisposable
   {
+    /// <summary>
+    /// Tries to get a Response message from rcl/rmw layers
+    /// </summary>
+    /// <remarks>
+    /// Marks the corresponding <see cref="Task"/> as finished if successful
+    /// </remarks>
     // TODO this should not be public - add an internal interface
     void TakeMessage();
 
+    /// <summary>
+    /// topic name which was used when calling <see cref="INode.CreateClient"/>
+    /// </summary>
     string Topic {get;}
 
     rcl_client_t Handle {get;}
 
+    /// <summary> service mutex for internal use </summary>
     object Mutex { get; }
   }
 
   /// <summary> Generic base interface for all subscriptions </summary>
+  /// <typeparam name="I">Message Type to be send</typeparam>
+  /// <typeparam name="O">Message Type to be received</typeparam>
+  /// <seealso cref="INode.CreateClient"/>
   public interface IClient<I, O>: IClientBase
       where I: Message
       where O: Message
   {
+    /// <summary>
+    /// Check if the service to be called is available
+    /// </summary>
+    /// <returns><see cref="true"/> if the service is avilable</returns>
     bool IsServiceAvailable();
-    /// <summary> Service a message </summary>
-    /// <description> Message memory is copied into native structures and the message
-    /// can be safely changed or disposed after this call </description>
+
+    /// <summary>
+    /// Send a Request to a Service and wait for a Response
+    /// </summary>
+    /// <remarks>The provided message can be modified or disposed after this call</remarks>
+    /// <param name="msg">Message to be send</param>
+    /// <returns>Response of the Service</returns>
     O Call(I msg);
 
+    /// <summary>
+    /// Send a Request to a Service and wait for a Response asynchronously
+    /// </summary>
+    /// <param name="msg">Message to be send</param>
+    /// <returns><see cref="Task"/> representing the Response of the Service</returns>
     Task<O> CallAsync(I msg);
 
+    /// <inheritdoc cref="CallAsync(I)"/>
+    /// <param name="options">Options used when creating the <see cref="Task"/></param>
     Task<O> CallAsync(I msg, TaskCreationOptions options);
   }
 }
