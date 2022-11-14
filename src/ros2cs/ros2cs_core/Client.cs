@@ -231,13 +231,18 @@ namespace ROS2
     /// <inheritdoc/>
     public Task<O> CallAsync(I msg, TaskCreationOptions options)
     {
-      if (!Ros2cs.Ok() || disposed)
+      TaskCompletionSource<O> source;
+      lock (mutex)
       {
-        throw new InvalidOperationException("Cannot service as the class is already disposed or shutdown was called");
+          if (!Ros2cs.Ok() || disposed)
+          {
+            throw new InvalidOperationException("Cannot service as the class is already disposed or shutdown was called");
+          }
+          // prevent TakeMessage from receiving Responses before we called RegisterSource
+          long sequence_number = SendRequest(msg);
+          source = new TaskCompletionSource<O>(options);
+          RegisterSource(source, sequence_number);
       }
-      long sequence_number = SendRequest(msg);
-      TaskCompletionSource<O> source = new TaskCompletionSource<O>(options);
-      RegisterSource(source, sequence_number);
       return source.Task;
     }
   }
