@@ -39,8 +39,6 @@ namespace ROS2
     public object Mutex { get { return mutex; } }
     private object mutex = new object();
 
-    private rcl_rmw_request_id_t request_header;
-
     /// <summary> Tries to send a response message to rcl/rmw layers. </summary>
     // TODO(adamdbrw) this should not be public - add an internal interface
     private void SendResp(rcl_rmw_request_id_t header, O msg)
@@ -57,6 +55,7 @@ namespace ROS2
     public void TakeMessage()
     {
       RCLReturnEnum ret;
+      rcl_rmw_request_id_t header = default;
       MessageInternals message;
 
       lock (mutex)
@@ -67,14 +66,14 @@ namespace ROS2
         }
         message = CreateMessage();
 
-	ret = (RCLReturnEnum)NativeRcl.rcl_take_request(ref serviceHandle, ref request_header,  message.Handle);
+        ret = (RCLReturnEnum)NativeRcl.rcl_take_request(ref serviceHandle, ref header,  message.Handle);
       }
 
       bool gotMessage = ret == RCLReturnEnum.RCL_RET_OK;
 
       if (gotMessage)
       {
-        TriggerCallback(request_header, message);
+        TriggerCallback(header, message);
       }
     }
 
@@ -101,7 +100,6 @@ namespace ROS2
       nodeHandle = node.nodeHandle;
       topic = subTopic;
       serviceHandle = NativeRcl.rcl_get_zero_initialized_service();
-      request_header = new rcl_rmw_request_id_t();
 
       QualityOfServiceProfile qualityOfServiceProfile = qos;
       if (qualityOfServiceProfile == null)
