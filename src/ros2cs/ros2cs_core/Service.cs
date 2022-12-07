@@ -101,7 +101,7 @@ namespace ROS2
     public void TakeMessage()
     {
       RCLReturnEnum ret;
-      rcl_rmw_request_id_t header = default;
+      rcl_rmw_request_id_t header = default(rcl_rmw_request_id_t);
       MessageInternals message;
 
       lock (mutex)

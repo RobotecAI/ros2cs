@@ -72,13 +72,13 @@ namespace ROS2
 
     internal AddResult TryAddSubscription(ISubscriptionBase subscription, out ulong index)
     {
-      UIntPtr native_index = default;
+      UIntPtr native_index = default(UIntPtr);
       int ret;
       lock (subscription.Mutex)
       {
         if (subscription.IsDisposed)
         {
-          index = default;
+          index = default(ulong);
           return AddResult.DISPOSED;
         }
 
@@ -92,7 +92,7 @@ namespace ROS2
 
       if ((RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_WAIT_SET_FULL)
       {
-        index = default;
+        index = default(ulong);
         return AddResult.FULL;
       }
       else
@@ -105,13 +105,13 @@ namespace ROS2
 
     internal AddResult TryAddClient(IClientBase client, out ulong index)
     {
-      UIntPtr native_index = default;
+      UIntPtr native_index = default(UIntPtr);
       int ret;
       lock (client.Mutex)
       {
         if (client.IsDisposed)
         {
-          index = default;
+          index = default(ulong);
           return AddResult.DISPOSED;
         }
 
@@ -125,7 +125,7 @@ namespace ROS2
       
       if ((RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_WAIT_SET_FULL)
       {
-        index = default;
+        index = default(ulong);
         return AddResult.FULL;
       }
       else
@@ -138,14 +138,14 @@ namespace ROS2
 
     internal AddResult TryAddService(IServiceBase service, out ulong index)
     {
-      UIntPtr native_index = default;
+      UIntPtr native_index = default(UIntPtr);
       int ret;
 
       lock (service.Mutex)
       {
         if (service.IsDisposed)
         {
-          index = default;
+          index = default(ulong);
           return AddResult.DISPOSED;
         }
 
@@ -160,7 +160,7 @@ namespace ROS2
 
       if ((RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_WAIT_SET_FULL)
       {
-        index = default;
+        index = default(ulong);
         return AddResult.FULL;
       }
       else

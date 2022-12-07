@@ -136,7 +136,7 @@ namespace ROS2
     public void TakeMessage()
     {
       MessageInternals msg = new O() as MessageInternals;
-      rcl_rmw_request_id_t request_header = default;
+      rcl_rmw_request_id_t request_header = default(rcl_rmw_request_id_t);
       int ret;
       lock (mutex)
       {
@@ -164,8 +164,8 @@ namespace ROS2
     /// <param name="header">sequence number received when sending the Request</param>
     private void ProcessResponse(long sequence_number, MessageInternals msg)
     {
-      bool exists = default;
-      TaskCompletionSource<O> source = default;
+      bool exists = default(bool);
+      TaskCompletionSource<O> source = default(TaskCompletionSource<O>);
       lock (Requests)
       {
         exists = Requests.Remove(sequence_number, out source);
@@ -188,7 +188,7 @@ namespace ROS2
     /// <returns>sequence number of the Request</returns>
     private long SendRequest(I msg)
     {
-      long sequence_number = default;
+      long sequence_number = default(long);
       MessageInternals msgInternals = msg as MessageInternals;
       msgInternals.WriteNativeMessage();
       Utils.CheckReturnEnum(
