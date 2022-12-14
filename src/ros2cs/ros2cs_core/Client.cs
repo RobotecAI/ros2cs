@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System;
+using System.Linq;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Diagnostics;
@@ -34,6 +36,12 @@ namespace ROS2
 
     public rcl_client_t Handle { get { return serviceHandle; } }
 
+    /// <inheritdoc/>
+    public IReadOnlyDictionary<long, Task<O>> PendingRequests {get; private set;}
+
+    /// <inheritdoc/>
+    IReadOnlyDictionary<long, Task> IClientBase.PendingRequests {get { return (IReadOnlyDictionary<long, Task>)this.PendingRequests; }}
+
     private string topic;
 
     /// <inheritdoc/>
@@ -42,9 +50,13 @@ namespace ROS2
     private object mutex = new object();
 
     /// <summary>
-    /// Mapping from request id without Response to <see cref="Task"/>
+    /// Mapping from request id without Response to <see cref="TaskCompletionSource"/>.
     /// </summary>
-    private Dictionary<long, TaskCompletionSource<O>> Requests;
+    /// <remarks>
+    /// The <see cref="TaskCompletionSource.Task"/> is stored separately to allow
+    /// <see cref="Cancel"/> to work even if the source returns multiple tasks.
+    /// </remarks>
+    private Dictionary<long, (TaskCompletionSource<O>, Task<O>)> Requests;
 
     private Ros2csLogger logger = Ros2csLogger.GetInstance();
 
@@ -71,7 +83,8 @@ namespace ROS2
       if (qualityOfServiceProfile == null)
         qualityOfServiceProfile = new QualityOfServiceProfile(QosPresetProfile.SERVICES_DEFAULT);
 
-      Requests = new Dictionary<long, TaskCompletionSource<O>>();
+      Requests = new Dictionary<long, (TaskCompletionSource<O>, Task<O>)>();
+      PendingRequests = new PendingTasksView(Requests);
 
       serviceOptions = NativeRclInterface.rclcs_client_create_options(qualityOfServiceProfile.handle);
 
@@ -107,7 +120,7 @@ namespace ROS2
           {
             foreach (var source in Requests.Values)
             {
-              bool success = source.TrySetException(new ObjectDisposedException("client has been disposed"));
+              bool success = source.Item1.TrySetException(new ObjectDisposedException("client has been disposed"));
               Debug.Assert(success);
             }
             Requests.Clear();
@@ -165,7 +178,7 @@ namespace ROS2
     private void ProcessResponse(long sequence_number, MessageInternals msg)
     {
       bool exists = default(bool);
-      TaskCompletionSource<O> source = default(TaskCompletionSource<O>);
+      (TaskCompletionSource<O>, Task<O>) source = default((TaskCompletionSource<O>, Task<O>));
       lock (Requests)
       {
         exists = Requests.Remove(sequence_number, out source);
@@ -173,7 +186,7 @@ namespace ROS2
       if (exists)
       {
         msg.ReadNativeMessage();
-        source.SetResult((O)msg);
+        source.Item1.SetResult((O)msg);
       }
       else
       {
@@ -206,12 +219,15 @@ namespace ROS2
     /// </summary>
     /// <param name="source">source used to controll the <see cref="Task"/></param>
     /// <param name="sequence_number">sequence number received when sending the Request</param>
-    private void RegisterSource(TaskCompletionSource<O> source, long sequence_number)
+    /// <returns>The associated task.</returns>
+    private Task<O> RegisterSource(TaskCompletionSource<O> source, long sequence_number)
     {
+      Task<O> task = source.Task;
       lock (Requests)
       {
-        Requests.Add(sequence_number, source);
+        Requests.Add(sequence_number, (source, task));
       }
+      return task;
     }
 
     /// <inheritdoc/>
@@ -241,9 +257,113 @@ namespace ROS2
           // prevent TakeMessage from receiving Responses before we called RegisterSource
           long sequence_number = SendRequest(msg);
           source = new TaskCompletionSource<O>(options);
-          RegisterSource(source, sequence_number);
+          return RegisterSource(source, sequence_number);
       }
-      return source.Task;
+    }
+
+    /// <inheritdoc/>
+    public bool Cancel(Task task)
+    {
+      var pair = default(KeyValuePair<long, (TaskCompletionSource<O>, Task<O>)>);
+      try
+      {
+        lock(this.Requests)
+        {
+          pair = this.Requests.First(entry => entry.Value.Item2 == task);
+          // has to be true
+          this.Requests.Remove(pair.Key);
+        }
+      }
+      catch (InvalidOperationException)
+      {
+        return false;
+      }
+      pair.Value.Item1.SetCanceled();
+      return true;
+    }
+
+    /// <summary>
+    /// Wrapper to avoid exposing <see cref="TaskCompletionSource"/> to users.
+    /// </summary>
+    private class PendingTasksView : IReadOnlyDictionary<long, Task<O>>, IReadOnlyDictionary<long, Task>
+    {
+      public Task<O> this[long key]
+      {
+        get { return this.Requests[key].Item2; }
+      }
+
+      Task IReadOnlyDictionary<long, Task>.this[long key]
+      {
+        get { return this[key]; }
+      }
+
+      public IEnumerable<long> Keys
+      {
+        get { return this.Requests.Keys; }
+      }
+
+      public IEnumerable<Task<O>> Values
+      {
+        get { return this.Requests.Values.Select(value => value.Item2); }
+      }
+
+      IEnumerable<Task> IReadOnlyDictionary<long, Task>.Values
+      {
+        get { return this.Values; }
+      }
+
+      public int Count
+      {
+        get { return this.Requests.Count; }
+      }
+
+      private readonly IReadOnlyDictionary<long, (TaskCompletionSource<O>, Task<O>)> Requests;
+
+      public PendingTasksView(IReadOnlyDictionary<long, (TaskCompletionSource<O>, Task<O>)> requests)
+      {
+        this.Requests = requests;
+      }
+
+      public bool ContainsKey(long key)
+      {
+        return this.Requests.ContainsKey(key);
+      }
+
+      public bool TryGetValue(long key, out Task<O> value)
+      {
+        if (this.Requests.TryGetValue(key, out var source))
+        {
+          value = source.Item2;
+          return true;
+        }
+        else
+        {
+          value = default(Task<O>);
+          return false;
+        }
+      }
+
+      bool IReadOnlyDictionary<long, Task>.TryGetValue(long key, out Task value)
+      {
+        bool success = this.TryGetValue(key, out var task);
+        value = task;
+        return success;
+      }
+
+      public IEnumerator<KeyValuePair<long, Task<O>>> GetEnumerator()
+      {
+        return this.Requests.Select(pair => new KeyValuePair<long, Task<O>>(pair.Key, pair.Value.Item2)).GetEnumerator();
+      }
+
+      IEnumerator IEnumerable.GetEnumerator()
+      {
+        return this.GetEnumerator();
+      }
+
+      IEnumerator<KeyValuePair<long, Task>> IEnumerable<KeyValuePair<long, Task>>.GetEnumerator()
+      {
+        return this.Requests.Select(pair => new KeyValuePair<long, Task>(pair.Key, pair.Value.Item2)).GetEnumerator();
+      }
     }
   }
 }

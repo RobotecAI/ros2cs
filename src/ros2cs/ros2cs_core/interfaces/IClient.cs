@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace ROS2
@@ -35,6 +35,21 @@ namespace ROS2
     /// </summary>
     string Topic {get;}
 
+    /// <summary>
+    /// Requests which are pending for this client.
+    /// </summary>
+    IReadOnlyDictionary<long, Task> PendingRequests {get;}
+
+    /// <summary>
+    /// Remove a pending <see cref="Task"/> and cancel it.
+    /// </summary>
+    /// <remarks>
+    /// Tasks are automatically removed on completion and have to be removed only when canceled.
+    /// </remarks>
+    /// <param name="task">Task to be removed.</param>
+    /// <returns>Whether the Task was removed successfully.</returns>
+    bool Cancel(Task task);
+
     rcl_client_t Handle {get;}
 
     /// <summary> service mutex for internal use </summary>
@@ -49,6 +64,11 @@ namespace ROS2
       where I: Message
       where O: Message
   {
+    /// <summary>
+    /// Requests which are pending for this client.
+    /// </summary>
+    new IReadOnlyDictionary<long, Task<O>> PendingRequests {get;}
+
     /// <summary>
     /// Check if the service to be called is available
     /// </summary>

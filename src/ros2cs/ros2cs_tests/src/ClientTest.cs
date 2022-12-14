@@ -14,6 +14,7 @@
 
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using example_interfaces.srv;
@@ -139,6 +140,67 @@ namespace ROS2.Test
             Client.Dispose();
             Client = Node.CreateClient<AddTwoInts_Request, AddTwoInts_Response>(SERVICE_NAME);
             Assert.DoesNotThrow(() => { Ros2cs.SpinOnce(Node, 0.1); });
+        }
+
+        [Test]
+        public void ClientPendingRequests()
+        {
+            using var service = Node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
+                SERVICE_NAME,
+                HandleRequest
+            );
+            Task[] tasks = Enumerable
+                .Repeat(this.CreateRequest(3, 4), 3)
+                .Select(request => this.Client.CallAsync(request))
+                .ToArray();
+
+            Assert.That(this.Client.PendingRequests.Count, Is.EqualTo(3));
+
+            while (!tasks.Any(task => task.IsCompleted))
+            {
+                Ros2cs.SpinOnce(Node, 0.1);
+            }
+
+            int completed = tasks.Where(task => task.IsCompletedSuccessfully).Count();
+
+            Assert.That(completed, Is.GreaterThan(0));
+            Assert.That(this.Client.PendingRequests.Count, Is.EqualTo(tasks.Length - completed));
+        }
+
+        [Test]
+        public void ClientPendingRequestsCast()
+        {
+            IReadOnlyDictionary<long, Task> requests = (this.Client as IClientBase).PendingRequests;
+            Task pendingTask = this.Client.CallAsync(this.CreateRequest(3, 4));
+
+            Assert.That(requests.Keys, Is.EquivalentTo(this.Client.PendingRequests.Keys));
+        }
+
+        [Test]
+        public void ClientCancel()
+        {
+            Assert.That(this.Client.Cancel(Task.CompletedTask), Is.False);
+
+            using var service = Node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
+                SERVICE_NAME,
+                HandleRequest
+            );
+            Task finishedTask = this.Client.CallAsync(this.CreateRequest(3, 4));
+
+            while (!finishedTask.IsCompleted)
+            {
+                Ros2cs.SpinOnce(Node, 0.1);
+            }
+
+            Assert.That(this.Client.Cancel(finishedTask), Is.False);
+
+            Task pendingTask = this.Client.CallAsync(this.CreateRequest(3, 4));
+
+            Assert.That(this.Client.Cancel(pendingTask));
+            Assert.That(pendingTask.IsCanceled);
+            Assert.That(this.Client.PendingRequests.Count, Is.Zero);
+
+            Assert.DoesNotThrow(() => { Ros2cs.SpinOnce(Node, 0.1); });            
         }
     }
 }
