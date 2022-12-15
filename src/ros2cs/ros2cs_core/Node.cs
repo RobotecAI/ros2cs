@@ -149,6 +149,7 @@ namespace ROS2
         if (publishers.Contains(publisher))
         {
           logger.LogInfo("Removing publisher for topic " + publisher.Topic);
+          publisher.Dispose();
           return publishers.Remove(publisher);
         }
         return false;
@@ -164,6 +165,7 @@ namespace ROS2
         if (subscriptions.Contains(subscription))
         {
           logger.LogInfo("Removing subscription for topic " + subscription.Topic);
+          subscription.Dispose();
           return subscriptions.Remove(subscription);
         }
         return false;
