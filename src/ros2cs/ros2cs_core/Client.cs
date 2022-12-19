@@ -285,11 +285,20 @@ namespace ROS2
     /// <summary>
     /// Wrapper to avoid exposing <see cref="TaskCompletionSource"/> to users.
     /// </summary>
+    /// <remarks>
+    /// The locking used is required because the user may access the view while <see cref="Client.TakeMessage"/> is running.
+    /// </remarks>
     private class PendingTasksView : IReadOnlyDictionary<long, Task<O>>, IReadOnlyDictionary<long, Task>
     {
       public Task<O> this[long key]
       {
-        get { return this.Requests[key].Item2; }
+        get
+        {
+          lock (this.Requests)
+          {
+            return this.Requests[key].Item2;
+          }
+        }
       }
 
       Task IReadOnlyDictionary<long, Task>.this[long key]
@@ -299,12 +308,24 @@ namespace ROS2
 
       public IEnumerable<long> Keys
       {
-        get { return this.Requests.Keys; }
+        get
+        {
+          lock (this.Requests)
+          {
+            return this.Requests.Keys.ToArray();
+          }
+        }
       }
 
       public IEnumerable<Task<O>> Values
       {
-        get { return this.Requests.Values.Select(value => value.Item2); }
+        get
+        {
+          lock (this.Requests)
+          {
+            return this.Requests.Values.Select(value => value.Item2).ToArray();
+          }
+        }
       }
 
       IEnumerable<Task> IReadOnlyDictionary<long, Task>.Values
@@ -314,7 +335,13 @@ namespace ROS2
 
       public int Count
       {
-        get { return this.Requests.Count; }
+        get
+        {
+          lock (this.Requests)
+          {
+            return this.Requests.Count;
+          }
+        }
       }
 
       private readonly IReadOnlyDictionary<long, (TaskCompletionSource<O>, Task<O>)> Requests;
@@ -326,21 +353,22 @@ namespace ROS2
 
       public bool ContainsKey(long key)
       {
-        return this.Requests.ContainsKey(key);
+        lock (this.Requests)
+        {
+          return this.Requests.ContainsKey(key);
+        }
       }
 
       public bool TryGetValue(long key, out Task<O> value)
       {
-        if (this.Requests.TryGetValue(key, out var source))
+        bool success = false;
+        (TaskCompletionSource<O>, Task<O>) source = default((TaskCompletionSource<O>, Task<O>));
+        lock (this.Requests)
         {
-          value = source.Item2;
-          return true;
+          success = this.Requests.TryGetValue(key, out source);
         }
-        else
-        {
-          value = default(Task<O>);
-          return false;
-        }
+        value = source.Item2;
+        return success;
       }
 
       bool IReadOnlyDictionary<long, Task>.TryGetValue(long key, out Task value)
@@ -352,7 +380,14 @@ namespace ROS2
 
       public IEnumerator<KeyValuePair<long, Task<O>>> GetEnumerator()
       {
-        return this.Requests.Select(pair => new KeyValuePair<long, Task<O>>(pair.Key, pair.Value.Item2)).GetEnumerator();
+        lock (this.Requests)
+        {
+          return this.Requests
+            .Select(pair => new KeyValuePair<long, Task<O>>(pair.Key, pair.Value.Item2))
+            .ToArray()
+            .AsEnumerable()
+            .GetEnumerator();
+        }
       }
 
       IEnumerator IEnumerable.GetEnumerator()
@@ -362,7 +397,14 @@ namespace ROS2
 
       IEnumerator<KeyValuePair<long, Task>> IEnumerable<KeyValuePair<long, Task>>.GetEnumerator()
       {
-        return this.Requests.Select(pair => new KeyValuePair<long, Task>(pair.Key, pair.Value.Item2)).GetEnumerator();
+        lock (this.Requests)
+        {
+          return this.Requests
+            .Select(pair => new KeyValuePair<long, Task>(pair.Key, pair.Value.Item2))
+            .ToArray()
+            .AsEnumerable()
+            .GetEnumerator();
+        }
       }
     }
   }
