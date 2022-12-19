@@ -168,6 +168,7 @@ namespace ROS2
         if (clients.Contains(client))
         {
           logger.LogInfo("Removing client for topic " + client.Topic);
+          client.Dispose();
           return clients.Remove(client);
         }
         return false;
@@ -202,6 +203,7 @@ namespace ROS2
         if (services.Contains(service))
         {
           logger.LogInfo("Removing service for topic " + service.Topic);
+          service.Dispose();
           return services.Remove(service);
         }
         return false;

@@ -13,8 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using NUnit.Framework;
 using System;
+using NUnit.Framework;
+using example_interfaces.srv;
 
 namespace ROS2.Test
 {
@@ -107,6 +108,27 @@ namespace ROS2.Test
                 "test_topic", msg => Console.WriteLine("Got message")))
             {
             }
+        }
+
+        [Test]
+        public void RemoveService()
+        {
+            var service = node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
+                "/test",
+                request => { throw new InvalidOperationException("service should not be called"); }
+            );
+            
+            Assert.That(node.RemoveService(service));
+            Assert.That(service.IsDisposed);
+        }
+
+        [Test]
+        public void RemoveClient()
+        {
+            var client = node.CreateClient<AddTwoInts_Request, AddTwoInts_Response>("/test");
+            
+            Assert.That(node.RemoveClient(client));
+            Assert.That(client.IsDisposed);
         }
     }
 }
