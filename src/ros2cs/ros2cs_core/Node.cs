@@ -54,7 +54,7 @@ namespace ROS2
         /// <inheritdoc/>
         public IReadOnlyCollection<IServiceBase> Services { get { return this.CurrentServices; } }
 
-        private HashSet<IServiceBase> CurrentServices = new HashSet<IServiceBase>();
+        internal HashSet<IRawService> CurrentServices = new HashSet<IRawService>();
 
         /// <inheritdoc/>
         public IReadOnlyCollection<IClientBase> Clients { get { return this.CurrentClients; } }
@@ -194,9 +194,9 @@ namespace ROS2
             }
             this.CurrentSubscriptions.Clear();
 
-            foreach (IDisposable disposable in this.CurrentServices)
+            foreach (IRawService service in this.CurrentServices)
             {
-                disposable.Dispose();
+                service.DisposeFromNode();
             }
             this.CurrentServices.Clear();
 

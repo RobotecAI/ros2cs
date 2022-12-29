@@ -158,6 +158,20 @@ void rclcs_client_dispose_options(rcl_client_options_t * client_options_handle)
 }
 
 ROSIDL_GENERATOR_C_EXPORT
+rcl_subscription_t * rclcs_get_zero_initialized_service()
+{
+  rcl_service_t * service = malloc(sizeof(rcl_service_t));
+  *service = rcl_get_zero_initialized_service();
+  return service;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+void rclcs_free_service(rcl_service_t * service)
+{
+  free(service);
+}
+
+ROSIDL_GENERATOR_C_EXPORT
 rcl_service_options_t *rclcs_service_create_options(rmw_qos_profile_t * qos)
 {
   rcl_service_options_t *default_service_options_handle = (rcl_service_options_t *)malloc(sizeof(rcl_service_options_t));

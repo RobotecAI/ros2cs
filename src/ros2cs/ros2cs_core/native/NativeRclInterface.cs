@@ -200,6 +200,24 @@ namespace ROS2
         typeof(ClientDisposeOptionsType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate IntPtr GetZeroInitializedServiceType();
+    internal static GetZeroInitializedServiceType
+        rclcs_get_zero_initialized_service =
+        (GetZeroInitializedServiceType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_get_zero_initialized_service"),
+        typeof(GetZeroInitializedServiceType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void FreeServiceType(IntPtr node);
+    internal static FreeServiceType
+        rclcs_free_service =
+        (FreeServiceType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_free_service"),
+        typeof(FreeServiceType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr ServiceCreateOptionsType(IntPtr qos);
     internal static ServiceCreateOptionsType
         rclcs_service_create_options =

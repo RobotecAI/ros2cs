@@ -198,16 +198,7 @@ namespace ROS2
         typeof(ServiceGetDefaultOptionsType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate rcl_service_t GetZeroInitiazizedServiceType();
-    internal static GetZeroInitiazizedServiceType
-        rcl_get_zero_initialized_service =
-        (GetZeroInitiazizedServiceType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-        nativeRCL,
-        "rcl_get_zero_initialized_service"),
-        typeof(GetZeroInitiazizedServiceType));
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int ServiceInitType(ref rcl_service_t service, IntPtr node, IntPtr type_support_ptr, string topic_name, IntPtr service_options);
+    internal delegate int ServiceInitType(IntPtr service, IntPtr node, IntPtr type_support_ptr, string topic_name, IntPtr service_options);
     internal static ServiceInitType
         rcl_service_init =
         (ServiceInitType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -216,7 +207,16 @@ namespace ROS2
         typeof(ServiceInitType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int ServiceFiniType(ref rcl_service_t client, IntPtr node);
+    internal delegate bool ServiceIsValidType(IntPtr service);
+    internal static ServiceIsValidType
+        rcl_service_is_valid =
+        (ServiceIsValidType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_service_is_valid"),
+        typeof(ServiceIsValidType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int ServiceFiniType(IntPtr service, IntPtr node);
     internal static ServiceFiniType
         rcl_service_fini =
         (ServiceFiniType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -225,7 +225,7 @@ namespace ROS2
         typeof(ServiceFiniType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int TakeRequestType(ref rcl_service_t service, ref rcl_rmw_request_id_t request_header, IntPtr message_handle);
+    internal delegate int TakeRequestType(IntPtr service, ref rcl_rmw_request_id_t request_header, IntPtr message_handle);
     internal static TakeRequestType
         rcl_take_request =
         (TakeRequestType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -234,8 +234,7 @@ namespace ROS2
         typeof(TakeRequestType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int SendResponceType( ref rcl_service_t service, ref rcl_rmw_request_id_t request_header, IntPtr responce_info);
-    ///internal delegate int SendResponceType( ref rcl_service_t service, ref rcl_rmw_request_id_t request_header, ref IntPtr responce_info);
+    internal delegate int SendResponceType(IntPtr service, ref rcl_rmw_request_id_t request_header, IntPtr responce_info);
     internal static SendResponceType
         rcl_send_response =
         (SendResponceType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -401,7 +400,7 @@ namespace ROS2
         typeof(WaitSetAddClientType));
     
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int WaitSetAddServiceType(ref rcl_wait_set_t wait_set, ref rcl_service_t service, ref UIntPtr index);
+    internal delegate int WaitSetAddServiceType(ref rcl_wait_set_t wait_set, IntPtr service, ref UIntPtr index);
     internal static WaitSetAddServiceType
         rcl_wait_set_add_service =
         (WaitSetAddServiceType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
