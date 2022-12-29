@@ -253,16 +253,7 @@ namespace ROS2
         typeof(PublisherGetDefaultOptionsType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate rcl_publisher_t GetZeroInitiazizedPublisherType();
-    internal static GetZeroInitiazizedPublisherType
-        rcl_get_zero_initialized_publisher =
-        (GetZeroInitiazizedPublisherType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-        nativeRCL,
-        "rcl_get_zero_initialized_publisher"),
-        typeof(GetZeroInitiazizedPublisherType));
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int PublisherInitType(ref rcl_publisher_t publisher, IntPtr node, IntPtr type_support_ptr, string topic_name, IntPtr publisher_options);
+    internal delegate int PublisherInitType(IntPtr publisher, IntPtr node, IntPtr type_support_ptr, string topic_name, IntPtr publisher_options);
     internal static PublisherInitType
         rcl_publisher_init =
         (PublisherInitType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -271,7 +262,16 @@ namespace ROS2
         typeof(PublisherInitType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int PublisherFiniType(ref rcl_publisher_t publisher, IntPtr node);
+    internal delegate bool PublisherValidType(IntPtr publisher);
+    internal static PublisherValidType
+        rcl_publisher_is_valid =
+        (PublisherValidType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_publisher_is_valid"),
+        typeof(PublisherValidType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int PublisherFiniType(IntPtr publisher, IntPtr node);
     internal static PublisherFiniType
         rcl_publisher_fini =
         (PublisherFiniType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -280,7 +280,7 @@ namespace ROS2
         typeof(PublisherFiniType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int PublishType(ref rcl_publisher_t publisher, IntPtr message, IntPtr allocator);
+    internal delegate int PublishType(IntPtr publisher, IntPtr message, IntPtr allocator);
     internal static PublishType
         rcl_publish =
         (PublishType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(

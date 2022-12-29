@@ -13,84 +13,124 @@
 // limitations under the License.
 
 using System;
-using System.Diagnostics;
 using ROS2.Internal;
 
 namespace ROS2
 {
-  /// <summary> Publisher of a topic with a given type </summary>
-  /// <description> Publishers are created through INode.CreatePublisher </description>
-  public class Publisher<T>: IPublisher<T> where T : Message, new ()
-  {
-    public string Topic { get { return topic; } }
-    private string topic;
-
-    private Ros2csLogger logger = Ros2csLogger.GetInstance();
-    rcl_publisher_t publisherHandle;
-    IntPtr publisherOptions = IntPtr.Zero;
-    rcl_node_t nodeHandle;
-    private bool disposed = false;
-
-    public bool IsDisposed { get { return disposed; } }
-
-    /// <summary> Internal constructor for Publsher. Use INode.CreatePublisher to construct </summary>
-    /// <see cref="INode.CreatePublisher"/>
-    public Publisher(string pubTopic, Node node, QualityOfServiceProfile qos = null)
+    /// <summary> Publisher of a topic with a given type. </summary>
+    /// <inheritdoc cref="IPublisher{T}"/>
+    internal sealed class Publisher<T> : IPublisher<T>, IRawPublisher where T : Message, new()
     {
-      topic = pubTopic;
-      nodeHandle = node.nodeHandle;
+        /// <inheritdoc/>
+        public string Topic { get; private set; }
 
-      QualityOfServiceProfile qualityOfServiceProfile = qos;
-      if (qualityOfServiceProfile == null)
-        qualityOfServiceProfile = new QualityOfServiceProfile();
+        /// <inheritdoc/>
+        public bool IsDisposed
+        {
+            get { return !NativeRcl.rcl_publisher_is_valid(this.Handle); }
+        }
 
-      publisherOptions = NativeRclInterface.rclcs_publisher_create_options(qualityOfServiceProfile.handle);
+        private IntPtr Handle = IntPtr.Zero;
 
-      IntPtr typeSupportHandle = MessageTypeSupportHelper.GetTypeSupportHandle<T>();
+        private IntPtr Options = IntPtr.Zero;
 
-      publisherHandle = NativeRcl.rcl_get_zero_initialized_publisher();
-      Utils.CheckReturnEnum(NativeRcl.rcl_publisher_init(
-                              ref publisherHandle,
-                              ref nodeHandle,
-                              typeSupportHandle,
-                              topic,
-                              publisherOptions));
+        private readonly Node Node;
+
+        internal Publisher(string topic, Node node, QualityOfServiceProfile qos = null)
+        {
+            this.Topic = topic;
+            this.Node = node;
+
+            QualityOfServiceProfile qualityOfServiceProfile = qos ?? new QualityOfServiceProfile();
+
+            this.Options = NativeRclInterface.rclcs_publisher_create_options(qualityOfServiceProfile.handle);
+
+            IntPtr typeSupportHandle = MessageTypeSupportHelper.GetTypeSupportHandle<T>();
+
+            this.Handle = NativeRclInterface.rclcs_get_zero_initialized_publisher();
+            int ret = NativeRcl.rcl_publisher_init(
+              this.Handle,
+              this.Node.Handle,
+              typeSupportHandle,
+              this.Topic,
+              this.Options
+            );
+            if ((RCLReturnEnum)ret != RCLReturnEnum.RCL_RET_OK)
+            {
+                this.FreeHandles();
+                Utils.CheckReturnEnum(ret);
+            }
+        }
+
+        /// <summary>
+        /// Assert that the publisher has not been disposed.
+        /// </summary>
+        private void AssertOk()
+        {
+            if (this.IsDisposed)
+            {
+                throw new ObjectDisposedException($"publisher for topic '{this.Topic}'");
+            }
+        }
+
+        /// <inheritdoc/>
+        public void Publish(T msg)
+        {
+            this.AssertOk();
+            MessageInternals msgInternals = msg as MessageInternals;
+            msgInternals.WriteNativeMessage();
+            Utils.CheckReturnEnum(NativeRcl.rcl_publish(this.Handle, msgInternals.Handle, IntPtr.Zero));
+        }
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            this.Dispose(true);
+            // finalizer not needed when we disposed successfully
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>Disposal logic.</summary>
+        /// <param name="disposing">If this method is not called in a finalizer.</param>
+        private void Dispose(bool disposing)
+        {
+            if (this.Handle == IntPtr.Zero)
+            {
+                return;
+            }
+
+            // only do if Node.CurrentPublishers has not been finalized
+            if (disposing)
+            {
+                this.Node.CurrentPublishers.Remove(this);
+            }
+
+            this.DisposeFromNode();
+        }
+
+        /// <inheritdoc/>
+        public void DisposeFromNode()
+        {
+            if (this.Handle == IntPtr.Zero)
+            {
+                return;
+            }
+
+            Utils.CheckReturnEnum(NativeRcl.rcl_publisher_fini(this.Handle, this.Node.Handle));
+            this.FreeHandles();
+        }
+
+        private void FreeHandles()
+        {
+            NativeRclInterface.rclcs_free_publisher(this.Handle);
+            this.Handle = IntPtr.Zero;
+            NativeRclInterface.rclcs_publisher_dispose_options(this.Options);
+            this.Options = IntPtr.Zero;
+        }
+
+        ~Publisher()
+        {
+            this.Dispose(false);
+        }
     }
-
-    ~Publisher()
-    {
-      Dispose();
-    }
-
-    public void Dispose()
-    {
-      DestroyPublisher();
-    }
-
-    /// <summary> "Destructor" supporting disposable model </summary>
-    private void DestroyPublisher()
-    {
-      if (!disposed)
-      {
-        Utils.CheckReturnEnum(NativeRcl.rcl_publisher_fini(ref publisherHandle, ref nodeHandle));
-        NativeRclInterface.rclcs_publisher_dispose_options(publisherOptions);
-        logger.LogInfo("Publisher destroyed");
-        disposed = true;
-      }
-    }
-
-    /// <summary> Publish a message </summary>
-    /// <see cref="IPublisher.Publish"/>
-    public void Publish(T msg)
-    {
-      if (!Ros2cs.Ok() || disposed)
-      {
-        logger.LogWarning("Cannot publish as the class is already disposed or shutdown was called");
-        return;
-      }
-      MessageInternals msgInternals = msg as MessageInternals;
-      msgInternals.WriteNativeMessage();
-      Utils.CheckReturnEnum(NativeRcl.rcl_publish(ref publisherHandle, msgInternals.Handle, IntPtr.Zero));
-    }
-  }
 }

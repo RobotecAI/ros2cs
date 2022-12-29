@@ -12,25 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-
 namespace ROS2
 {
-  /// <summary> Non-generic base interface for all subscriptions </summary>
-  /// <description> Use Ros2cs.CreatePublisher to construct.
-  /// This interface is useful for managing publisher collections and disposal </description>
-  public interface IPublisherBase: IExtendedDisposable
-  {
-    string Topic {get;}
-  }
+    /// <summary> Non-generic base interface for all publishers. </summary>
+    /// <remarks>
+    /// This interface is useful for managing publisher collections and disposal.
+    /// Create instances with <see cref="INode.CreatePublisher"/>.
+    /// </remarks>
+    public interface IPublisherBase : IExtendedDisposable
+    {
+        /// <summary> Topic of this publisher. </summary>
+        string Topic { get; }
+    }
 
-  /// <summary> Generic base interface for all subscriptions </summary>
-  public interface IPublisher<T>: IPublisherBase
-      where T: Message
-  {
-    /// <summary> Publish a message </summary>
-    /// <description> Message memory is copied into native structures and the message
-    /// can be safely changed or disposed after this call </description>
-    void Publish(T msg);
-  }
+    /// <summary> Internal publisher extensions. </summary>
+    internal interface IRawPublisher : IPublisherBase
+    {
+        /// <summary> Dispose without modifying the node. </summary>
+        void DisposeFromNode();
+    }
+
+    /// <summary> Generic base interface for all publishers. </summary>
+    /// <typeparam name="T"> Message Type to be published. </typeparam>
+    public interface IPublisher<T> : IPublisherBase
+        where T : Message
+    {
+        /// <summary> Publish a message </summary>
+        /// <remarks>
+        /// Message memory is copied into native structures and the message
+        /// can be safely changed or disposed after this call.
+        /// </remarks>
+        /// <param name="msg"> Message to be published. </param>
+        void Publish(T msg);
+    }
 }

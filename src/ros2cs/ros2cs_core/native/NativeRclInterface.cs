@@ -127,6 +127,24 @@ namespace ROS2
         "rclcs_subscription_dispose_options"),
         typeof(SubscriptionDisposeOptionsType));
 
+   [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate IntPtr GetZeroInitializedPublisherType();
+    internal static GetZeroInitializedPublisherType
+        rclcs_get_zero_initialized_publisher =
+        (GetZeroInitializedPublisherType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_get_zero_initialized_publisher"),
+        typeof(GetZeroInitializedPublisherType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void FreePublisherType(IntPtr publisher);
+    internal static FreePublisherType
+        rclcs_free_publisher =
+        (FreePublisherType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_free_publisher"),
+        typeof(FreePublisherType));
+
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr PublisherCreateOptionsType(IntPtr qos);
     internal static PublisherCreateOptionsType

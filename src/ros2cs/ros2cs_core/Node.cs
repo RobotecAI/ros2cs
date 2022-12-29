@@ -44,7 +44,7 @@ namespace ROS2
         /// <inheritdoc/>
         public IReadOnlyCollection<IPublisherBase> Publishers { get { return this.CurrentPublishers; } }
 
-        private HashSet<IPublisherBase> CurrentPublishers = new HashSet<IPublisherBase>();
+        internal HashSet<IRawPublisher> CurrentPublishers = new HashSet<IRawPublisher>();
 
         /// <inheritdoc/>
         public IReadOnlyCollection<ISubscriptionBase> Subscriptions { get { return this.CurrentSubscriptions; } }
@@ -182,9 +182,9 @@ namespace ROS2
                 throw new RuntimeError("removing the node from the current executor failed");
             }
 
-            foreach (IDisposable disposable in this.CurrentPublishers)
+            foreach (IRawPublisher publisher in this.CurrentPublishers)
             {
-                disposable.Dispose();
+                publisher.DisposeFromNode();
             }
             this.CurrentPublishers.Clear();
 
