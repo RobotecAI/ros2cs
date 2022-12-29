@@ -28,13 +28,50 @@ namespace ROS2
     private static readonly DllLoadUtils dllLoadUtils = DllLoadUtilsFactory.GetDllLoadUtils();
     private static readonly IntPtr nativeROS2CS = dllLoadUtils.LoadLibrary("ros2cs");
 
-    internal delegate int RCLCSInitType(ref rcl_context_t context, rcl_allocator_t allocator);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate IntPtr GetZeroInitializedContextType();
+    internal static GetZeroInitializedContextType
+        rclcs_get_zero_initialized_context =
+        (GetZeroInitializedContextType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_get_zero_initialized_context"),
+        typeof(GetZeroInitializedContextType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void FreeContextType(IntPtr context);
+    internal static FreeContextType
+        rclcs_free_context =
+        (FreeContextType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_free_context"),
+        typeof(FreeContextType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int RCLCSInitType(IntPtr context, rcl_allocator_t allocator);
     internal static RCLCSInitType
         rclcs_init =
         (RCLCSInitType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
         nativeROS2CS,
         "rclcs_init"),
         typeof(RCLCSInitType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate IntPtr GetZeroInitializedNodeType();
+    internal static GetZeroInitializedContextType
+        rclcs_get_zero_initialized_node =
+        (GetZeroInitializedNodeType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_get_zero_initialized_node"),
+        typeof(GetZeroInitializedNodeType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void FreeNodeType(IntPtr node);
+    internal static FreeContextType
+        rclcs_free_node =
+        (FreeNodeType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_free_node"),
+        typeof(FreeNodeType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr GetErrorStringType();

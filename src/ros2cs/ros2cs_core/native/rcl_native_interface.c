@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <rcl/error_handling.h>
+#include <rcl/context.h>
 #include <rcl/node.h>
 #include <rcl/rcl.h>
 #include <rcl/time.h>
@@ -20,6 +21,20 @@
 #include <rcutils/strdup.h>
 #include <rcutils/types.h>
 #include <rmw/qos_profiles.h>
+
+ROSIDL_GENERATOR_C_EXPORT
+rcl_context_t * rclcs_get_zero_initialized_context()
+{
+  rcl_context_t * context = malloc(sizeof(rcl_context_t));
+  *context = rcl_get_zero_initialized_context();
+  return context;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+void rclcs_free_context(rcl_context_t * context)
+{
+  free(context);
+}
 
 ROSIDL_GENERATOR_C_EXPORT
 int rclcs_init(rcl_context_t *context, rcl_allocator_t allocator)
@@ -39,6 +54,20 @@ int rclcs_init(rcl_context_t *context, rcl_allocator_t allocator)
 
   ret = rcl_init_options_fini(&init_options);
   return ret;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+rcl_node_t * rclcs_get_zero_initialized_node()
+{
+  rcl_node_t * node = malloc(sizeof(rcl_node_t));
+  *node =  rcl_get_zero_initialized_node();
+  return node;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+void rclcs_free_node(rcl_node_t * node)
+{
+  free(node);
 }
 
 ROSIDL_GENERATOR_C_EXPORT

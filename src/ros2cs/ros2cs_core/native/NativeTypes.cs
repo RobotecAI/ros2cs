@@ -42,13 +42,6 @@ namespace ROS2
     private IntPtr impl;
   }
 
-  public struct rcl_context_t
-{
-    private IntPtr global_arguments;
-    private IntPtr impl;
-    private IntPtr instance_id_storage;
-  }
-
   public struct rcl_error_string_t
   {
     internal IntPtr str;
@@ -57,12 +50,6 @@ namespace ROS2
   public struct rcl_init_options_t
   {
     private IntPtr impl;
-  }
-
-  public struct rcl_node_t
-  {
-    private IntPtr context;
-    private IntPtr rcl_node_impl_t;
   }
 
   public struct rcl_publisher_t

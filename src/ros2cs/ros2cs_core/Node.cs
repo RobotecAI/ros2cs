@@ -13,271 +13,209 @@
 // limitations under the License.
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
 
 namespace ROS2
 {
-  /// <summary> Represents a managed ros2 (rcl) node </summary>
-  /// <see cref="INode"/>
-  public class Node: INode
-  {
-    public string Name { get { return name; } }
-    private string name;
-    private Ros2csLogger logger = Ros2csLogger.GetInstance();
-
-    internal List<ISubscriptionBase> Subscriptions
+    /// <inheritdoc cref="INode"/>
+    internal sealed class Node : INode, IExtendedDisposable
     {
-      get
-      {
-        lock (mutex)
+        /// <inheritdoc/>
+        public string Name { get; private set; }
+
+        /// <inheritdoc/>
+        public IContext Context { get { return this.ROSContext; } }
+
+        /// <inheritdoc/>
+        public IExecutor Executor { get; private set; }
+
+        /// <inheritdoc/>
+        public bool IsDisposed
         {
-          return subscriptions.ToList();
-        }
-      }
-    }
-
-    internal List<IClientBase> Clients
-    {
-      get
-      {
-        lock (mutex)
-        {
-          return clients.ToList();
-        }
-      }
-    }
-
-    internal List<IServiceBase> Services
-    {
-      get
-      {
-        lock (mutex)
-        {
-          return services.ToList();
-        }
-      }
-    }
-
-    internal rcl_node_t nodeHandle;
-    private IntPtr defaultNodeOptions;
-    private HashSet<ISubscriptionBase> subscriptions;
-    private HashSet<IPublisherBase> publishers;
-    private HashSet<IClientBase> clients;
-    private HashSet<IServiceBase> services;
-    private readonly object mutex = new object();
-    private bool disposed = false;
-
-    public bool IsDisposed { get { return disposed; } }
-
-    /// <summary> Node constructor </summary>
-    /// <description> Nodes are created through CreateNode method of Ros2cs class </description>
-    /// <param name="nodeName"> unique, non-namespaced node name </param>
-    /// <param name="context"> (rcl) context for the node. Global context is passed to this method </param>
-    internal Node(string nodeName, ref rcl_context_t context)
-    {
-      name = nodeName;
-      string nodeNamespace = "/";
-      subscriptions = new HashSet<ISubscriptionBase>();
-      publishers = new HashSet<IPublisherBase>();
-      clients = new HashSet<IClientBase>();
-      services = new HashSet<IServiceBase>();
-
-      nodeHandle = NativeRcl.rcl_get_zero_initialized_node();
-      defaultNodeOptions = NativeRclInterface.rclcs_node_create_default_options();
-      Utils.CheckReturnEnum(NativeRcl.rcl_node_init(ref nodeHandle, nodeName, nodeNamespace, ref context, defaultNodeOptions));
-      logger.LogInfo("Node initialized");
-    }
-
-    /// <summary> Finalizer supporting IDisposable model </summary>
-    ~Node()
-    {
-      DestroyNode();
-    }
-
-    /// <summary> Release managed and native resources. IDisposable implementation </summary>
-    public void Dispose()
-    {
-      DestroyNode();
-    }
-
-    /// <summary> "Destructor" supporting IDisposable model </summary>
-    /// <description> Disposes all subscriptions and publishers and clients before finilizing node </description>
-    internal void DestroyNode()
-    {
-      lock (mutex)
-      {
-        if (!disposed)
-        {
-          foreach(ISubscriptionBase subscription in subscriptions)
-          {
-            subscription.Dispose();
-          }
-          subscriptions.Clear();
-
-          foreach(IPublisherBase publisher in publishers)
-          {
-            publisher.Dispose();
-          }
-          publishers.Clear();
-
-          foreach(IClientBase client in clients)
-          {
-            client.Dispose();
-          }
-          clients.Clear();
-
-          foreach(IServiceBase service in services)
-          {
-            service.Dispose();
-          }
-          services.Clear();
-
-          Utils.CheckReturnEnum(NativeRcl.rcl_node_fini(ref nodeHandle));
-          NativeRclInterface.rclcs_node_dispose_options(defaultNodeOptions);
-          disposed = true;
-          logger.LogInfo("Node " + name + " destroyed");
-        }
-      }
-    }
-
-    /// <summary> Create a client for this node for a given topic, qos and message type </summary>
-    /// <see cref="INode.CreateClient"/>
-    public Client<I, O> CreateClient<I, O>(string topic, QualityOfServiceProfile qos = null) where I : Message, new() where O : Message, new()
-    {
-      lock (mutex)
-      {
-        if (disposed || !Ros2cs.Ok())
-        {
-          logger.LogWarning("Cannot create client as the class is already disposed or shutdown was called");
-          return null;
+            get { return !NativeRcl.rcl_node_is_valid(this.Handle); }
         }
 
-        Client<I, O> client = new Client<I, O>(topic, this, qos);
-        clients.Add(client);
-        logger.LogInfo("Created Client for topic " + topic);
-        return client;
-      }
-    }
-    /// <summary> Remove a client </summary>
-    /// <see cref="INode.RemoveClient"/>
-    public bool RemoveClient(IClientBase client)
-    {
-      lock (mutex)
-      {
-        if (clients.Contains(client))
-        {
-          logger.LogInfo("Removing client for topic " + client.Topic);
-          client.Dispose();
-          return clients.Remove(client);
-        }
-        return false;
-      }
-    }
+        internal IntPtr Handle = IntPtr.Zero;
 
-    /// <summary> Create a service for this node for a given topic, callback, qos and message type </summary>
-    /// <see cref="INode.CreateService"/>
-    public Service<I, O> CreateService<I, O>(string topic, Func<I, O> callback, QualityOfServiceProfile qos = null) where I : Message, new() where O : Message, new()
-    {
-      lock (mutex)
-      {
-        if (disposed || !Ros2cs.Ok())
-        {
-          logger.LogWarning("Cannot create service as the class is already disposed or shutdown was called");
-          return null;
-        }
+        private Context ROSContext;
 
-	Service<I, O> service = new Service<I, O>(topic, this, callback, qos);
-        services.Add(service);
-        logger.LogInfo("Created service for topic " + topic);
-        return service;
-      }
-    }
+        private IntPtr Options;
 
-    /// <summary> Remove a service </summary>
-    /// <see cref="INode.RemoveService"/>
-    public bool RemoveService(IServiceBase service)
-    {
-      lock (mutex)
-      {
-        if (services.Contains(service))
-        {
-          logger.LogInfo("Removing service for topic " + service.Topic);
-          service.Dispose();
-          return services.Remove(service);
-        }
-        return false;
-      }
-    }
+        /// <inheritdoc/>
+        public IReadOnlyCollection<IPublisherBase> Publishers { get { return this.CurrentPublishers; } }
 
-    /// <summary> Create a publisher for this node for a given topic, qos and message type </summary>
-    /// <see cref="INode.CreatePublisher"/>
-    public Publisher<T> CreatePublisher<T>(string topic, QualityOfServiceProfile qos = null) where T : Message, new()
-    {
-      lock (mutex)
-      {
-        if (disposed || !Ros2cs.Ok())
+        private HashSet<IPublisherBase> CurrentPublishers = new HashSet<IPublisherBase>();
+
+        /// <inheritdoc/>
+        public IReadOnlyCollection<ISubscriptionBase> Subscriptions { get { return this.CurrentSubscriptions; } }
+
+        private HashSet<ISubscriptionBase> CurrentSubscriptions = new HashSet<ISubscriptionBase>();
+
+        /// <inheritdoc/>
+        public IReadOnlyCollection<IServiceBase> Services { get { return this.CurrentServices; } }
+
+        private HashSet<IServiceBase> CurrentServices = new HashSet<IServiceBase>();
+
+        /// <inheritdoc/>
+        public IReadOnlyCollection<IClientBase> Clients { get { return this.CurrentClients; } }
+
+        private HashSet<IClientBase> CurrentClients = new HashSet<IClientBase>();
+
+        internal Node(string name, Context context)
         {
-          logger.LogWarning("Cannot create publisher as the class is already disposed or shutdown was called");
-          return null;
+            this.Name = name;
+            this.ROSContext = context;
+            this.Options = NativeRclInterface.rclcs_node_create_default_options();
+            this.Handle = NativeRclInterface.rclcs_get_zero_initialized_node();
+            int ret = NativeRcl.rcl_node_init(
+              this.Handle,
+              this.Name,
+              "/",
+              this.ROSContext.Handle,
+              this.Options
+
+            );
+            if ((RCLReturnEnum)ret != RCLReturnEnum.RCL_RET_OK)
+            {
+                this.FreeHandles();
+                Utils.CheckReturnEnum(ret);
+            }
         }
 
-        Publisher<T> publisher = new Publisher<T>(topic, this, qos);
-        publishers.Add(publisher);
-        logger.LogInfo("Created Publisher for topic " + topic);
-        return publisher;
-      }
-    }
-
-    /// <summary> Create a subscription for this node for a given topic, callback, qos and message type </summary>
-    /// <see cref="INode.CreateSubscription"/>
-    public Subscription<T> CreateSubscription<T>(string topic, Action<T> callback, QualityOfServiceProfile qos = null) where T : Message, new()
-    {
-      lock (mutex)
-      {
-        if (disposed || !Ros2cs.Ok())
+        /// <summary>
+        /// Assert that the instance has not been disposed.
+        /// </summary>
+        private void AssertOk()
         {
-          logger.LogWarning("Cannot create subscription as the class is already disposed or shutdown was called");
-          return null;
+            if (this.IsDisposed)
+            {
+                throw new ObjectDisposedException($"ROS2 node '{this.Name}'");
+            }
         }
 
-        Subscription<T> subscription = new Subscription<T>(topic, this, callback, qos);
-        subscriptions.Add(subscription);
-        logger.LogInfo("Created subscription for topic " + topic);
-        return subscription;
-      }
-    }
-
-    /// <summary> Remove a publisher </summary>
-    /// <see cref="INode.RemovePublisher"/>
-    public bool RemovePublisher(IPublisherBase publisher)
-    {
-      lock (mutex)
-      {
-        if (publishers.Contains(publisher))
+        /// <inheritdoc/>
+        public bool TrySetExecutor(IExecutor executor)
         {
-          logger.LogInfo("Removing publisher for topic " + publisher.Topic);
-          publisher.Dispose();
-          return publishers.Remove(publisher);
+            return this.TrySetExecutor(executor, out _);
         }
-        return false;
-      }
-    }
 
-    /// <summary> Remove a subscription </summary>
-    /// <see cref="INode.RemoveSubscription"/>
-    public bool RemoveSubscription(ISubscriptionBase subscription)
-    {
-      lock (mutex)
-      {
-        if (subscriptions.Contains(subscription))
+        /// <inheritdoc/>
+        public bool TrySetExecutor(IExecutor executor, out IExecutor oldExecutor)
         {
-          logger.LogInfo("Removing subscription for topic " + subscription.Topic);
-          subscription.Dispose();
-          return subscriptions.Remove(subscription);
+            oldExecutor = default(IExecutor);
+            if (this.Executor != null && !this.Executor.Remove(this))
+            {
+                return false;
+            }
+            // prevent invalid executor if a failure occurs
+            (oldExecutor, this.Executor) = (this.Executor, oldExecutor);
+            oldExecutor?.Wake(this);
+            executor?.Add(this);
+            this.Executor = executor;
+            executor?.Wake(this);
+            return true;
         }
-        return false;
-      }
+
+        /// <inheritdoc/>
+        public IPublisher<T> CreatePublisher<T>(string topic, QualityOfServiceProfile qos = null) where T : Message, new()
+        {
+            this.AssertOk();
+            Publisher<T> publisher = new Publisher<T>(topic, this, qos);
+            this.CurrentPublishers.Add(publisher);
+            return publisher;
+        }
+
+        /// <inheritdoc/>
+        public ISubscription<T> CreateSubscription<T>(string topic, Action<T> callback, QualityOfServiceProfile qos = null) where T : Message, new()
+        {
+            this.AssertOk();
+            Subscription<T> subscription = new Subscription<T>(topic, this, callback, qos);
+            this.CurrentSubscriptions.Add(subscription);
+            this.Executor?.Wake(this);
+            return subscription;
+        }
+
+        /// <inheritdoc/>
+        public IClient<I, O> CreateClient<I, O>(string topic, QualityOfServiceProfile qos = null) where I : Message, new() where O : Message, new()
+        {
+            this.AssertOk();
+            Client<I, O> client = new Client<I, O>(topic, this, qos);
+            this.CurrentClients.Add(client);
+            this.Executor?.Wake(this);
+            return client;
+        }
+
+        /// <inheritdoc/>
+        public IService<I, O> CreateService<I, O>(string topic, Func<I, O> callback, QualityOfServiceProfile qos = null) where I : Message, new() where O : Message, new()
+        {
+            this.AssertOk();
+            Service<I, O> service = new Service<I, O>(topic, this, callback, qos);
+            this.CurrentServices.Add(service);
+            this.Executor?.Wake(this);
+            return service;
+        }
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            if (this.Handle == IntPtr.Zero)
+            {
+                return;
+            }
+            // no finalizer since the hash sets may have been finalized
+            this.DisposeFromContext();
+            this.ROSContext.RemoveNode(this.Name);
+        }
+
+        /// <summary>
+        /// Dispose this node without modifying the context.
+        /// </summary>
+        internal void DisposeFromContext()
+        {
+            if (this.Handle == IntPtr.Zero)
+            {
+                return;
+            }
+
+            if (!this.TrySetExecutor(null))
+            {
+                throw new RuntimeError("removing the node from the current executor failed");
+            }
+
+            foreach (IDisposable disposable in this.CurrentPublishers)
+            {
+                disposable.Dispose();
+            }
+            this.CurrentPublishers.Clear();
+
+            foreach (IDisposable disposable in this.CurrentSubscriptions)
+            {
+                disposable.Dispose();
+            }
+            this.CurrentSubscriptions.Clear();
+
+            foreach (IDisposable disposable in this.CurrentServices)
+            {
+                disposable.Dispose();
+            }
+            this.CurrentServices.Clear();
+
+            foreach (IDisposable disposable in this.CurrentClients)
+            {
+                disposable.Dispose();
+            }
+            this.CurrentClients.Clear();
+
+            Utils.CheckReturnEnum(NativeRcl.rcl_node_fini(this.Handle));
+            this.FreeHandles();
+        }
+
+        private void FreeHandles()
+        {
+            NativeRclInterface.rclcs_free_node(this.Handle);
+            this.Handle = IntPtr.Zero;
+            NativeRclInterface.rclcs_node_dispose_options(this.Options);
+            this.Options = IntPtr.Zero;
+        }
     }
-  }
 }
