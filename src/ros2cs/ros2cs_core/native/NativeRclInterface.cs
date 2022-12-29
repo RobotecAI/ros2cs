@@ -109,6 +109,24 @@ namespace ROS2
         "rclcs_node_dispose_options"),
         typeof(NodeDisposeOptionsType));
 
+   [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate IntPtr GetZeroInitializedSubscriptionType();
+    internal static GetZeroInitializedSubscriptionType
+        rclcs_get_zero_initialized_subscription =
+        (GetZeroInitializedSubscriptionType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_get_zero_initialized_subscription"),
+        typeof(GetZeroInitializedSubscriptionType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void FreeSubscriptionType(IntPtr subscription);
+    internal static FreeSubscriptionType
+        rclcs_free_subscription =
+        (FreeSubscriptionType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_free_subscription"),
+        typeof(FreeSubscriptionType));
+
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr SubscriptionCreateOptionsType(IntPtr qos);
     internal static SubscriptionCreateOptionsType

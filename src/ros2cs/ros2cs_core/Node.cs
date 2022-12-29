@@ -49,7 +49,7 @@ namespace ROS2
         /// <inheritdoc/>
         public IReadOnlyCollection<ISubscriptionBase> Subscriptions { get { return this.CurrentSubscriptions; } }
 
-        private HashSet<ISubscriptionBase> CurrentSubscriptions = new HashSet<ISubscriptionBase>();
+        internal HashSet<IRawSubscription> CurrentSubscriptions = new HashSet<IRawSubscription>();
 
         /// <inheritdoc/>
         public IReadOnlyCollection<IServiceBase> Services { get { return this.CurrentServices; } }
@@ -188,9 +188,9 @@ namespace ROS2
             }
             this.CurrentPublishers.Clear();
 
-            foreach (IDisposable disposable in this.CurrentSubscriptions)
+            foreach (IRawSubscription subscription in this.CurrentSubscriptions)
             {
-                disposable.Dispose();
+                subscription.DisposeFromNode();
             }
             this.CurrentSubscriptions.Clear();
 

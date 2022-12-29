@@ -85,6 +85,20 @@ void rclcs_node_dispose_options(rcl_node_options_t * node_options_handle)
 }
 
 ROSIDL_GENERATOR_C_EXPORT
+rcl_subscription_t * rclcs_get_zero_initialized_subscription()
+{
+  rcl_subscription_t * subscription = malloc(sizeof(rcl_subscription_t));
+  *subscription = rcl_get_zero_initialized_subscription();
+  return subscription;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+void rclcs_free_subscription(rcl_subscription_t * subscription)
+{
+  free(subscription);
+}
+
+ROSIDL_GENERATOR_C_EXPORT
 rcl_subscription_options_t *rclcs_subscription_create_options(rmw_qos_profile_t * qos)
 {
   rcl_subscription_options_t  * default_subscription_options_handle = (rcl_subscription_options_t *)malloc(sizeof(rcl_subscription_options_t));

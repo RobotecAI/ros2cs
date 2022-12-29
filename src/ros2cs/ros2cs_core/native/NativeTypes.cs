@@ -52,11 +52,6 @@ namespace ROS2
     private IntPtr impl;
   }
 
-  public struct rcl_subscription_t
-  {
-    private IntPtr impl;
-  }
-
   public struct rcl_client_t
   {
     private IntPtr impl;

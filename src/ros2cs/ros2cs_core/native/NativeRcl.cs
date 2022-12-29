@@ -289,16 +289,7 @@ namespace ROS2
         typeof(PublishType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate rcl_subscription_t GetZeroInitializedSubcriptionType();
-    internal static GetZeroInitializedSubcriptionType
-        rcl_get_zero_initialized_subscription =
-        (GetZeroInitializedSubcriptionType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-        nativeRCL,
-        "rcl_get_zero_initialized_subscription"),
-        typeof(GetZeroInitializedSubcriptionType));
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int SubscriptionInitType(ref rcl_subscription_t subscription, IntPtr node, IntPtr type_support_ptr, string topic_name, IntPtr subscription_options);
+    internal delegate int SubscriptionInitType(IntPtr subscription, IntPtr node, IntPtr type_support_ptr, string topic_name, IntPtr subscription_options);
     internal static SubscriptionInitType
         rcl_subscription_init =
         (SubscriptionInitType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -307,7 +298,7 @@ namespace ROS2
         typeof(SubscriptionInitType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int SubscriptionFiniType(ref rcl_subscription_t subscription, IntPtr node);
+    internal delegate int SubscriptionFiniType(IntPtr subscription, IntPtr node);
     internal static SubscriptionFiniType
         rcl_subscription_fini =
         (SubscriptionFiniType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -316,7 +307,7 @@ namespace ROS2
         typeof(SubscriptionFiniType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate bool SubscriptionIsValidType(ref rcl_subscription_t subscription);
+    internal delegate bool SubscriptionIsValidType(IntPtr subscription);
     internal static SubscriptionIsValidType
         rcl_subscription_is_valid =
         (SubscriptionIsValidType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -325,7 +316,7 @@ namespace ROS2
         typeof(SubscriptionIsValidType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int TakeType(ref rcl_subscription_t subscription, IntPtr message_handle, IntPtr message_info, IntPtr allocation);
+    internal delegate int TakeType(IntPtr subscription, IntPtr message_handle, IntPtr message_info, IntPtr allocation);
     internal static TakeType
         rcl_take =
         (TakeType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -392,7 +383,7 @@ namespace ROS2
         typeof(WaitSetClearType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int WaitSetAddSubscriptionType(ref rcl_wait_set_t wait_set, ref rcl_subscription_t subscription, ref UIntPtr index);
+    internal delegate int WaitSetAddSubscriptionType(ref rcl_wait_set_t wait_set, IntPtr subscription, ref UIntPtr index);
     internal static WaitSetAddSubscriptionType
         rcl_wait_set_add_subscription =
         (WaitSetAddSubscriptionType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
