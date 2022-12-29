@@ -15,6 +15,9 @@
 #include <rcl/error_handling.h>
 #include <rcl/context.h>
 #include <rcl/node.h>
+#include <rcl/publisher.h>
+#include <rcl/subscription.h>
+#include <rcl/service.h>
 #include <rcl/rcl.h>
 #include <rcl/time.h>
 #include <rcutils/allocator.h>
@@ -158,7 +161,7 @@ void rclcs_client_dispose_options(rcl_client_options_t * client_options_handle)
 }
 
 ROSIDL_GENERATOR_C_EXPORT
-rcl_subscription_t * rclcs_get_zero_initialized_service()
+rcl_service_t * rclcs_get_zero_initialized_service()
 {
   rcl_service_t * service = malloc(sizeof(rcl_service_t));
   *service = rcl_get_zero_initialized_service();
