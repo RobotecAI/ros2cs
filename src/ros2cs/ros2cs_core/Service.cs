@@ -50,7 +50,7 @@ namespace ROS2
             this.Node = node;
             this.Callback = callback;
 
-            QualityOfServiceProfile qualityOfServiceProfile = qos ?? new QualityOfServiceProfile();
+            QualityOfServiceProfile qualityOfServiceProfile = qos ?? new QualityOfServiceProfile(QosPresetProfile.SERVICES_DEFAULT);
 
             this.Options = NativeRclInterface.rclcs_service_create_options(qualityOfServiceProfile.handle);
 
