@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using ROS2.Internal;
 
@@ -151,7 +152,8 @@ namespace ROS2
             // only do if Node.CurrentServices has not been finalized
             if (disposing)
             {
-                this.Node.CurrentServices.Remove(this);
+                bool success = this.Node.CurrentServices.Remove(this);
+                Debug.Assert(success, "failed to remove service");
                 this.Node.Executor?.Wake(this.Node);
             }
 

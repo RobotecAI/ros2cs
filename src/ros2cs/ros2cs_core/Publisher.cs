@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Diagnostics;
 using ROS2.Internal;
 
 namespace ROS2
@@ -102,7 +103,8 @@ namespace ROS2
             // only do if Node.CurrentPublishers has not been finalized
             if (disposing)
             {
-                this.Node.CurrentPublishers.Remove(this);
+                bool success = this.Node.CurrentPublishers.Remove(this);
+                Debug.Assert(success, "failed to remove publisher");
             }
 
             this.DisposeFromNode();

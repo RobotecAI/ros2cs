@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using ROS2.Internal;
 
@@ -117,7 +118,8 @@ namespace ROS2
             // only do if Node.CurrentSubscriptions has not been finalized
             if (disposing)
             {
-                this.Node.CurrentSubscriptions.Remove(this);
+                bool success = this.Node.CurrentSubscriptions.Remove(this);
+                Debug.Assert(success, "failed to remove subscription");
                 this.Node.Executor?.Wake(this.Node);
             }
 

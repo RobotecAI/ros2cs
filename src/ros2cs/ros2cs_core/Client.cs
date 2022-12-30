@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using ROS2.Internal;
@@ -162,6 +163,10 @@ namespace ROS2
                 (message as MessageInternals).ReadNativeMessage();
                 source.Item1.SetResult(message);
             }
+            else
+            {
+                Debug.Print("received request which was not pending, maybe canceled");
+            }
             return true;
         }
 
@@ -236,18 +241,19 @@ namespace ROS2
         public bool Cancel(Task task)
         {
             var pair = default(KeyValuePair<long, (TaskCompletionSource<O>, Task<O>)>);
-            try
+            lock (this.Requests)
             {
-                lock (this.Requests)
+                try
                 {
                     pair = this.Requests.First(entry => entry.Value.Item2 == task);
-                    // has to be true
-                    this.Requests.Remove(pair.Key);
                 }
-            }
-            catch (InvalidOperationException)
-            {
-                return false;
+                catch (InvalidOperationException)
+                {
+                    return false;
+                }
+                // has to be true
+                bool success = this.Requests.Remove(pair.Key);
+                Debug.Assert(success, "failed to remove matching request");
             }
             pair.Value.Item1.SetCanceled();
             return true;
@@ -273,7 +279,8 @@ namespace ROS2
             // only do if Node.CurrentClients and this.Requests have not been finalized
             if (disposing)
             {
-                this.Node.CurrentClients.Remove(this);
+                bool success = this.Node.CurrentClients.Remove(this);
+                Debug.Assert(success, "failed to remove client");
                 this.Node.Executor?.Wake(this.Node);
                 this.DisposeAllTasks();
             }

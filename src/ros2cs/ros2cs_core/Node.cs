@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace ROS2
 {
@@ -121,7 +122,8 @@ namespace ROS2
         {
             this.AssertOk();
             Publisher<T> publisher = new Publisher<T>(topic, this, qos);
-            this.CurrentPublishers.Add(publisher);
+            bool success = this.CurrentPublishers.Add(publisher);
+            Debug.Assert(success, "publisher already exists");
             return publisher;
         }
 
@@ -130,7 +132,8 @@ namespace ROS2
         {
             this.AssertOk();
             Subscription<T> subscription = new Subscription<T>(topic, this, callback, qos);
-            this.CurrentSubscriptions.Add(subscription);
+            bool success = this.CurrentSubscriptions.Add(subscription);
+            Debug.Assert(success, "subscription already exists");
             this.Executor?.Wake(this);
             return subscription;
         }
@@ -140,7 +143,8 @@ namespace ROS2
         {
             this.AssertOk();
             Client<I, O> client = new Client<I, O>(topic, this, qos);
-            this.CurrentClients.Add(client);
+            bool success = this.CurrentClients.Add(client);
+            Debug.Assert(success, "client already exists");
             this.Executor?.Wake(this);
             return client;
         }
@@ -150,7 +154,8 @@ namespace ROS2
         {
             this.AssertOk();
             Service<I, O> service = new Service<I, O>(topic, this, callback, qos);
-            this.CurrentServices.Add(service);
+            bool success = this.CurrentServices.Add(service);
+            Debug.Assert(success, "service already exists");
             this.Executor?.Wake(this);
             return service;
         }
@@ -162,9 +167,12 @@ namespace ROS2
             {
                 return;
             }
+
+            bool success = this.ROSContext.RemoveNode(this.Name);
+            Debug.Assert(success, "failed to remove node");
+
             // no finalizer since the hash sets may have been finalized
             this.DisposeFromContext();
-            this.ROSContext.RemoveNode(this.Name);
         }
 
         /// <summary>
