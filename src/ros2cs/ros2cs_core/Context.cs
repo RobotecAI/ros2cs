@@ -49,7 +49,7 @@ namespace ROS2
 
         public Context()
         {
-            this.Nodes = new MappingValueView<string, Node, INode>(this.ROSNodes, node => node);
+            this.Nodes = new MappedValueDictionary<string, Node, INode>(this.ROSNodes, node => node);
             this.ROSAllocator = NativeRcl.rcutils_get_default_allocator();
             this.Handle = NativeRclInterface.rclcs_get_zero_initialized_context();
             int ret = NativeRclInterface.rclcs_init(this.Handle, this.ROSAllocator);

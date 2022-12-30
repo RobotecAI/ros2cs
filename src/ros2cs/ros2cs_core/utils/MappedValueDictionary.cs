@@ -1,20 +1,20 @@
 using System;
-using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ROS2
 {
     /// <summary>
-    /// Dictionary view wich transforms the values of the wrapped dictionary.
+    /// Dictionary view which transforms the values of the wrapped dictionary.
     /// </summary>
-    internal class MappingValueView<K, T, V> : IReadOnlyDictionary<K, V>
+    internal sealed class MappedValueDictionary<K, T, V> : IReadOnlyDictionary<K, V>
     {
         private readonly IReadOnlyDictionary<K, T> Wrapped;
 
         private readonly Func<T, V> Mapper;
 
-        public MappingValueView(IReadOnlyDictionary<K, T> wrapped, Func<T, V> mapper)
+        public MappedValueDictionary(IReadOnlyDictionary<K, T> wrapped, Func<T, V> mapper)
         {
             this.Wrapped = wrapped;
             this.Mapper = mapper;
