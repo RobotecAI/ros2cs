@@ -182,6 +182,24 @@ namespace ROS2
         typeof(PublisherDisposeOptionsType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate IntPtr GetZeroInitializedClientType();
+    internal static GetZeroInitializedClientType
+        rclcs_get_zero_initialized_client =
+        (GetZeroInitializedClientType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_get_zero_initialized_client"),
+        typeof(GetZeroInitializedClientType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void FreeClientType(IntPtr client);
+    internal static FreeClientType
+        rclcs_free_client =
+        (FreeClientType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_free_client"),
+        typeof(FreeClientType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr ClientCreateOptionsType(IntPtr qos);
     internal static ClientCreateOptionsType
         rclcs_client_create_options =

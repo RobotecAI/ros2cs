@@ -52,11 +52,6 @@ namespace ROS2
     private IntPtr impl;
   }
 
-  public struct rcl_client_t
-  {
-    private IntPtr impl;
-  }
-
   [StructLayout(LayoutKind.Sequential)]
   public struct rcl_rmw_request_id_t
   {

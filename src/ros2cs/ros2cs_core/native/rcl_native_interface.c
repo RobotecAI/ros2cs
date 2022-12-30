@@ -18,6 +18,7 @@
 #include <rcl/publisher.h>
 #include <rcl/subscription.h>
 #include <rcl/service.h>
+#include <rcl/client.h>
 #include <rcl/rcl.h>
 #include <rcl/time.h>
 #include <rcutils/allocator.h>
@@ -143,6 +144,20 @@ ROSIDL_GENERATOR_C_EXPORT
 void rclcs_publisher_dispose_options(rcl_publisher_options_t * publisher_options_handle)
 {
   free(publisher_options_handle);
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+rcl_client_t * rclcs_get_zero_initialized_client()
+{
+  rcl_client_t * client = malloc(sizeof(rcl_client_t));
+  *client = rcl_get_zero_initialized_client();
+  return client;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+void rclcs_free_client(rcl_client_t * client)
+{
+  free(client);
 }
 
 ROSIDL_GENERATOR_C_EXPORT
