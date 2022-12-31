@@ -42,7 +42,12 @@ namespace ROS2
         /// <inheritdoc/>
         public bool IsDisposed
         {
-            get { return !NativeRcl.rcl_client_is_valid(this.Handle); }
+            get
+            {
+                bool ok = NativeRcl.rcl_client_is_valid(this.Handle);
+                GC.KeepAlive(this);
+                return !ok;
+            }
         }
 
         private IntPtr Handle = IntPtr.Zero;
@@ -122,6 +127,7 @@ namespace ROS2
                 this.Handle,
                 ref available
             ));
+            GC.KeepAlive(this);
             return available;
         }
 
@@ -146,6 +152,7 @@ namespace ROS2
                     ref header,
                     (message as MessageInternals).Handle
                 );
+                GC.KeepAlive(this);
 
                 if ((RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_CLIENT_TAKE_FAILED)
                 {
@@ -220,6 +227,7 @@ namespace ROS2
                     ref sequence_number
                 )
             );
+            GC.KeepAlive(this);
             return sequence_number;
         }
 

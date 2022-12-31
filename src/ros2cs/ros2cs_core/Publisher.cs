@@ -28,7 +28,12 @@ namespace ROS2
         /// <inheritdoc/>
         public bool IsDisposed
         {
-            get { return !NativeRcl.rcl_publisher_is_valid(this.Handle); }
+            get
+            {
+                bool ok = NativeRcl.rcl_publisher_is_valid(this.Handle);
+                GC.KeepAlive(this);
+                return !ok;
+            }
         }
 
         private IntPtr Handle = IntPtr.Zero;
@@ -81,6 +86,7 @@ namespace ROS2
             MessageInternals msgInternals = msg as MessageInternals;
             msgInternals.WriteNativeMessage();
             Utils.CheckReturnEnum(NativeRcl.rcl_publish(this.Handle, msgInternals.Handle, IntPtr.Zero));
+            GC.KeepAlive(this);
         }
 
         /// <inheritdoc/>

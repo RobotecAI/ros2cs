@@ -31,7 +31,12 @@ namespace ROS2
         /// <inheritdoc/>
         public bool IsDisposed
         {
-            get { return !NativeRcl.rcl_service_is_valid(this.Handle); }
+            get
+            {
+                bool ok = NativeRcl.rcl_service_is_valid(this.Handle);
+                GC.KeepAlive(this);
+                return !ok;
+            }
         }
 
         private IntPtr Handle = IntPtr.Zero;
@@ -88,6 +93,7 @@ namespace ROS2
                 ref header,
                 (message as MessageInternals).Handle
             );
+            GC.KeepAlive(this);
 
             if ((RCLReturnEnum)ret != RCLReturnEnum.RCL_RET_SERIVCE_TAKE_FAILD)
             {
@@ -130,6 +136,7 @@ namespace ROS2
                 ref header,
                 msgInternals.Handle
             ));
+            GC.KeepAlive(this);
         }
 
         /// <inheritdoc/>

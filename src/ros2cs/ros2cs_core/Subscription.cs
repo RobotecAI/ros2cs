@@ -29,7 +29,12 @@ namespace ROS2
         /// <inheritdoc/>
         public bool IsDisposed
         {
-            get { return !NativeRcl.rcl_subscription_is_valid(this.Handle); }
+            get
+            {
+                bool ok = NativeRcl.rcl_subscription_is_valid(this.Handle);
+                GC.KeepAlive(this);
+                return !ok;
+            }
         }
 
         private IntPtr Handle = IntPtr.Zero;
@@ -82,6 +87,8 @@ namespace ROS2
                 IntPtr.Zero,
                 IntPtr.Zero
             );
+            GC.KeepAlive(this);
+
             if ((RCLReturnEnum)ret != RCLReturnEnum.RCL_RET_SUBSCRIPTION_TAKE_FAILED)
             {
                 Utils.CheckReturnEnum(ret);
