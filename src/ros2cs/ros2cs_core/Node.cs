@@ -19,7 +19,7 @@ using System.Diagnostics;
 namespace ROS2
 {
     /// <inheritdoc cref="INode"/>
-    internal sealed class Node : INode, IExtendedDisposable
+    internal sealed class Node : INode
     {
         /// <inheritdoc/>
         public string Name { get; private set; }
@@ -28,7 +28,7 @@ namespace ROS2
         public IContext Context { get { return this.ROSContext; } }
 
         /// <inheritdoc/>
-        public IExecutor Executor { get; private set; }
+        public IExecutor Executor { get; set; }
 
         /// <inheritdoc/>
         public bool IsDisposed
@@ -95,29 +95,6 @@ namespace ROS2
         }
 
         /// <inheritdoc/>
-        public bool TrySetExecutor(IExecutor executor)
-        {
-            return this.TrySetExecutor(executor, out _);
-        }
-
-        /// <inheritdoc/>
-        public bool TrySetExecutor(IExecutor executor, out IExecutor oldExecutor)
-        {
-            oldExecutor = default(IExecutor);
-            if (this.Executor != null && !this.Executor.Remove(this))
-            {
-                return false;
-            }
-            // prevent invalid executor if a failure occurs
-            (oldExecutor, this.Executor) = (this.Executor, oldExecutor);
-            oldExecutor?.Wake(this);
-            executor?.Add(this);
-            this.Executor = executor;
-            executor?.Wake(this);
-            return true;
-        }
-
-        /// <inheritdoc/>
         public IPublisher<T> CreatePublisher<T>(string topic, QualityOfServiceProfile qos = null) where T : Message, new()
         {
             this.AssertOk();
@@ -147,7 +124,7 @@ namespace ROS2
             Subscription<T> subscription = new Subscription<T>(topic, this, callback, qos);
             bool success = this.CurrentSubscriptions.Add(subscription);
             Debug.Assert(success, "subscription already exists");
-            this.Executor?.Wake(this);
+            this.Executor?.TryScheduleRescan(this);
             return subscription;
         }
 
@@ -161,7 +138,12 @@ namespace ROS2
         /// <returns>If the subscription existed on this node and has been removed.</returns>
         internal bool RemoveSubscription(IRawSubscription subscription)
         {
-            return this.CurrentSubscriptions.Remove(subscription);
+            if (this.CurrentSubscriptions.Remove(subscription))
+            {
+                this.Executor?.TryScheduleRescan(this);
+                return true;
+            }
+            return false;
         }
 
         /// <inheritdoc/>
@@ -171,7 +153,7 @@ namespace ROS2
             Client<I, O> client = new Client<I, O>(topic, this, qos);
             bool success = this.CurrentClients.Add(client);
             Debug.Assert(success, "client already exists");
-            this.Executor?.Wake(this);
+            this.Executor?.TryScheduleRescan(this);
             return client;
         }
 
@@ -185,7 +167,12 @@ namespace ROS2
         /// <returns>If the client existed on this node and has been removed.</returns>
         internal bool RemoveClient(IRawClient client)
         {
-            return this.CurrentClients.Remove(client);
+            if (this.CurrentClients.Remove(client))
+            {
+                this.Executor?.TryScheduleRescan(this);
+                return true;
+            }
+            return false;
         }
 
         /// <inheritdoc/>
@@ -195,7 +182,7 @@ namespace ROS2
             Service<I, O> service = new Service<I, O>(topic, this, callback, qos);
             bool success = this.CurrentServices.Add(service);
             Debug.Assert(success, "service already exists");
-            this.Executor?.Wake(this);
+            this.Executor?.TryScheduleRescan(this);
             return service;
         }
 
@@ -209,7 +196,12 @@ namespace ROS2
         /// <returns>If the service existed on this node and has been removed.</returns>
         internal bool RemoveService(IRawService service)
         {
-            return this.CurrentServices.Remove(service);
+            if (this.CurrentServices.Remove(service))
+            {
+                this.Executor?.TryScheduleRescan(this);
+                return true;
+            }
+            return false;
         }
 
         /// <inheritdoc/>
@@ -237,9 +229,10 @@ namespace ROS2
                 return;
             }
 
-            if (!this.TrySetExecutor(null))
+            if (!(this.Executor is null))
             {
-                throw new RuntimeError("removing the node from the current executor failed");
+                bool success = this.Executor.Remove(this);
+                Debug.Assert(success, "node was not added to its old executor");
             }
 
             foreach (IRawPublisher publisher in this.CurrentPublishers)

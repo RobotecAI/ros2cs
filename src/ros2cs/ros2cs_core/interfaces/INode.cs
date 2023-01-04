@@ -37,28 +37,14 @@ namespace ROS2
         IContext Context { get; }
 
         /// <summary>
-        /// Executor handling callbacks of this node.
+        /// Executor handling callbacks of this node, may be null.
         /// </summary>
         /// <remarks>
-        /// A node has to guarantee that it is associated with at most one executor at any given time
+        /// Users have to guarantee that a node is associated with at most one executor at any given time
         /// to prevent undefined behaviour when multithreading is used.
+        /// It is recommended to not set this property directly and leave this task to the executor.
         /// </remarks>
-        IExecutor Executor { get; }
-
-        /// <summary>
-        /// Try to change the executor of this node.
-        /// </summary>
-        /// <remarks>
-        /// A node has to guarantee that it is associated with at most one executor at any given time
-        /// to prevent undefined behaviour when multithreading is used.
-        /// </remarks>
-        /// <param name="executor">The new executor</param>
-        /// <returns>If the change was successful</returns>
-        bool TrySetExecutor(IExecutor executor);
-
-        /// <inheritdoc cref="TrySetExecutor"/>
-        /// <param name="oldExecutor">The old executor</param>
-        bool TrySetExecutor(IExecutor executor, out IExecutor oldExecutor);
+        IExecutor Executor { get; set; }
 
         /// <summary> Create a publisher for this node for a given topic, qos and message type </summary>
         /// <param name="topic"> Topic for the publisher. Naming restrictions of ros2 apply and violation results in an exception </param>

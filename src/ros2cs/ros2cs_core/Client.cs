@@ -289,7 +289,8 @@ namespace ROS2
             {
                 bool success = this.Node.RemoveClient(this);
                 Debug.Assert(success, "failed to remove client");
-                this.Node.Executor?.Wake(this.Node);
+                // not required if we are being finalized since the executor cant be running
+                this.Node.Executor?.Wait();
                 this.DisposeAllTasks();
             }
 
