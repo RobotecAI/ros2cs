@@ -287,7 +287,7 @@ namespace ROS2
             // only do if Node.CurrentClients and this.Requests have not been finalized
             if (disposing)
             {
-                bool success = this.Node.CurrentClients.Remove(this);
+                bool success = this.Node.RemoveClient(this);
                 Debug.Assert(success, "failed to remove client");
                 this.Node.Executor?.Wake(this.Node);
                 this.DisposeAllTasks();

@@ -125,7 +125,7 @@ namespace ROS2
             // only do if Node.CurrentSubscriptions has not been finalized
             if (disposing)
             {
-                bool success = this.Node.CurrentSubscriptions.Remove(this);
+                bool success = this.Node.RemoveSubscription(this);
                 Debug.Assert(success, "failed to remove subscription");
                 this.Node.Executor?.Wake(this.Node);
             }

@@ -159,7 +159,7 @@ namespace ROS2
             // only do if Node.CurrentServices has not been finalized
             if (disposing)
             {
-                bool success = this.Node.CurrentServices.Remove(this);
+                bool success = this.Node.RemoveService(this);
                 Debug.Assert(success, "failed to remove service");
                 this.Node.Executor?.Wake(this.Node);
             }

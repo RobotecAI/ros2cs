@@ -38,29 +38,29 @@ namespace ROS2
 
         internal IntPtr Handle = IntPtr.Zero;
 
-        private Context ROSContext;
-
         private IntPtr Options;
+
+        private readonly Context ROSContext;
 
         /// <inheritdoc/>
         public IReadOnlyCollection<IPublisherBase> Publishers { get { return this.CurrentPublishers; } }
 
-        internal HashSet<IRawPublisher> CurrentPublishers = new HashSet<IRawPublisher>();
+        private readonly HashSet<IRawPublisher> CurrentPublishers = new HashSet<IRawPublisher>();
 
         /// <inheritdoc/>
         public IReadOnlyCollection<ISubscriptionBase> Subscriptions { get { return this.CurrentSubscriptions; } }
 
-        internal HashSet<IRawSubscription> CurrentSubscriptions = new HashSet<IRawSubscription>();
+        private readonly HashSet<IRawSubscription> CurrentSubscriptions = new HashSet<IRawSubscription>();
 
         /// <inheritdoc/>
         public IReadOnlyCollection<IServiceBase> Services { get { return this.CurrentServices; } }
 
-        internal HashSet<IRawService> CurrentServices = new HashSet<IRawService>();
+        private readonly HashSet<IRawService> CurrentServices = new HashSet<IRawService>();
 
         /// <inheritdoc/>
         public IReadOnlyCollection<IClientBase> Clients { get { return this.CurrentClients; } }
 
-        internal HashSet<IRawClient> CurrentClients = new HashSet<IRawClient>();
+        private readonly HashSet<IRawClient> CurrentClients = new HashSet<IRawClient>();
 
         internal Node(string name, Context context)
         {
@@ -127,6 +127,19 @@ namespace ROS2
             return publisher;
         }
 
+        /// <summary>
+        /// Remove a publisher.
+        /// </summary>
+        /// <remarks>
+        /// This method is intended to be used by <see cref="Publisher.Dispose"/> and does not dispose the publisher.
+        /// </remarks>
+        /// <param name="publisher">Publisher to be removed.</param>
+        /// <returns>If the publisher existed on this node and has been removed.</returns>
+        internal bool RemovePublisher(IRawPublisher publisher)
+        {
+            return this.CurrentPublishers.Remove(publisher);
+        }
+
         /// <inheritdoc/>
         public ISubscription<T> CreateSubscription<T>(string topic, Action<T> callback, QualityOfServiceProfile qos = null) where T : Message, new()
         {
@@ -136,6 +149,19 @@ namespace ROS2
             Debug.Assert(success, "subscription already exists");
             this.Executor?.Wake(this);
             return subscription;
+        }
+
+        /// <summary>
+        /// Remove a subscription.
+        /// </summary>
+        /// <remarks>
+        /// This method is intended to be used by <see cref="Subscription.Dispose"/> and does not dispose the subscription.
+        /// </remarks>
+        /// <param name="subscription">Subscription to be removed.</param>
+        /// <returns>If the subscription existed on this node and has been removed.</returns>
+        internal bool RemoveSubscription(IRawSubscription subscription)
+        {
+            return this.CurrentSubscriptions.Remove(subscription);
         }
 
         /// <inheritdoc/>
@@ -149,6 +175,19 @@ namespace ROS2
             return client;
         }
 
+        /// <summary>
+        /// Remove a client.
+        /// </summary>
+        /// <remarks>
+        /// This method is intended to be used by <see cref="Client.Dispose"/> and does not dispose the client.
+        /// </remarks>
+        /// <param name="client">Client to be removed.</param>
+        /// <returns>If the client existed on this node and has been removed.</returns>
+        internal bool RemoveClient(IRawClient client)
+        {
+            return this.CurrentClients.Remove(client);
+        }
+
         /// <inheritdoc/>
         public IService<I, O> CreateService<I, O>(string topic, Func<I, O> callback, QualityOfServiceProfile qos = null) where I : Message, new() where O : Message, new()
         {
@@ -158,6 +197,19 @@ namespace ROS2
             Debug.Assert(success, "service already exists");
             this.Executor?.Wake(this);
             return service;
+        }
+
+        /// <summary>
+        /// Remove a service.
+        /// </summary>
+        /// <remarks>
+        /// This method is intended to be used by <see cref="Service.Dispose"/> and does not dispose the service.
+        /// </remarks>
+        /// <param name="service">Service to be removed.</param>
+        /// <returns>If the service existed on this node and has been removed.</returns>
+        internal bool RemoveService(IRawService service)
+        {
+            return this.CurrentServices.Remove(service);
         }
 
         /// <inheritdoc/>

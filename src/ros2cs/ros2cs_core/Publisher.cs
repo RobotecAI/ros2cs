@@ -109,7 +109,7 @@ namespace ROS2
             // only do if Node.CurrentPublishers has not been finalized
             if (disposing)
             {
-                bool success = this.Node.CurrentPublishers.Remove(this);
+                bool success = this.Node.RemovePublisher(this);
                 Debug.Assert(success, "failed to remove publisher");
             }
 
