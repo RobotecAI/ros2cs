@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdint.h>
 #include <rcl/error_handling.h>
 #include <rcl/context.h>
 #include <rcl/node.h>
@@ -19,6 +20,7 @@
 #include <rcl/subscription.h>
 #include <rcl/service.h>
 #include <rcl/client.h>
+#include <rcl/graph.h>
 #include <rcl/rcl.h>
 #include <rcl/time.h>
 #include <rcutils/allocator.h>
@@ -38,6 +40,17 @@ ROSIDL_GENERATOR_C_EXPORT
 void rclcs_free_context(rcl_context_t * context)
 {
   free(context);
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+uint8_t rclcs_context_is_valid(rcl_context_t * context)
+{
+  // since bool has different sizes in C and C++
+  if (rcl_context_is_valid(context))
+  {
+    return 1;
+  }
+  return 0;
 }
 
 ROSIDL_GENERATOR_C_EXPORT
@@ -75,6 +88,17 @@ void rclcs_free_node(rcl_node_t * node)
 }
 
 ROSIDL_GENERATOR_C_EXPORT
+uint8_t rclcs_node_is_valid(rcl_node_t * node)
+{
+  // since bool has different sizes in C and C++
+  if (rcl_node_is_valid(node))
+  {
+    return 1;
+  }
+  return 0;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
 rcl_node_options_t * rclcs_node_create_default_options()
 {
   rcl_node_options_t  * default_node_options_handle = (rcl_node_options_t *)malloc(sizeof(rcl_node_options_t));
@@ -100,6 +124,17 @@ ROSIDL_GENERATOR_C_EXPORT
 void rclcs_free_subscription(rcl_subscription_t * subscription)
 {
   free(subscription);
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+uint8_t rclcs_subscription_is_valid(rcl_subscription_t * subscription)
+{
+  // since bool has different sizes in C and C++
+  if (rcl_subscription_is_valid(subscription))
+  {
+    return 1;
+  }
+  return 0;
 }
 
 ROSIDL_GENERATOR_C_EXPORT
@@ -132,6 +167,17 @@ void rclcs_free_publisher(rcl_publisher_t * publisher)
 }
 
 ROSIDL_GENERATOR_C_EXPORT
+uint8_t rclcs_publisher_is_valid(rcl_publisher_t * publisher)
+{
+  // since bool has different sizes in C and C++
+  if (rcl_publisher_is_valid(publisher))
+  {
+    return 1;
+  }
+  return 0;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
 rcl_publisher_options_t *rclcs_publisher_create_options(rmw_qos_profile_t * qos)
 {
   rcl_publisher_options_t *default_publisher_options_handle = (rcl_publisher_options_t *)malloc(sizeof(rcl_publisher_options_t));
@@ -161,6 +207,17 @@ void rclcs_free_client(rcl_client_t * client)
 }
 
 ROSIDL_GENERATOR_C_EXPORT
+uint8_t rclcs_client_is_valid(rcl_client_t * client)
+{
+  // since bool has different sizes in C and C++
+  if (rcl_client_is_valid(client))
+  {
+    return 1;
+  }
+  return 0;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
 rcl_client_options_t *rclcs_client_create_options(rmw_qos_profile_t * qos)
 {
   rcl_client_options_t *default_client_options_handle = (rcl_client_options_t *)malloc(sizeof(rcl_client_options_t));
@@ -187,6 +244,17 @@ ROSIDL_GENERATOR_C_EXPORT
 void rclcs_free_service(rcl_service_t * service)
 {
   free(service);
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+uint8_t rclcs_service_is_valid(rcl_service_t * service)
+{
+  // since bool has different sizes in C and C++
+  if (rcl_service_is_valid(service))
+  {
+    return 1;
+  }
+  return 0;
 }
 
 ROSIDL_GENERATOR_C_EXPORT

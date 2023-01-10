@@ -20,18 +20,6 @@ namespace ROS2.Test
     [TestFixture]
     public class ClockTest
     {
-        [SetUp]
-        public void SetUp()
-        {
-            Ros2cs.Init();
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            Ros2cs.Shutdown();
-        }
-
         [Test]
         public void CreateClock()
         {

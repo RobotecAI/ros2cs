@@ -36,7 +36,7 @@ namespace ROS2
         typeof(GetZeroInitializedInitOptionsType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int InitOptionsInitType(ref rcl_init_options_t init_options, rcl_allocator_t allocator);
+    internal delegate int InitOptionsInitType([In, Out] ref rcl_init_options_t init_options, rcl_allocator_t allocator);
     internal static InitOptionsInitType
     rcl_init_options_init =
     (InitOptionsInitType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -54,16 +54,7 @@ namespace ROS2
         typeof(ShutdownType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate bool ContextIsValidType(IntPtr context);
-    internal static ContextIsValidType
-        rcl_context_is_valid =
-        (ContextIsValidType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-        nativeRCL,
-        "rcl_context_is_valid"),
-        typeof(ContextIsValidType));
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int InitType(int argc, [In, Out] string[] argv, ref rcl_init_options_t option, IntPtr context);
+    internal delegate int InitType(int argc, [In, Out] string[] argv, [In] ref rcl_init_options_t option, IntPtr context);
     internal static InitType
         rcl_init =
         (InitType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -97,15 +88,6 @@ namespace ROS2
         nativeRCL,
         "rcl_node_fini"),
         typeof(NodeFiniType));
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate bool NodeValidType(IntPtr node);
-    internal static NodeValidType
-        rcl_node_is_valid =
-        (NodeValidType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-        nativeRCL,
-        "rcl_node_is_valid"),
-        typeof(NodeValidType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr NodeGetNameType(IntPtr node);
@@ -144,15 +126,6 @@ namespace ROS2
         typeof(ClientInitType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate bool ClientIsValidType(IntPtr client);
-    internal static ClientIsValidType
-        rcl_client_is_valid =
-        (ClientIsValidType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-        nativeRCL,
-        "rcl_client_is_valid"),
-        typeof(ClientIsValidType));
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate int ClientFiniType(IntPtr client, IntPtr node);
     internal static ClientFiniType
         rcl_client_fini =
@@ -162,7 +135,7 @@ namespace ROS2
         typeof(ClientFiniType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int SendRequestType(IntPtr client, IntPtr message, ref long sequence_number);
+    internal delegate int SendRequestType(IntPtr client, IntPtr message, out long sequence_number);
     internal static SendRequestType
         rcl_send_request =
         (SendRequestType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -171,7 +144,7 @@ namespace ROS2
         typeof(SendRequestType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int TakeResponceType(IntPtr client, ref rcl_rmw_request_id_t request_header, IntPtr ros_response);
+    internal delegate int TakeResponceType(IntPtr client, [In, Out] ref rcl_rmw_request_id_t request_header, IntPtr ros_response);
     internal static TakeResponceType
         rcl_take_response =
         (TakeResponceType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -180,7 +153,7 @@ namespace ROS2
         typeof(TakeResponceType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int ServiceIsAvailableType(IntPtr node, IntPtr client, ref bool is_available);
+    internal delegate int ServiceIsAvailableType(IntPtr node, IntPtr client, out bool is_available);
     internal static ServiceIsAvailableType
         rcl_service_server_is_available =
         (ServiceIsAvailableType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -207,15 +180,6 @@ namespace ROS2
         typeof(ServiceInitType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate bool ServiceIsValidType(IntPtr service);
-    internal static ServiceIsValidType
-        rcl_service_is_valid =
-        (ServiceIsValidType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-        nativeRCL,
-        "rcl_service_is_valid"),
-        typeof(ServiceIsValidType));
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate int ServiceFiniType(IntPtr service, IntPtr node);
     internal static ServiceFiniType
         rcl_service_fini =
@@ -225,7 +189,7 @@ namespace ROS2
         typeof(ServiceFiniType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int TakeRequestType(IntPtr service, ref rcl_rmw_request_id_t request_header, IntPtr message_handle);
+    internal delegate int TakeRequestType(IntPtr service, [In, Out] ref rcl_rmw_request_id_t request_header, IntPtr message_handle);
     internal static TakeRequestType
         rcl_take_request =
         (TakeRequestType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -234,7 +198,7 @@ namespace ROS2
         typeof(TakeRequestType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int SendResponceType(IntPtr service, ref rcl_rmw_request_id_t request_header, IntPtr responce_info);
+    internal delegate int SendResponceType(IntPtr service, [In, Out] ref rcl_rmw_request_id_t request_header, IntPtr responce_info);
     internal static SendResponceType
         rcl_send_response =
         (SendResponceType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -259,15 +223,6 @@ namespace ROS2
         nativeRCL,
         "rcl_publisher_init"),
         typeof(PublisherInitType));
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate bool PublisherValidType(IntPtr publisher);
-    internal static PublisherValidType
-        rcl_publisher_is_valid =
-        (PublisherValidType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-        nativeRCL,
-        "rcl_publisher_is_valid"),
-        typeof(PublisherValidType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate int PublisherFiniType(IntPtr publisher, IntPtr node);
@@ -304,15 +259,6 @@ namespace ROS2
         nativeRCL,
         "rcl_subscription_fini"),
         typeof(SubscriptionFiniType));
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate bool SubscriptionIsValidType(IntPtr subscription);
-    internal static SubscriptionIsValidType
-        rcl_subscription_is_valid =
-        (SubscriptionIsValidType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-        nativeRCL,
-        "rcl_subscription_is_valid"),
-        typeof(SubscriptionIsValidType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate int TakeType(IntPtr subscription, IntPtr message_handle, IntPtr message_info, IntPtr allocation);
@@ -418,7 +364,7 @@ namespace ROS2
         typeof(WaitType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    internal delegate int RclClockGetNow(IntPtr ros_clock, ref long query_now);
+    internal delegate int RclClockGetNow(IntPtr ros_clock, out long query_now);
     internal static RclClockGetNow
         rcl_clock_get_now =
         (RclClockGetNow)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(

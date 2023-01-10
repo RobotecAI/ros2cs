@@ -33,7 +33,7 @@ namespace ROS2
         {
             get
             {
-                bool ok = NativeRcl.rcl_service_is_valid(this.Handle);
+                bool ok = NativeRclInterface.rclcs_service_is_valid(this.Handle);
                 GC.KeepAlive(this);
                 return !ok;
             }

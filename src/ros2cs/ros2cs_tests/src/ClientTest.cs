@@ -26,6 +26,8 @@ namespace ROS2.Test
     {
         private static readonly string SERVICE_NAME = "test_service";
 
+        private Context Context;
+
         private INode Node;
 
         private IClient<AddTwoInts_Request, AddTwoInts_Response> Client;
@@ -33,16 +35,15 @@ namespace ROS2.Test
         [SetUp]
         public void SetUp()
         {
-            Ros2cs.Init();
-            Node = Ros2cs.CreateNode("service_test_node");
+            Context = new Context();
+            Context.TryCreateNode("service_test_node", out Node);
             Client = Node.CreateClient<AddTwoInts_Request, AddTwoInts_Response>(SERVICE_NAME);
         }
 
         [TearDown]
         public void TearDown()
         {
-            Node.Dispose();
-            Ros2cs.Shutdown();
+            Context.Dispose();
         }
 
         private AddTwoInts_Request CreateRequest(int a, int b)
@@ -70,7 +71,8 @@ namespace ROS2.Test
             var task = Client.CallAsync(CreateRequest(42, 3));
             while (!task.IsCompleted)
             {
-                Ros2cs.SpinOnce(Node, 0.1);
+                service.TryProcess();
+                Client.TryProcess();
             }
             Assert.That(task.Result.Sum, Is.EqualTo(45));
         }
@@ -88,7 +90,8 @@ namespace ROS2.Test
                 .ToArray();
             while (!tasks.All(task => task.IsCompleted))
             {
-                Ros2cs.SpinOnce(Node, 0.1);
+                service.TryProcess();
+                Client.TryProcess();
             }
             Assert.That(tasks.Select(task => task.Result.Sum), Is.All.EqualTo(100));
         }
@@ -96,7 +99,7 @@ namespace ROS2.Test
         [Test]
         public void ClientWaitForService()
         {
-            Assert.That(!Client.IsServiceAvailable());
+            Assert.That(Client.IsServiceAvailable(), Is.False);
             {
                 using var service = Node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
                     SERVICE_NAME,
@@ -104,22 +107,33 @@ namespace ROS2.Test
                 );
                 Assert.That(Client.IsServiceAvailable());
             }
-            Assert.That(!Client.IsServiceAvailable());
+            Assert.That(Client.IsServiceAvailable(), Is.False);
         }
 
         [Test]
         public void DisposedClientHandling()
         {
-            Assert.That(!Client.IsDisposed);
+            Assert.That(Client.IsDisposed, Is.False);
+
             Client.Dispose();
+
             Assert.That(Client.IsDisposed);
-            Assert.DoesNotThrow(() => { Ros2cs.SpinOnce(Node, 0.1); });
+            Assert.That(Node.Clients, Does.Not.Contain(Client));
+            Assert.Throws<ObjectDisposedException>(() => Client.CallAsync(CreateRequest(42, 3)));
+        }
+
+        [Test]
+        public void DoubleDisposeClient()
+        {
+            Client.Dispose();
+            Client.Dispose();
+
+            Assert.That(Client.IsDisposed);
         }
 
         [Test]
         public void DisposedClientTasks()
         {
-            Ros2cs.SpinOnce(Node, 0.1);
             using var service = Node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
                 SERVICE_NAME,
                 HandleRequest
@@ -131,15 +145,6 @@ namespace ROS2.Test
             Assert.Throws<AggregateException>(task.Wait);
             Assert.That(task.IsFaulted);
             Assert.That(task.Exception.InnerExceptions.Any(e => e is ObjectDisposedException));
-            Assert.DoesNotThrow(() => { Ros2cs.SpinOnce(Node, 0.1); });
-        }
-
-        [Test]
-        public void ReinitializeDisposedClient()
-        {
-            Client.Dispose();
-            Client = Node.CreateClient<AddTwoInts_Request, AddTwoInts_Response>(SERVICE_NAME);
-            Assert.DoesNotThrow(() => { Ros2cs.SpinOnce(Node, 0.1); });
         }
 
         [Test]
@@ -158,7 +163,8 @@ namespace ROS2.Test
 
             while (!tasks.Any(task => task.IsCompleted))
             {
-                Ros2cs.SpinOnce(Node, 0.1);
+                service.TryProcess();
+                Client.TryProcess();
             }
 
             int completed = tasks.Where(task => task.IsCompletedSuccessfully).Count();
@@ -189,7 +195,8 @@ namespace ROS2.Test
 
             while (!finishedTask.IsCompleted)
             {
-                Ros2cs.SpinOnce(Node, 0.1);
+                service.TryProcess();
+                Client.TryProcess();
             }
 
             Assert.That(this.Client.Cancel(finishedTask), Is.False);
@@ -200,7 +207,40 @@ namespace ROS2.Test
             Assert.That(pendingTask.IsCanceled);
             Assert.That(this.Client.PendingRequests.Count, Is.Zero);
 
-            Assert.DoesNotThrow(() => { Ros2cs.SpinOnce(Node, 0.1); });            
+            Assert.DoesNotThrow(() => { service.TryProcess(); Client.TryProcess(); });            
+        }
+
+        [Test]
+        public void ClientTryProcess()
+        {
+            this.ClientTryProcessTest(this.Client.TryProcess);
+        }
+
+        [Test]
+        public void ClientTryProcessAsync()
+        {
+            this.ClientTryProcessTest(() => {
+                Task<bool> task = this.Client.TryProcessAsync();
+                task.Wait();
+                return task.Result;
+            });
+        }
+
+        private void ClientTryProcessTest(Func<bool> implementation)
+        {
+            Assert.That(implementation(), Is.False);
+
+            using var service = Node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
+                SERVICE_NAME,
+                HandleRequest
+            );
+            Task pendingTask = this.Client.CallAsync(this.CreateRequest(3, 4));
+            while (!service.TryProcess())
+            {}
+            while (!implementation())
+            {}
+
+            Assert.That(pendingTask.IsCompletedSuccessfully);
         }
     }
 }

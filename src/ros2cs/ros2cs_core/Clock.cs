@@ -48,7 +48,7 @@ namespace ROS2
       {
         RosTime time = new RosTime();
         long queryNowNanoseconds = 0;
-        NativeRcl.rcl_clock_get_now(handle, ref queryNowNanoseconds);
+        NativeRcl.rcl_clock_get_now(handle, out queryNowNanoseconds);
         time.sec = (int)(queryNowNanoseconds / (long)1e9);
         time.nanosec = (uint)(queryNowNanoseconds - time.sec*((long)1e9));
         return time;

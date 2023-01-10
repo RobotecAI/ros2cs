@@ -44,7 +44,7 @@ namespace ROS2
         {
             get
             {
-                bool ok = NativeRcl.rcl_client_is_valid(this.Handle);
+                bool ok = NativeRclInterface.rclcs_client_is_valid(this.Handle);
                 GC.KeepAlive(this);
                 return !ok;
             }
@@ -125,7 +125,7 @@ namespace ROS2
             Utils.CheckReturnEnum(NativeRcl.rcl_service_server_is_available(
                 this.Node.Handle,
                 this.Handle,
-                ref available
+                out available
             ));
             GC.KeepAlive(this);
             return available;
@@ -224,7 +224,7 @@ namespace ROS2
                 NativeRcl.rcl_send_request(
                     this.Handle,
                     msgInternals.Handle,
-                    ref sequence_number
+                    out sequence_number
                 )
             );
             GC.KeepAlive(this);

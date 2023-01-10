@@ -47,6 +47,16 @@ namespace ROS2
         typeof(FreeContextType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    [return: MarshalAs(UnmanagedType.U1)]
+    internal delegate bool ContextIsValidType(IntPtr context);
+    internal static ContextIsValidType
+        rclcs_context_is_valid =
+        (ContextIsValidType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_context_is_valid"),
+        typeof(ContextIsValidType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate int RCLCSInitType(IntPtr context, rcl_allocator_t allocator);
     internal static RCLCSInitType
         rclcs_init =
@@ -57,7 +67,7 @@ namespace ROS2
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr GetZeroInitializedNodeType();
-    internal static GetZeroInitializedContextType
+    internal static GetZeroInitializedNodeType
         rclcs_get_zero_initialized_node =
         (GetZeroInitializedNodeType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
         nativeROS2CS,
@@ -66,12 +76,22 @@ namespace ROS2
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate void FreeNodeType(IntPtr node);
-    internal static FreeContextType
+    internal static FreeNodeType
         rclcs_free_node =
         (FreeNodeType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
         nativeROS2CS,
         "rclcs_free_node"),
         typeof(FreeNodeType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    [return: MarshalAs(UnmanagedType.U1)]
+    internal delegate bool NodeIsValidType(IntPtr node);
+    internal static NodeIsValidType
+        rclcs_node_is_valid =
+        (NodeIsValidType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_node_is_valid"),
+        typeof(NodeIsValidType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr GetErrorStringType();
@@ -128,6 +148,16 @@ namespace ROS2
         typeof(FreeSubscriptionType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    [return: MarshalAs(UnmanagedType.U1)]
+    internal delegate bool SubscriptionIsValidType(IntPtr subscription);
+    internal static SubscriptionIsValidType
+        rclcs_subscription_is_valid =
+        (SubscriptionIsValidType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_subscription_is_valid"),
+        typeof(SubscriptionIsValidType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr SubscriptionCreateOptionsType(IntPtr qos);
     internal static SubscriptionCreateOptionsType
         rclcs_subscription_create_options =
@@ -162,6 +192,16 @@ namespace ROS2
         nativeROS2CS,
         "rclcs_free_publisher"),
         typeof(FreePublisherType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    [return: MarshalAs(UnmanagedType.U1)]
+    internal delegate bool PublisherIsValidType(IntPtr publisher);
+    internal static PublisherIsValidType
+        rclcs_publisher_is_valid =
+        (PublisherIsValidType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_publisher_is_valid"),
+        typeof(PublisherIsValidType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr PublisherCreateOptionsType(IntPtr qos);
@@ -200,6 +240,16 @@ namespace ROS2
         typeof(FreeClientType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    [return: MarshalAs(UnmanagedType.U1)]
+    internal delegate bool ClientIsValidType(IntPtr client);
+    internal static ClientIsValidType
+        rclcs_client_is_valid =
+        (ClientIsValidType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_client_is_valid"),
+        typeof(ClientIsValidType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr ClientCreateOptionsType(IntPtr qos);
     internal static ClientCreateOptionsType
         rclcs_client_create_options =
@@ -234,6 +284,16 @@ namespace ROS2
         nativeROS2CS,
         "rclcs_free_service"),
         typeof(FreeServiceType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    [return: MarshalAs(UnmanagedType.U1)]
+    internal delegate bool ServiceIsValidType(IntPtr service);
+    internal static ServiceIsValidType
+        rclcs_service_is_valid =
+        (ServiceIsValidType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_service_is_valid"),
+        typeof(ServiceIsValidType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr ServiceCreateOptionsType(IntPtr qos);

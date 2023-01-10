@@ -29,8 +29,8 @@ if(BUILD_TESTING)
 
   set(TESTS_SRC
     src/ClockTest.cs
-    src/CreateNodeTest.cs
-    src/InitShutdownTest.cs
+    src/ContextTest.cs
+    src/PublisherTest.cs
     src/LargeMessageTest.cs
     src/MessagesTest.cs
     src/NodeTest.cs

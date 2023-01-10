@@ -74,7 +74,7 @@ namespace ROS2
         /// <inheritdoc/>
         public bool Ok()
         {
-            return NativeRcl.rcl_context_is_valid(this.Handle);
+            return NativeRclInterface.rclcs_context_is_valid(this.Handle);
         }
 
         /// <inheritdoc/>

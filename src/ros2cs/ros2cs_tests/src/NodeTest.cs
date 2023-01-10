@@ -22,113 +22,196 @@ namespace ROS2.Test
     [TestFixture]
     public class NodeTest
     {
-        INode node;
-        string TEST_NODE = "my_node";
+        private static readonly string TEST_NODE = "my_node";
+
+        private Context Context;
+
+        private INode Node;
 
         [SetUp]
         public void SetUp()
         {
-            Ros2cs.Init();
-            node = Ros2cs.CreateNode(TEST_NODE);
+            Context = new Context();
+            Context.TryCreateNode(TEST_NODE, out Node);
         }
 
         [TearDown]
         public void TearDown()
         {
-            node.Dispose();
-            Ros2cs.Shutdown();
+            Context.Dispose();
         }
 
         [Test]
-        public void Accessors()
+        public void NameProperty()
         {
-            Assert.That(node.Name, Is.EqualTo("my_node"));
+            Assert.That(Node.Name, Is.EqualTo(TEST_NODE));
+        }
+
+        [Test]
+        public void ContextProperty()
+        {
+            Assert.That(Object.ReferenceEquals(Node.Context, Context));
+        }
+
+        [Test]
+        public void DefaultExecutor()
+        {
+            Assert.That(Node.Executor, Is.Null);
+        }
+
+        [Test]
+        public void IsDisposed()
+        {
+            Assert.That(Node.IsDisposed, Is.False);
+
+            Node.Dispose();
+
+            Assert.That(Node.IsDisposed);
+        }
+
+        [Test]
+        public void DoubleDisposal()
+        {
+            Node.Dispose();
+            Node.Dispose();
+
+            Assert.That(Node.IsDisposed);
+        }
+
+        [Test]
+        public void DisposeAllOnDispose()
+        {
+            var publisher = Node.CreatePublisher<std_msgs.msg.Bool>("publisher_topic");
+            var subscription = Node.CreateSubscription<std_msgs.msg.Bool>(
+                "publisher_topic",
+                msg => { throw new InvalidOperationException($"received message {msg}"); }
+            );
+            var service = Node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
+                "service_topic",
+                request => { throw new InvalidOperationException($"received request {request}"); }
+            );
+            var client = Node.CreateClient<AddTwoInts_Request, AddTwoInts_Response>(
+                "service_topic"
+            );
+
+            Node.Dispose();
+
+            Assert.That(publisher.IsDisposed);
+            Assert.That(subscription.IsDisposed);
+            Assert.That(service.IsDisposed);
+            Assert.That(client.IsDisposed);
+            Assert.That(Node.Publishers, Is.Empty);
+            Assert.That(Node.Subscriptions, Is.Empty);
+            Assert.That(Node.Services, Is.Empty);
+            Assert.That(Node.Clients, Is.Empty);
         }
 
         [Test]
         public void CreatePublisher()
         {
-            Publisher<std_msgs.msg.Bool> publisher = node.CreatePublisher<std_msgs.msg.Bool>("test_topic");
+            string topic = "publisher_topic";
+            var publishers = Node.Publishers;
+            using IPublisher<std_msgs.msg.Bool> publisher = Node.CreatePublisher<std_msgs.msg.Bool>(topic);
+            
+            Assert.That(publishers, Contains.Item(publisher));
+            Assert.That(publisher.Topic, Is.EqualTo(topic));
+        }
+
+        [Test]
+        public void DisposePublisher()
+        {
+            IPublisher<std_msgs.msg.Bool> publisher = Node.CreatePublisher<std_msgs.msg.Bool>("test_topic");
+        
+            Assert.That(Node.Publishers, Contains.Item(publisher));
+
             publisher.Dispose();
 
-            using (publisher = node.CreatePublisher<std_msgs.msg.Bool>("test_topic"))
-            {
-            }
-        }
-
-        [Test]
-        public void Publish()
-        {
-            using (Publisher<std_msgs.msg.Bool> publisher = node.CreatePublisher<std_msgs.msg.Bool>("test_topic"))
-            {
-                publisher.Publish(new std_msgs.msg.Bool());
-            }
-        }
-
-        [Test]
-        public void PublishChangingSize()
-        {
-          using (Publisher<test_msgs.msg.UnboundedSequences> publisher = node.CreatePublisher<test_msgs.msg.UnboundedSequences>("test_topic"))
-          {
-            string[] setStringSequence = new string[2]
-            {
-              "First",
-              "Second string to send, has to be a bit longer for the test"
-            };
-
-            test_msgs.msg.UnboundedSequences msg3 = new test_msgs.msg.UnboundedSequences();
-            msg3.String_values = setStringSequence;
-            publisher.Publish(msg3);
-
-            msg3.Int32_values = new int[2] { 1, 2 };
-            msg3.String_values[0] = "A string that is longer than the previous one";
-            msg3.String_values[1] = "shorter than previous one";
-
-            // Publish reusing the message
-            publisher.Publish(msg3);
-
-            msg3.String_values = new string[5] { "1", "2", "3", "4", "5" };
-            msg3.Int32_values = new int[10] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-            publisher.Publish(msg3);
-
-            msg3.String_values = new string[1] { "hello" };
-            msg3.Int32_values = new int[1] { 1 };
-            publisher.Publish(msg3);
-          }
+            Assert.That(Node.Publishers, Does.Not.Contain(publisher));
         }
 
         [Test]
         public void CreateSubscription()
         {
-            Subscription<std_msgs.msg.Bool> subscription = node.CreateSubscription<std_msgs.msg.Bool>(
-                "/subscription_topic", msg => Console.WriteLine("I heard: [" + msg.Data + "]"));
+            string topic = "subscription_topic";
+            var subscriptions = Node.Subscriptions;
+            using ISubscription<std_msgs.msg.Bool> subscription = Node.CreateSubscription<std_msgs.msg.Bool>(
+                topic,
+                msg => { throw new InvalidOperationException($"received message {msg}"); }
+            );
+
+            Assert.That(subscriptions, Contains.Item(subscription));
+            Assert.That(subscription.Topic, Is.EqualTo(topic));
+        }
+
+        [Test]
+        public void DisposeSubscription()
+        {
+            ISubscription<std_msgs.msg.Bool> subscription = Node.CreateSubscription<std_msgs.msg.Bool>(
+                "test_topic",
+                msg => { throw new InvalidOperationException($"received message {msg}"); }
+            );
+
+            Assert.That(Node.Subscriptions, Contains.Item(subscription));
+
             subscription.Dispose();
 
-            using (subscription = node.CreateSubscription<std_msgs.msg.Bool>(
-                "test_topic", msg => Console.WriteLine("Got message")))
-            {
-            }
+            Assert.That(Node.Subscriptions, Does.Not.Contain(subscription));
         }
 
         [Test]
-        public void RemoveService()
+        public void CreateService()
         {
-            var service = node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
-                "/test",
-                request => { throw new InvalidOperationException("service should not be called"); }
+            string topic = "service_topic";
+            var services = Node.Services;
+            using IService<AddTwoInts_Request, AddTwoInts_Response> service = Node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
+                topic,
+                request => { throw new InvalidOperationException($"received request {request}"); }
+            );
+
+            Assert.That(services, Contains.Item(service));
+            Assert.That(service.Topic, Is.EqualTo(topic));
+        }
+
+        [Test]
+        public void DisposeService()
+        {
+            IService<AddTwoInts_Request, AddTwoInts_Response> service = Node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
+                "test_topic",
+                request => { throw new InvalidOperationException($"received request {request}"); }
             );
             
-            Assert.That(node.RemoveService(service));
-            Assert.That(service.IsDisposed);
+            Assert.That(Node.Services, Contains.Item(service));
+
+            service.Dispose();
+
+            Assert.That(Node.Services, Does.Not.Contain(service));
         }
 
         [Test]
-        public void RemoveClient()
+        public void CreateClient()
         {
-            var client = node.CreateClient<AddTwoInts_Request, AddTwoInts_Response>("/test");
+            string topic = "client_topic";
+            var clients = Node.Clients;
+            using IClient<AddTwoInts_Request, AddTwoInts_Response> client = Node.CreateClient<AddTwoInts_Request, AddTwoInts_Response>(
+                topic
+            );
+
+            Assert.That(clients, Contains.Item(client));
+            Assert.That(client.Topic, Is.EqualTo(topic));
+        }
+
+        [Test]
+        public void DisposeClient()
+        {
+            IClient<AddTwoInts_Request, AddTwoInts_Response> client = Node.CreateClient<AddTwoInts_Request, AddTwoInts_Response>(
+                "test_topic"
+            );
             
-            Assert.That(node.RemoveClient(client));
-            Assert.That(client.IsDisposed);
+            Assert.That(Node.Clients, Contains.Item(client));
+
+            client.Dispose();
+
+            Assert.That(Node.Clients, Does.Not.Contain(client));
         }
     }
 }

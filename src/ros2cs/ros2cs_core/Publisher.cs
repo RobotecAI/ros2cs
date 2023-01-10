@@ -30,7 +30,7 @@ namespace ROS2
         {
             get
             {
-                bool ok = NativeRcl.rcl_publisher_is_valid(this.Handle);
+                bool ok = NativeRclInterface.rclcs_publisher_is_valid(this.Handle);
                 GC.KeepAlive(this);
                 return !ok;
             }

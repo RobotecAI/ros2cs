@@ -33,7 +33,7 @@ namespace ROS2
         /// <inheritdoc/>
         public bool IsDisposed
         {
-            get { return !NativeRcl.rcl_node_is_valid(this.Handle); }
+            get { return !NativeRclInterface.rclcs_node_is_valid(this.Handle); }
         }
 
         internal IntPtr Handle = IntPtr.Zero;
