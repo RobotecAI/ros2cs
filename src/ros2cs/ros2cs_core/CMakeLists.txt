@@ -79,6 +79,9 @@ set(CS_INTERFACES
   interfaces/IService.cs
   interfaces/IPublisher.cs
   interfaces/ISubscription.cs
+  interfaces/IContext.cs
+  interfaces/IExecutor.cs
+  interfaces/IWaitable.cs
 )
 
 set(CS_NATIVE
@@ -91,6 +94,8 @@ set(CS_NATIVE
 
 set(CS_UTILS
   utils/Utils.cs
+  utils/LockedDictionary.cs
+  utils/MappedValueDictionary.cs
 )
 
 set(CS_SOURCES
@@ -103,9 +108,9 @@ set(CS_SOURCES
   Node.cs
   Publisher.cs
   QualityOfServiceProfile.cs
-  Ros2cs.cs
   Subscription.cs
   WaitSet.cs
+  Context.cs
   properties/AssemblyInfo.cs
 )
 
