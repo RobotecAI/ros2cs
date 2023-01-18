@@ -40,6 +40,8 @@ if(UNIX)
   else()
     set(CSBUILD_TOOL "DotNetCore")
   endif()
+elseif(APPLE)
+  set(CSBUILD_TOOL "Mono")    
 else()
   set(CSBUILD_TOOL "DotNetCore")
 endif()
@@ -83,7 +85,11 @@ ament_export_libraries(ros2cs_native)
 ament_export_targets(ros2cs_native)
 configure_csharp_c_extension_library(ros2cs_native)
 
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-undefined,error")
+endif()
 
 set(CS_INTERFACES
   interfaces/INode.cs
@@ -282,7 +288,7 @@ if(STANDALONE_BUILD)
 
   macro(install_standalone_dependencies)
     # Filter valid libraries
-    list(FILTER REQ_STANDALONE_LIBS INCLUDE REGEX ".*(lib|dll|so)(\.[0-9])*$")
+    list(FILTER REQ_STANDALONE_LIBS INCLUDE REGEX ".*(lib|dll|so|dylib)(\.[0-9])*$")
     list(REMOVE_DUPLICATES REQ_STANDALONE_LIBS)
 
     if(WIN32)
@@ -295,6 +301,12 @@ if(STANDALONE_BUILD)
         DESTINATION standalone
       )
     elseif(UNIX)
+      # handle both mac and unix libraries
+      set(LIB_EXT "so")
+      if (APPLE)
+        set(LIB_EXT "dylib")
+      endif()
+
       set(_resolvedFiles "")
       foreach(lib_path ${REQ_STANDALONE_LIBS})
         # Generate soversion files (.so.<major>). Some libs links to soversion symlinks which are not returned by find_package by default.
@@ -308,15 +320,15 @@ if(STANDALONE_BUILD)
 
       # Fix soversion files
       foreach(_resolvedFile ${_resolvedFiles})
-        if("${_resolvedFile}" MATCHES "so(\.[0-9]*)+$")
+        if("${_resolvedFile}" MATCHES "${LIB_EXT}(\.[0-9]*)+$")
           # message("Soversion file detected ${_resolvedFile}")
 
-          # Get file path without so
-          string(FIND "${_resolvedFile}" ".so." _findPos)
+          # Get file path without ${LIB_EXT}
+          string(FIND "${_resolvedFile}" ".${LIB_EXT}." _findPos)
           string(SUBSTRING "${_resolvedFile}" 0 ${_findPos} _cutted)
 
           set(_remainingPath "${_resolvedFile}")
-          while("${_remainingPath}" MATCHES "so(\.[0-9]*)+$")
+          while("${_remainingPath}" MATCHES "${LIB_EXT}(\.[0-9]*)+$")
             string(FIND "${_remainingPath}" "." _lastDotPos REVERSE)
             string(SUBSTRING "${_remainingPath}" 0 ${_lastDotPos} _tempPos)
             get_filename_component(_libPathFilename "${_tempPos}" NAME)
@@ -330,15 +342,15 @@ if(STANDALONE_BUILD)
 
       # rpath for each standalone lib must be updated so all the libs will see each other
       install(CODE 
-        "execute_process(COMMAND find ${CMAKE_INSTALL_PREFIX}/standalone -name *.so -exec patchelf --set-rpath $ORIGIN:. {} \;)"
+        "execute_process(COMMAND find ${CMAKE_INSTALL_PREFIX}/standalone -name *.${LIB_EXT} -exec patchelf --set-rpath $ORIGIN:. {} \;)"
       )
       # soversion files as well
       install(CODE 
-        "execute_process(COMMAND find ${CMAKE_INSTALL_PREFIX}/standalone -name *.so.* -exec patchelf --set-rpath $ORIGIN:. {} \;)"
+        "execute_process(COMMAND find ${CMAKE_INSTALL_PREFIX}/standalone -name *.${LIB_EXT}.* -exec patchelf --set-rpath $ORIGIN:. {} \;)"
       )
       # as well as custom resources
       install(CODE 
-        "execute_process(COMMAND find ${CMAKE_INSTALL_PREFIX}/resources -name *.so -exec patchelf --set-rpath $ORIGIN:. {} \;)"
+        "execute_process(COMMAND find ${CMAKE_INSTALL_PREFIX}/resources -name *.${LIB_EXT} -exec patchelf --set-rpath $ORIGIN:. {} \;)"
       )
     endif()
   endmacro()

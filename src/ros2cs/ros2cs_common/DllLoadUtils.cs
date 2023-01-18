@@ -119,13 +119,13 @@ namespace ROS2
     }
 
     private static Platform CheckPlatform () {
-          if (IsUnix())
-          {
-              return Platform.Unix;
-          }
-          else if (IsMacOSX())
+          if (IsMacOSX())
           {
               return Platform.MacOSX;
+          }
+          else if (IsUnix())
+          {
+              return Platform.Unix;
           }
           else if (IsWindowsDesktop())
           {
