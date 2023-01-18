@@ -50,7 +50,7 @@ namespace ROS2
             }
         }
 
-        private IntPtr Handle = IntPtr.Zero;
+        public IntPtr Handle {get; private set; } = IntPtr.Zero;
 
         private IntPtr Options = IntPtr.Zero;
 
