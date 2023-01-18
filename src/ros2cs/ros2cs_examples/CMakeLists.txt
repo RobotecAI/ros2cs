@@ -26,7 +26,7 @@ find_package(builtin_interfaces REQUIRED)
 find_package(dotnet_cmake_module REQUIRED)
 find_package(rosidl_generator_cs REQUIRED)
 
-set(CSHARP_TARGET_FRAMEWORK "netstandard2.1")
+set(CSHARP_TARGET_FRAMEWORK "netstandard2.0")
 
 if(UNIX)
   find_program(LSB_RELEASE_EXEC lsb_release)

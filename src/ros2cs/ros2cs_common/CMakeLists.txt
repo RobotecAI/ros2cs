@@ -20,7 +20,7 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_export_assemblies REQUIRED)
 find_package(dotnet_cmake_module REQUIRED)
 
-set(CSHARP_TARGET_FRAMEWORK "netstandard2.1")
+set(CSHARP_TARGET_FRAMEWORK "netstandard2.0")
 
 if(UNIX)
   find_program(LSB_RELEASE_EXEC lsb_release)

@@ -13,11 +13,11 @@
 // limitations under the License.
 
 using System;
-using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 using ROS2.Internal;
 
 
@@ -177,11 +177,15 @@ namespace ROS2
     /// <param name="header">sequence number received when sending the Request</param>
     private void ProcessResponse(long sequence_number, MessageInternals msg)
     {
-      bool exists = default(bool);
+      bool exists = false;
       (TaskCompletionSource<O>, Task<O>) source = default((TaskCompletionSource<O>, Task<O>));
       lock (Requests)
       {
-        exists = Requests.Remove(sequence_number, out source);
+        if (Requests.TryGetValue(sequence_number, out source))
+        {
+          exists = true;
+          Requests.Remove(sequence_number);
+        }
       }
       if (exists)
       {
