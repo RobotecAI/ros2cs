@@ -63,23 +63,6 @@ namespace ROS2
     public long sequence_number;
   };
 
-  public struct rcl_wait_set_t
-  {
-    private IntPtr subscriptions;
-    internal UIntPtr size_of_subscriptions;
-    private IntPtr guard_conditions;
-    internal UIntPtr size_of_guard_conditions;
-    private IntPtr timers;
-    internal UIntPtr size_of_timers;
-    private IntPtr clients;
-    internal UIntPtr size_of_clients;
-    private IntPtr services;
-    internal UIntPtr size_of_services;
-    private IntPtr events;
-    internal UIntPtr size_of_events;
-    private IntPtr impl;
-  }
-
   public struct rcl_clock_t
   {
     private int type;

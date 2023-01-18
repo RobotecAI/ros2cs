@@ -296,6 +296,84 @@ namespace ROS2
         typeof(ServiceIsValidType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate IntPtr GetZeroInitializedWaitSetType();
+    internal static GetZeroInitializedWaitSetType
+        rclcs_get_zero_initialized_wait_set =
+        (GetZeroInitializedWaitSetType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_get_zero_initialized_wait_set"),
+        typeof(GetZeroInitializedWaitSetType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void FreeWaitSetType(IntPtr waitSet);
+    internal static FreeWaitSetType
+        rclcs_free_wait_set =
+        (FreeWaitSetType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_free_wait_set"),
+        typeof(FreeWaitSetType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    [return: MarshalAs(UnmanagedType.U1)]
+    internal delegate bool WaitSetIsValidType(IntPtr waitSet);
+    internal static WaitSetIsValidType
+        rclcs_wait_set_is_valid =
+        (WaitSetIsValidType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_wait_set_is_valid"),
+        typeof(WaitSetIsValidType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    [return: MarshalAs(UnmanagedType.U1)]
+    internal delegate bool WaitSetGetType(IntPtr waitSet, UIntPtr index, out IntPtr value);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    [return: MarshalAs(UnmanagedType.U1)]
+    internal delegate bool WaitSetSetType(IntPtr waitSet, UIntPtr index, IntPtr value);
+
+    internal static WaitSetGetType
+        rclcs_wait_set_get_subscription =
+        (WaitSetGetType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_wait_set_get_subscription"),
+        typeof(WaitSetGetType));
+
+    internal static WaitSetSetType
+        rclcs_wait_set_set_subscription =
+        (WaitSetSetType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_wait_set_set_subscription"),
+        typeof(WaitSetSetType));
+
+    internal static WaitSetGetType
+        rclcs_wait_set_get_client =
+        (WaitSetGetType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_wait_set_get_client"),
+        typeof(WaitSetGetType));
+
+    internal static WaitSetSetType
+        rclcs_wait_set_set_client =
+        (WaitSetSetType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_wait_set_set_client"),
+        typeof(WaitSetSetType));
+
+    internal static WaitSetGetType
+        rclcs_wait_set_get_service =
+        (WaitSetGetType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_wait_set_get_service"),
+        typeof(WaitSetGetType));
+
+    internal static WaitSetSetType
+        rclcs_wait_set_set_service =
+        (WaitSetSetType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_wait_set_set_service"),
+        typeof(WaitSetSetType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr ServiceCreateOptionsType(IntPtr qos);
     internal static ServiceCreateOptionsType
         rclcs_service_create_options =

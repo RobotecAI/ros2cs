@@ -20,6 +20,7 @@
 #include <rcl/subscription.h>
 #include <rcl/service.h>
 #include <rcl/client.h>
+#include <rcl/wait.h>
 #include <rcl/graph.h>
 #include <rcl/rcl.h>
 #include <rcl/time.h>
@@ -270,6 +271,97 @@ ROSIDL_GENERATOR_C_EXPORT
 void rclcs_service_dispose_options(rcl_service_options_t * service_options_handle)
 {
   free(service_options_handle);
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+rcl_wait_set_t * rclcs_get_zero_initialized_wait_set()
+{
+  rcl_wait_set_t * wait_set = malloc(sizeof(rcl_wait_set_t));
+  *wait_set = rcl_get_zero_initialized_wait_set();
+  return wait_set;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+void rclcs_free_wait_set(rcl_wait_set_t * wait_set)
+{
+  free(wait_set);
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+uint8_t rclcs_wait_set_is_valid(rcl_wait_set_t * wait_set)
+{
+  // since bool has different sizes in C and C++
+  if (rcl_wait_set_is_valid(wait_set))
+  {
+    return 1;
+  }
+  return 0;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+uint8_t rclcs_wait_set_get_subscription(rcl_wait_set_t * wait_set, size_t index, const rcl_subscription_t ** subscription)
+{
+  if (index < wait_set->size_of_subscriptions)
+  {
+    *subscription = wait_set->subscriptions[index];
+    return 1;
+  }
+  return 0;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+uint8_t rclcs_wait_set_set_subscription(rcl_wait_set_t * wait_set, size_t index, const rcl_subscription_t * subscription)
+{
+  if (index < wait_set->size_of_subscriptions)
+  {
+    wait_set->subscriptions[index] = subscription;
+    return 1;
+  }
+  return 0;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+uint8_t rclcs_wait_set_get_client(rcl_wait_set_t * wait_set, size_t index, const rcl_client_t ** client)
+{
+  if (index < wait_set->size_of_clients)
+  {
+    *client = wait_set->clients[index];
+    return 1;
+  }
+  return 0;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+uint8_t rclcs_wait_set_set_client(rcl_wait_set_t * wait_set, size_t index, const rcl_client_t * client)
+{
+  if (index < wait_set->size_of_clients)
+  {
+    wait_set->clients[index] = client;
+    return 1;
+  }
+  return 0;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+uint8_t rclcs_wait_set_get_service(rcl_wait_set_t * wait_set, size_t index, const rcl_service_t ** service)
+{
+  if (index < wait_set->size_of_services)
+  {
+    *service = wait_set->services[index];
+    return 1;
+  }
+  return 0;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+uint8_t rclcs_wait_set_set_service(rcl_wait_set_t * wait_set, size_t index, const rcl_service_t * service)
+{
+  if (index < wait_set->size_of_services)
+  {
+    wait_set->services[index] = service;
+    return 1;
+  }
+  return 0;
 }
 
 ROSIDL_GENERATOR_C_EXPORT

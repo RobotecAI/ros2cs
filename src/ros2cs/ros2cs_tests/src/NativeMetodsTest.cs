@@ -13,10 +13,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using NUnit.Framework;
 using System;
-using ROS2.Test;
+using NUnit.Framework;
 using ROS2.Internal;
+using ROS2.Test;
 
 namespace ROS2.TestNativeMethods
 {
@@ -447,9 +447,9 @@ namespace ROS2.TestNativeMethods
             NativeRcl.rcl_reset_error();
 
             rcl_allocator_t allocator = NativeRcl.rcutils_get_default_allocator();
-            rcl_wait_set_t waitSet = NativeRcl.rcl_get_zero_initialized_wait_set();
+            IntPtr handle = NativeRclInterface.rclcs_get_zero_initialized_wait_set();
             TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_init(
-                ref waitSet,
+                handle,
                 (UIntPtr)1,
                 (UIntPtr)0,
                 (UIntPtr)0,
@@ -459,16 +459,18 @@ namespace ROS2.TestNativeMethods
                 this.Context,
                 allocator
             ));
-            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_clear(ref waitSet));
+            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_clear(handle));
 
             Assert.That(NativeRclInterface.rclcs_subscription_is_valid(this.Subscription), Is.True);
             UIntPtr index = (UIntPtr)42;
-            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_add_subscription(ref waitSet, this.Subscription, ref index));
+            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_add_subscription(handle, this.Subscription, out index));
             Assert.That(index.ToUInt64(), Is.EqualTo(0));
 
             long timeout_ns = 10*1000*1000;
-            var ret = (RCLReturnEnum)NativeRcl.rcl_wait(ref waitSet, timeout_ns);
+            var ret = (RCLReturnEnum)NativeRcl.rcl_wait(handle, timeout_ns);
             Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_TIMEOUT));
+            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_fini(handle));
+            NativeRclInterface.rclcs_free_wait_set(handle);
         }
     }
 
@@ -490,21 +492,12 @@ namespace ROS2.TestNativeMethods
         }
 
         [Test]
-        public void GetZeroInitializedWaitSet()
-        {
-            // NOTE: The struct rcl_wait_set_t contains size_t
-            // fields that are set to UIntPtr in C# declaration,
-            // not guaranteed to work for all C implemenations/platforms.
-            rcl_wait_set_t waitSet = NativeRcl.rcl_get_zero_initialized_wait_set();
-        }
-
-        [Test]
         public void WaitSetInit()
         {
             rcl_allocator_t allocator = NativeRcl.rcutils_get_default_allocator();
-            rcl_wait_set_t waitSet = NativeRcl.rcl_get_zero_initialized_wait_set();
+            IntPtr handle = NativeRclInterface.rclcs_get_zero_initialized_wait_set();
             TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_init(
-                ref waitSet,
+                handle,
                 (UIntPtr)1,
                 (UIntPtr)0,
                 (UIntPtr)0,
@@ -514,16 +507,17 @@ namespace ROS2.TestNativeMethods
                 this.Context,
                 allocator
             ));
-            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_fini(ref waitSet));
+            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_fini(handle));
+            NativeRclInterface.rclcs_free_wait_set(handle);
         }
 
         [Test]
         public void WaitSetClear()
         {
             rcl_allocator_t allocator = NativeRcl.rcutils_get_default_allocator();
-            rcl_wait_set_t waitSet = NativeRcl.rcl_get_zero_initialized_wait_set();
-            NativeRcl.rcl_wait_set_init(
-                ref waitSet,
+            IntPtr handle = NativeRclInterface.rclcs_get_zero_initialized_wait_set();
+            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_init(
+                handle,
                 (UIntPtr)1,
                 (UIntPtr)0,
                 (UIntPtr)0,
@@ -532,9 +526,10 @@ namespace ROS2.TestNativeMethods
                 (UIntPtr)0,
                 this.Context,
                 allocator
-            );
-            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_clear(ref waitSet));
-            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_fini(ref waitSet));
+            ));
+            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_clear(handle));
+            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_fini(handle));
+            NativeRclInterface.rclcs_free_wait_set(handle);
         }
     }
 
