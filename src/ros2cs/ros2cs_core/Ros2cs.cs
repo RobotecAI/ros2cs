@@ -16,6 +16,7 @@ using System;
 using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace ROS2
 {
@@ -184,31 +185,37 @@ namespace ROS2
     {
       while (initialized)
       {
-        SpinOnce(nodes, timeoutSec);
+        if (!SpinOnce(nodes, timeoutSec))
+        {
+          Thread.Sleep(TimeSpan.FromSeconds(timeoutSec));
+        }
       }
     }
 
     /// <summary> Spin only once </summary>
     /// <description> This overload is meant for when the while loop is better to
     /// handle in the application layer  </description>
+    /// <returns> Whether the spin was successful (wait set not empty or Ros2cs not initialized) </returns>
     /// <see cref="Spin(INode,double)"/>
-    public static void SpinOnce(INode node, double timeoutSec = 0.1)
+    public static bool SpinOnce(INode node, double timeoutSec = 0.1)
     {
       var nodes = new List<INode>{ node };
-      SpinOnce(nodes, timeoutSec);
+      return SpinOnce(nodes, timeoutSec);
     }
+
+    private static bool warned_once = false;
 
     /// <summary> SpinOnce overload for multiple nodes </summary>
     /// <remarks> This overload saves on implicit List creation </remarks>
+    /// <returns> Whether the spin was successful (wait set not empty or Ros2cs not initialized) </returns>
     /// <see cref="SpinOnce(INode,double)"/>
-    private static bool warned_once = false;
-    public static void SpinOnce(List<INode> nodes, double timeoutSec = 0.1)
+    public static bool SpinOnce(List<INode> nodes, double timeoutSec = 0.1)
     {
       lock (mutex)
       {  // Figure out how to minimize this lock
         if (!initialized)
         {
-          return;
+          return false;
         }
 
         // TODO - This can be optimized so that we cache the list and invalidate only with changes
@@ -247,13 +254,23 @@ namespace ROS2
           AddResult result = WaitSet.TryAddService(service, out ulong _);
           Debug.Assert(result != AddResult.FULL, "no space for Service in WaitSet");
         }
-        if (WaitSet.Wait(TimeSpan.FromSeconds(timeoutSec)))
+        bool success;
+        try
+        {
+          success = WaitSet.Wait(TimeSpan.FromSeconds(timeoutSec));
+        }
+        catch (WaitSetEmptyException)
+        {
+          return false;
+        }
+        if (success)
         {
           // Sequential processing
           allSubscriptions.ForEach(subscription => subscription.TakeMessage());
           allClients.ForEach(client => client.TakeMessage());
           allServices.ForEach(service => service.TakeMessage());
         }
+        return true;
       }
     }
   }
