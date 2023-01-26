@@ -109,6 +109,42 @@ namespace ROS2
         typeof(PublisherDisposeOptionsType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate IntPtr ClientCreateOptionsType(IntPtr qos);
+    internal static ClientCreateOptionsType
+        rclcs_client_create_options =
+        (ClientCreateOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_client_create_options"),
+        typeof(ClientCreateOptionsType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void ClientDisposeOptionsType(IntPtr options);
+    internal static ClientDisposeOptionsType
+        rclcs_client_dispose_options =
+        (ClientDisposeOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_client_dispose_options"),
+        typeof(ClientDisposeOptionsType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate IntPtr ServiceCreateOptionsType(IntPtr qos);
+    internal static ServiceCreateOptionsType
+        rclcs_service_create_options =
+        (ServiceCreateOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_service_create_options"),
+        typeof(ServiceCreateOptionsType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate void ServiceDisposeOptionsType(IntPtr options);
+    internal static ServiceDisposeOptionsType
+        rclcs_service_dispose_options =
+        (ServiceDisposeOptionsType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeROS2CS,
+        "rclcs_service_dispose_options"),
+        typeof(ServiceDisposeOptionsType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr RclcsClockCreate(ref rcl_allocator_t allocator_handle);
     internal static RclcsClockCreate
         rclcs_ros_clock_create =

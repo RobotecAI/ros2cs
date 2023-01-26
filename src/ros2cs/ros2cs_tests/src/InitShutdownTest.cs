@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using NUnit.Framework;
 
 namespace ROS2.Test
@@ -69,6 +70,26 @@ namespace ROS2.Test
         public void CreateNodeWithoutInit()
         {
             Assert.That(() => { Ros2cs.CreateNode("foo"); }, Throws.TypeOf<NotInitializedException>());
+        }
+
+        [Test]
+        public void SpinEmptyNode()
+        {
+            Ros2cs.Init();
+            try
+            {
+                var node = Ros2cs.CreateNode("TestNode");
+                Assert.That(Ros2cs.SpinOnce(node), Is.False);
+                var subscription = node.CreateSubscription<std_msgs.msg.Int32>(
+                    "subscription_test_topic",
+                    (msg) => { throw new InvalidOperationException("subscription callback was triggered"); }
+                );
+                Assert.That(Ros2cs.SpinOnce(node), Is.True);
+            }
+            finally
+            {
+                Ros2cs.Shutdown();
+            }
         }
     }
 }

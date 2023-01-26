@@ -24,6 +24,7 @@ if(BUILD_TESTING)
 
   find_package(std_msgs REQUIRED)
   find_package(test_msgs REQUIRED)
+  find_package(example_interfaces REQUIRED)
 
   set(DOTNET_OUTPUT_PATH
     ${CSHARP_BUILDER_OUTPUT_PATH}/${CSHARP_TARGET_FRAMEWORK}/
@@ -34,6 +35,7 @@ if(BUILD_TESTING)
       ${ros2cs_common_ASSEMBLIES_DLL}
       ${std_msgs_ASSEMBLIES_DLL}
       ${test_msgs_ASSEMBLIES_DLL}
+      ${example_interfaces_ASSEMBLIES_DLL}
   )
 
   set(TESTS_SRC
@@ -44,6 +46,8 @@ if(BUILD_TESTING)
     src/MessagesTest.cs
     src/NodeTest.cs
     src/NativeMetodsTest.cs
+    src/ClientTest.cs
+    src/ServiceTest.cs
     src/SubscriptionTest.cs
     src/TestUtils.cs
   )

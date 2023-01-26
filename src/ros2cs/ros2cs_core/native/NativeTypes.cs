@@ -75,20 +75,41 @@ namespace ROS2
     private IntPtr impl;
   }
 
+  public struct rcl_client_t
+  {
+    private IntPtr impl;
+  }
+
+  public struct rcl_service_t
+  {
+    private IntPtr impl;
+  }
+
+  [StructLayout(LayoutKind.Sequential)]
+  public struct rcl_rmw_request_id_t
+  {
+    /// The guid of the writer associated with this request
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
+    public byte[] writer_guid;
+    /// Sequence number of this service
+    [MarshalAs(UnmanagedType.I8)]
+    public long sequence_number;
+  };
+
   public struct rcl_wait_set_t
   {
     private IntPtr subscriptions;
-    private UIntPtr size_of_subscriptions;
+    internal UIntPtr size_of_subscriptions;
     private IntPtr guard_conditions;
-    private UIntPtr size_of_guard_conditions;
+    internal UIntPtr size_of_guard_conditions;
     private IntPtr timers;
-    private UIntPtr size_of_timers;
+    internal UIntPtr size_of_timers;
     private IntPtr clients;
-    private UIntPtr size_of_clients;
+    internal UIntPtr size_of_clients;
     private IntPtr services;
-    private UIntPtr size_of_services;
+    internal UIntPtr size_of_services;
     private IntPtr events;
-    private UIntPtr size_of_events;
+    internal UIntPtr size_of_events;
     private IntPtr impl;
   }
 

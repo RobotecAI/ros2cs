@@ -34,3 +34,31 @@ TEMPLATE(
 
 @[end for]@
 @# TODO (adamdbrw): Add services and actions
+
+@#######################################################################
+@# Handle service
+@#######################################################################
+@{
+from rosidl_parser.definition import Service
+}@
+@[if include_parts[1] == "srv"]@
+@[for service in content.get_elements_of_type(Service)]@
+@{
+TEMPLATE(
+    'srv.c.em',
+    package_name=package_name, interface_path=interface_path,service=service,
+    message=service.request_message, include_parts=include_parts,
+    get_c_type=get_c_type)
+}@
+
+@{
+TEMPLATE(
+    'srv.c.em',
+    package_name=package_name, interface_path=interface_path,service=service,
+    message=service.response_message, include_parts=include_parts,
+    get_c_type=get_c_type)
+}@
+@[end for]@
+@[end if]@
+@# // endif
+

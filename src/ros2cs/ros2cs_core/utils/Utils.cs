@@ -33,6 +33,8 @@ namespace ROS2
           throw new InvalidNodeNameException(errorMessage);
         case RCLReturnEnum.RCL_RET_NODE_INVALID_NAMESPACE:
           throw new InvalidNamespaceException(errorMessage);
+        case RCLReturnEnum.RCL_RET_WAIT_SET_EMPTY:
+          throw new WaitSetEmptyException(errorMessage);
         default:
           throw new RuntimeError(errorMessage);
       }

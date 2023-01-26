@@ -13,7 +13,10 @@
 // limitations under the License.
 
 using System;
+using System.Linq;
+using System.Diagnostics;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace ROS2
 {
@@ -33,6 +36,8 @@ namespace ROS2
     private static rcl_allocator_t default_allocator;
     private static List<INode> nodes = new List<INode>(); // kept to shutdown everything in order
 
+    private static WaitSet WaitSet;
+
     /// <summary> Globally initialize ros2 (rcl) </summary>
     /// <description> Note that only a single context is used. </description>
     /// <remarks> If needed, support for multiple contexts can be added
@@ -49,6 +54,7 @@ namespace ROS2
         default_allocator = NativeRcl.rcutils_get_default_allocator();
         global_context = NativeRcl.rcl_get_zero_initialized_context();
         Utils.CheckReturnEnum(NativeRclInterface.rclcs_init(ref global_context, default_allocator));
+        WaitSet = new WaitSet(ref global_context);
         initialized = true;
       }
     }
@@ -179,58 +185,92 @@ namespace ROS2
     {
       while (initialized)
       {
-        SpinOnce(nodes, timeoutSec);
+        if (!SpinOnce(nodes, timeoutSec))
+        {
+          Thread.Sleep(TimeSpan.FromSeconds(timeoutSec));
+        }
       }
     }
 
     /// <summary> Spin only once </summary>
     /// <description> This overload is meant for when the while loop is better to
     /// handle in the application layer  </description>
+    /// <returns> Whether the spin was successful (wait set not empty or Ros2cs not initialized) </returns>
     /// <see cref="Spin(INode,double)"/>
-    public static void SpinOnce(INode node, double timeoutSec = 0.1)
+    public static bool SpinOnce(INode node, double timeoutSec = 0.1)
     {
       var nodes = new List<INode>{ node };
-      SpinOnce(nodes, timeoutSec);
+      return SpinOnce(nodes, timeoutSec);
     }
+
+    private static bool warned_once = false;
 
     /// <summary> SpinOnce overload for multiple nodes </summary>
     /// <remarks> This overload saves on implicit List creation </remarks>
+    /// <returns> Whether the spin was successful (wait set not empty or Ros2cs not initialized) </returns>
     /// <see cref="SpinOnce(INode,double)"/>
-    private static bool warned_once = false;
-    public static void SpinOnce(List<INode> nodes, double timeoutSec = 0.1)
+    public static bool SpinOnce(List<INode> nodes, double timeoutSec = 0.1)
     {
       lock (mutex)
       {  // Figure out how to minimize this lock
         if (!initialized)
         {
-          return;
+          return false;
         }
 
         // TODO - This can be optimized so that we cache the list and invalidate only with changes
         var allSubscriptions = new List<ISubscriptionBase>();
+        var allClients = new List<IClientBase>();
+        var allServices = new List<IServiceBase>();
         foreach (INode node_interface in nodes)
         {
           Node node = node_interface as Node;
           if (node == null)
             continue; //Rare situation in which we are disposing
-
-          foreach(ISubscriptionBase subscription in node.Subscriptions)
-          {
-            if (subscription == null)
-              continue; //Rare situation in which we are disposing
-
-            allSubscriptions.Add(subscription);
-          }
+          
+          allSubscriptions.AddRange(node.Subscriptions.Where(s => s != null));
+          allClients.AddRange(node.Clients.Where(c => c != null));
+          allServices.AddRange(node.Services.Where(s => s != null));
         }
 
         // TODO - investigate performance impact
-        WaitSet.Wait(global_context, allSubscriptions, timeoutSec);
-
-        // Sequential processing
-        foreach (var subscription in allSubscriptions)
+        WaitSet.Resize(
+          (ulong)allSubscriptions.Count,
+          (ulong)allClients.Count,
+          (ulong)allServices.Count      
+        );
+        foreach(var subscription in allSubscriptions)
         {
-          subscription.TakeMessage();
+          AddResult result = WaitSet.TryAddSubscription(subscription, out ulong _);
+          Debug.Assert(result != AddResult.FULL, "no space for subscription in WaitSet");
         }
+        foreach(var client in allClients)
+        {
+          AddResult result = WaitSet.TryAddClient(client, out ulong _);
+          Debug.Assert(result != AddResult.FULL, "no space for client in WaitSet");
+        }
+        foreach(var service in allServices)
+        {
+          AddResult result = WaitSet.TryAddService(service, out ulong _);
+          Debug.Assert(result != AddResult.FULL, "no space for Service in WaitSet");
+        }
+        bool success;
+        try
+        {
+          success = WaitSet.Wait(TimeSpan.FromSeconds(timeoutSec));
+        }
+        catch (WaitSetEmptyException)
+        {
+          return false;
+        }
+        if (success)
+        {
+          // Sequential processing
+          allSubscriptions.ForEach(subscription => subscription.TakeMessage());
+          allClients.ForEach(client => client.TakeMessage());
+          allServices.ForEach(service => service.TakeMessage());
+        }
+        return true;
       }
     }
   }

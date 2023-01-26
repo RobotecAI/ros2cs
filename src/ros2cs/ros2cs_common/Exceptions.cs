@@ -56,4 +56,20 @@ namespace ROS2
       public InvalidNamespaceException(string message) : base(message) {}
       public InvalidNamespaceException(string message, Exception inner) : base(message, inner) {}
     }
+    /// <summary>
+    /// Exception thrown when trying to wait on an empty wait set.
+    /// </summary>
+    public class WaitSetEmptyException : InvalidOperationException
+    {
+      public WaitSetEmptyException() : base()
+      { }
+
+      /// <inheritdoc />
+      public WaitSetEmptyException(string message) : base(message)
+      { }
+
+      /// <inheritdoc />
+      public WaitSetEmptyException(string message, Exception innerException) : base(message, innerException)
+      { }
+    }
 }

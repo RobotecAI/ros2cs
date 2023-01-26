@@ -29,6 +29,8 @@ find_package(ament_cmake_export_assemblies REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(dotnet_cmake_module REQUIRED)
 
+set(CSHARP_TARGET_FRAMEWORK "netstandard2.0")
+
 if(UNIX)
   find_program(LSB_RELEASE_EXEC lsb_release)
   execute_process(COMMAND ${LSB_RELEASE_EXEC} -rs
@@ -87,6 +89,8 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
 
 set(CS_INTERFACES
   interfaces/INode.cs
+  interfaces/IClient.cs
+  interfaces/IService.cs
   interfaces/IPublisher.cs
   interfaces/ISubscription.cs
 )
@@ -108,6 +112,8 @@ set(CS_SOURCES
   ${CS_NATIVE}
   ${CS_UTILS}
   Clock.cs
+  Client.cs
+  Service.cs
   Node.cs
   Publisher.cs
   QualityOfServiceProfile.cs
