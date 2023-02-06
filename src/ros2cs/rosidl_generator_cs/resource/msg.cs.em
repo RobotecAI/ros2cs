@@ -337,9 +337,12 @@ public class @(message_class) : @(internals_interface), @(parent_interface)
       IntPtr pArr = native_read_field_@(member.name)(out arraySize, handle);
       @(get_field_name(member.type, member.name, message_class)) = new @(get_dotnet_type(member.type.value_type))[arraySize];
       @(get_marshal_array_type(member.type))[] __@(get_field_name(member.type, member.name, message_class)) = new @(get_marshal_array_type(member.type))[arraySize];
-      int start = 0;
 
-      Marshal.Copy(pArr, __@(get_field_name(member.type, member.name, message_class)), start, arraySize);
+      if (arraySize != 0)
+      {
+        int start = 0;
+        Marshal.Copy(pArr, __@(get_field_name(member.type, member.name, message_class)), start, arraySize);
+      }
       for (int i = 0; i < arraySize; ++i)
       {
 @[    if get_dotnet_type(member.type.value_type) == 'bool']@
