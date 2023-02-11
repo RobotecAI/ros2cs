@@ -8,6 +8,7 @@
 
 - ROS2 installed on the system, along with `test-msgs`, `cyclonedds` and `fastrtps` packages
 - vcstool package - [see here](https://github.com/dirk-thomas/vcstool)
+- .NET core 6.0 sdk - [see here](https://www.microsoft.com/net/learn/get-started)
 
 
 ```bash
@@ -25,26 +26,12 @@ sudo apt-get install -y python3-vcstool
 wget https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
 sudo dpkg -i packages-microsoft-prod.deb
 rm packages-microsoft-prod.deb
-```
 
-**Ubuntu 20.04 only**
-
-- .NET core 3.1 sdk - [see here](https://www.microsoft.com/net/learn/get-started)
-
-```
+# install .NET core 6.0 SDK
 sudo apt-get update; \
   sudo apt-get install -y apt-transport-https && \
   sudo apt-get update && \
-  sudo apt-get install -y dotnet-sdk-3.1
-```
-
-**Ubuntu 22.04 only**
-
-- mono - [see here](https://www.mono-project.com/)
-
-```
-sudo apt-get update; \
-  sudo apt install mono-complete
+  sudo apt-get install -y dotnet-sdk-6.0
 ```
 
 **Optional**
