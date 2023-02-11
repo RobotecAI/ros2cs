@@ -6,6 +6,8 @@ if(BUILD_TESTING)
   find_package(ament_cmake REQUIRED)
   find_package(dotnet_cmake_module REQUIRED)
 
+  set(CSHARP_TARGET_FRAMEWORK "netcoreapp6.0")
+
   if(UNIX)
     find_program(LSB_RELEASE_EXEC lsb_release)
     execute_process(COMMAND ${LSB_RELEASE_EXEC} -rs
