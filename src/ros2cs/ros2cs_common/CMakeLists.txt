@@ -21,21 +21,8 @@ find_package(ament_cmake_export_assemblies REQUIRED)
 find_package(dotnet_cmake_module REQUIRED)
 
 set(CSHARP_TARGET_FRAMEWORK "netstandard2.0")
+set(CSBUILD_TOOL "DotNetCore")
 
-if(UNIX)
-  find_program(LSB_RELEASE_EXEC lsb_release)
-  execute_process(COMMAND ${LSB_RELEASE_EXEC} -rs
-      OUTPUT_VARIABLE LSB_RELEASE_ID_SHORT
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-  if("${LSB_RELEASE_ID_SHORT}" STREQUAL "22.04")
-    set(CSBUILD_TOOL "Mono")
-  else()
-    set(CSBUILD_TOOL "DotNetCore")
-  endif()
-else()
-  set(CSBUILD_TOOL "DotNetCore")
-endif()
 find_package(DotNETExtra REQUIRED)
 
 set(CS_INTERFACES

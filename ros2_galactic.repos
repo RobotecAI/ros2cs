@@ -30,7 +30,7 @@ repositories:
   external/build_tools/dotnet_cmake_module:
     type: git
     url: https://github.com/RobotecAI/dotnet_cmake_module
-    version: master
+    version: 1.1.0
   external/build_tools/ament_cmake_export_assemblies:
     type: git
     url: https://github.com/RobotecAI/ament_cmake_export_assemblies
