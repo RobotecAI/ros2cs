@@ -6,7 +6,7 @@
 
 *  ROS2 installed on the system (additionally you should go to [Building ROS2 section](https://docs.ros.org/en/foxy/Installation/Windows-Development-Setup.html) and check if all `pip` [Install dependencies](https://docs.ros.org/en/foxy/Installation/Windows-Development-Setup.html#install-dependencies) and [Developer tools](https://docs.ros.org/en/foxy/Installation/Windows-Development-Setup.html#install-developer-tools) are installed)
 *  vcstool package - [see here](https://github.com/dirk-thomas/vcstool)
-*  .NET 3.1 sdk - [see here](https://dotnet.microsoft.com/download/dotnet/3.1)
+*  .NET 6.0 sdk - [see here](https://dotnet.microsoft.com/download/dotnet/6.0)
 *  For tests only: xUnit testing framework - [see here](https://xunit.net/)
 
 ### Important notices
