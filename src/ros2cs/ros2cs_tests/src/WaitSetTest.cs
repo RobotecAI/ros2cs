@@ -115,6 +115,26 @@ namespace ROS2.Test
         }
 
         [Test]
+        public void TestGuardConditionCollection()
+        {
+            Assert.That(this.WaitSet.Count, Is.Zero);
+
+            using var guard_condition = new GuardCondition(
+                this.Context,
+                () => throw new InvalidOperationException("guard condition was triggered!")
+            );
+            this.WaitSet.GuardConditions.Add(guard_condition);
+
+            Assert.That(this.WaitSet.Count, Is.EqualTo(1));
+            Assert.That(this.WaitSet.GuardConditions.Count, Is.EqualTo(1));
+            Assert.That(this.WaitSet.GuardConditions, Does.Contain(guard_condition));
+    
+            Assert.That(this.WaitSet.GuardConditions.Remove(guard_condition), Is.True);
+
+            Assert.That(this.WaitSet.GuardConditions, Does.Not.Contain(guard_condition));
+        }
+
+        [Test]
         public void TestTryWait()
         {
             this.Context.TryCreateNode("TestNode", out var node);

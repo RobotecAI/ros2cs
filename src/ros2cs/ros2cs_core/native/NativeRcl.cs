@@ -270,6 +270,24 @@ namespace ROS2
         typeof(TakeType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int GuardConditionTriggerType(IntPtr guard_condition);
+    internal static GuardConditionTriggerType
+        rcl_trigger_guard_condition =
+        (GuardConditionTriggerType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_trigger_guard_condition"),
+        typeof(GuardConditionTriggerType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate int GuardConditionFiniType(IntPtr guard_condition);
+    internal static GuardConditionFiniType
+        rcl_guard_condition_fini =
+        (GuardConditionFiniType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_guard_condition_fini"),
+        typeof(GuardConditionFiniType));
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate int WaitSetResizeType(IntPtr wait_set,
                                             UIntPtr number_of_subscriptions,
                                             UIntPtr number_of_guard_conditions,
@@ -339,6 +357,13 @@ namespace ROS2
         (WaitSetAddType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
         nativeRCL,
         "rcl_wait_set_add_service"),
+        typeof(WaitSetAddType));
+
+    internal static WaitSetAddType
+        rcl_wait_set_add_guard_condition =
+        (WaitSetAddType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
+        nativeRCL,
+        "rcl_wait_set_add_guard_condition"),
         typeof(WaitSetAddType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]

@@ -20,6 +20,7 @@
 #include <rcl/subscription.h>
 #include <rcl/service.h>
 #include <rcl/client.h>
+#include <rcl/guard_condition.h>
 #include <rcl/wait.h>
 #include <rcl/graph.h>
 #include <rcl/rcl.h>
@@ -274,6 +275,36 @@ void rclcs_service_dispose_options(rcl_service_options_t * service_options_handl
 }
 
 ROSIDL_GENERATOR_C_EXPORT
+rcl_ret_t rclcs_get_guard_condition(rcl_context_t * context, rcl_guard_condition_t ** guard_condition)
+{
+  *guard_condition = malloc(sizeof(rcl_guard_condition_t));
+  **guard_condition = rcl_get_zero_initialized_guard_condition();
+  rcl_ret_t ret = rcl_guard_condition_init(*guard_condition, context, rcl_guard_condition_get_default_options());
+  if (ret != RCL_RET_OK)
+  {
+    free(*guard_condition);
+  }
+  return ret;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+void rclcs_free_guard_condition(rcl_guard_condition_t * guard_condition)
+{
+  free(guard_condition);
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+uint8_t rclcs_guard_condition_is_valid(rcl_guard_condition_t * guard_condition)
+{
+  // since there is no rcl_guard_condition_is_valid
+  if (rcl_guard_condition_get_options(guard_condition) != NULL)
+  {
+    return 1;
+  }
+  return 0;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
 rcl_wait_set_t * rclcs_get_zero_initialized_wait_set()
 {
   rcl_wait_set_t * wait_set = malloc(sizeof(rcl_wait_set_t));
@@ -359,6 +390,28 @@ uint8_t rclcs_wait_set_set_service(rcl_wait_set_t * wait_set, size_t index, cons
   if (index < wait_set->size_of_services)
   {
     wait_set->services[index] = service;
+    return 1;
+  }
+  return 0;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+uint8_t rclcs_wait_set_get_guard_condition(rcl_wait_set_t * wait_set, size_t index, const rcl_guard_condition_t ** guard_condition)
+{
+  if (index < wait_set->size_of_guard_conditions)
+  {
+    *guard_condition = wait_set->guard_conditions[index];
+    return 1;
+  }
+  return 0;
+}
+
+ROSIDL_GENERATOR_C_EXPORT
+uint8_t rclcs_wait_set_set_guard_condition(rcl_wait_set_t * wait_set, size_t index, const rcl_guard_condition_t * guard_condition)
+{
+  if (index < wait_set->size_of_guard_conditions)
+  {
+    wait_set->guard_conditions[index] = guard_condition;
     return 1;
   }
   return 0;

@@ -40,6 +40,7 @@ if(BUILD_TESTING)
     src/SubscriptionTest.cs
     src/TestUtils.cs
     src/WaitSetTest.cs
+    src/GuardConditionTest.cs
   )
 
   add_dotnet_test(ros2cs_tests

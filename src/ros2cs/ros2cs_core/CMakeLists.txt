@@ -111,6 +111,7 @@ set(CS_SOURCES
   Subscription.cs
   WaitSet.cs
   Context.cs
+  GuardCondition.cs
   properties/AssemblyInfo.cs
 )
 

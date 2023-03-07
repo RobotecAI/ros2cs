@@ -40,6 +40,11 @@ namespace ROS2
         public ICollection<IServiceBase> Services { get { return this.CurrentServices; } }
 
         /// <summary>
+        /// The <see cref="GuardCondition"/> instances currently in the wait set.
+        /// </summary>
+        public ICollection<GuardCondition> GuardConditions { get { return this.CurrentGuardConditions; } }
+
+        /// <summary>
         /// Context associated with this wait set.
         /// </summary>
         public IContext Context { get; private set; }
@@ -58,7 +63,13 @@ namespace ROS2
         /// <inheritdoc />
         public int Count
         {
-            get { return this.Subscriptions.Count + this.Clients.Count + this.Services.Count; }
+            get
+            {
+                return this.Subscriptions.Count
+                    + this.Clients.Count
+                    + this.Services.Count
+                    + this.GuardConditions.Count;
+            }
         }
 
         private IntPtr Handle = IntPtr.Zero;
@@ -75,6 +86,8 @@ namespace ROS2
 
         private readonly List<IServiceBase> CurrentServices = new List<IServiceBase>();
 
+        private readonly List<GuardCondition> CurrentGuardConditions = new List<GuardCondition>();
+
         /// <summary>
         /// Construct a new instance.
         /// </summary>
@@ -86,7 +99,7 @@ namespace ROS2
             int ret = NativeRcl.rcl_wait_set_init(
                 this.Handle,
                 new UIntPtr(Convert.ToUInt32(this.CurrentSubscriptions.Capacity)),
-                UIntPtr.Zero,
+                new UIntPtr(Convert.ToUInt32(this.CurrentGuardConditions.Capacity)),
                 UIntPtr.Zero,
                 new UIntPtr(Convert.ToUInt32(this.CurrentClients.Capacity)),
                 new UIntPtr(Convert.ToUInt32(this.CurrentServices.Capacity)),
@@ -116,7 +129,11 @@ namespace ROS2
         /// <inheritdoc />
         public IEnumerator<IWaitable> GetEnumerator()
         {
-            return this.Subscriptions.Concat<IWaitable>(this.Clients).Concat(this.Services).GetEnumerator();
+            return this.Subscriptions
+                .Concat<IWaitable>(this.Clients)
+                .Concat(this.Services)
+                .Concat(this.GuardConditions)
+                .GetEnumerator();
         }
 
         /// <inheritdoc />
@@ -156,7 +173,7 @@ namespace ROS2
             Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_resize(
                 this.Handle,
                 new UIntPtr(Convert.ToUInt32(this.CurrentSubscriptions.Count)),
-                UIntPtr.Zero,
+                new UIntPtr(Convert.ToUInt32(this.CurrentGuardConditions.Count)),
                 UIntPtr.Zero,
                 new UIntPtr(Convert.ToUInt32(this.CurrentClients.Count)),
                 new UIntPtr(Convert.ToUInt32(this.CurrentServices.Count)),
@@ -251,6 +268,11 @@ namespace ROS2
                 NativeRclInterface.rclcs_wait_set_get_service,
                 this.CurrentServices
             );
+            this.FillWaitSet(
+                NativeRcl.rcl_wait_set_add_guard_condition,
+                NativeRclInterface.rclcs_wait_set_get_guard_condition,
+                this.CurrentGuardConditions
+            );
         }
 
         /// <param name="timeout">Timeout for waiting, infinite if negative</param>
@@ -296,6 +318,12 @@ namespace ROS2
                     NativeRclInterface.rclcs_wait_set_get_service,
                     NativeRclInterface.rclcs_wait_set_set_service,
                     this.CurrentServices
+                ),
+                new ReadyDictionary<GuardCondition>(
+                    this,
+                    NativeRclInterface.rclcs_wait_set_get_guard_condition,
+                    NativeRclInterface.rclcs_wait_set_set_guard_condition,
+                    this.CurrentGuardConditions
                 )
             );
             return true;
@@ -791,11 +819,21 @@ namespace ROS2
         /// </summary>
         public IDictionary<int, IServiceBase> ReadyServices { get; private set; }
 
-        internal WaitResult(IDictionary<int, ISubscriptionBase> subscriptions, IDictionary<int, IClientBase> clients, IDictionary<int, IServiceBase> services)
+        /// <summary>
+        /// Mapping from index to guard conditions which are ready.
+        /// </summary>
+        public IDictionary<int, GuardCondition> ReadyGuardConditions { get; private set; }
+
+        internal WaitResult(
+            IDictionary<int, ISubscriptionBase> subscriptions,
+            IDictionary<int, IClientBase> clients,
+            IDictionary<int, IServiceBase> services,
+            IDictionary<int, GuardCondition> guard_conditions)
         {
             this.ReadySubscriptions = subscriptions;
             this.ReadyClients = clients;
             this.ReadyServices = services;
+            this.ReadyGuardConditions = guard_conditions;
         }
 
         /// <inheritdoc />
@@ -804,6 +842,7 @@ namespace ROS2
             return this.ReadySubscriptions.Values
                 .Concat<IWaitable>(this.ReadyClients.Values)
                 .Concat(this.ReadyServices.Values)
+                .Concat(this.ReadyGuardConditions.Values)
                 .GetEnumerator();
         }
 
@@ -816,11 +855,16 @@ namespace ROS2
         /// <summary>
         /// Deconstruct the result into the resources which are ready.
         /// </summary>
-        public void Deconstruct(out IDictionary<int, ISubscriptionBase> subscriptions, out IDictionary<int, IClientBase> clients, out IDictionary<int, IServiceBase> services)
+        public void Deconstruct(
+            out IDictionary<int, ISubscriptionBase> subscriptions,
+            out IDictionary<int, IClientBase> clients,
+            out IDictionary<int, IServiceBase> services,
+            out IDictionary<int, GuardCondition> guard_conditions)
         {
             subscriptions = this.ReadySubscriptions;
             clients = this.ReadyClients;
             services = this.ReadyServices;
+            guard_conditions = this.ReadyGuardConditions;
         }
     }
 }
