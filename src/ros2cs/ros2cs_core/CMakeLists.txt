@@ -112,6 +112,7 @@ set(CS_SOURCES
   WaitSet.cs
   Context.cs
   GuardCondition.cs
+  executors/ManualExecutor.cs
   properties/AssemblyInfo.cs
 )
 

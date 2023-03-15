@@ -41,6 +41,7 @@ if(BUILD_TESTING)
     src/TestUtils.cs
     src/WaitSetTest.cs
     src/GuardConditionTest.cs
+    src/ManualExecutorTest.cs
   )
 
   add_dotnet_test(ros2cs_tests
