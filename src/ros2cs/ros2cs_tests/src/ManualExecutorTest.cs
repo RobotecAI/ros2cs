@@ -122,11 +122,40 @@ namespace ROS2.Test
             // wait for spin to start
             while (!this.Executor.IsSpinning)
             { }
-            // possible race condition since the wait may not have started
-            Thread.Sleep(TimeSpan.FromSeconds(0.1));
             this.Executor.ScheduleRescan();
 
             Assert.That(this.Executor.TryWait(TimeSpan.FromSeconds(10)), Is.True);
+            Assert.That(spinThread.Join(TimeSpan.FromSeconds(10)), Is.True);
+        }
+
+        [Test]
+        public void TryWaitTimeout()
+        {
+            using ManualResetEventSlim isTriggered = new ManualResetEventSlim(false);
+            this.Context.TryCreateNode("test_node", out var node);
+            this.Executor.Add(node);
+            using var publisher = node.CreatePublisher<std_msgs.msg.Int32>(
+                SUBSCRIPTION_TOPIC
+            );
+            using var subscription = node.CreateSubscription<std_msgs.msg.Int32>(
+                SUBSCRIPTION_TOPIC,
+                msg =>
+                {
+                    isTriggered.Set();
+                    Thread.Sleep(TimeSpan.FromSeconds(2));
+                }
+            );
+            this.Executor.Rescan();
+            Thread spinThread = new Thread(() =>
+            {
+                this.Executor.TrySpin(TimeSpan.FromMinutes(0.5));
+            });
+            spinThread.Start();
+            publisher.Publish(new std_msgs.msg.Int32());
+            isTriggered.Wait(TimeSpan.FromSeconds(1));
+            this.Executor.ScheduleRescan();
+
+            Assert.That(this.Executor.TryWait(TimeSpan.FromSeconds(0.5)), Is.False);
             Assert.That(spinThread.Join(TimeSpan.FromSeconds(10)), Is.True);
         }
 
@@ -138,8 +167,6 @@ namespace ROS2.Test
             // wait for spin to start
             while (!this.Executor.IsSpinning)
             { }
-            // possible race condition since the wait may not have started
-            Thread.Sleep(TimeSpan.FromSeconds(0.1));
 
             this.Executor.Interrupt();
 

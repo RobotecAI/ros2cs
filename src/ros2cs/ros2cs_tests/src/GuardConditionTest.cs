@@ -73,5 +73,17 @@ namespace ROS2.Test
             Assert.That(waitSet.TryWait(TimeSpan.FromSeconds(0.5), out var result), Is.True);
             Assert.That(result.ReadyGuardConditions.Values.Contains(this.GuardCondition), Is.True);
         }
+
+        [Test]
+        public void TriggerGuardConditionNotWaiting()
+        {
+            using var waitSet = new WaitSet(this.Context);
+            waitSet.GuardConditions.Add(this.GuardCondition);
+
+            this.GuardCondition.Trigger();
+
+            Assert.That(waitSet.TryWait(TimeSpan.FromSeconds(0.1), out _), Is.True);
+            Assert.That(waitSet.TryWait(TimeSpan.FromSeconds(0.1), out _), Is.False);
+        }
     }
 }

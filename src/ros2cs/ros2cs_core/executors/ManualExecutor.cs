@@ -186,7 +186,7 @@ namespace ROS2.Executors
         /// <inheritdoc/>
         public bool TryWait(TimeSpan timeout)
         {
-            if (this._RescanScheduled)
+            if (this._RescanScheduled && this.IsSpinning)
             {
                 try
                 {
@@ -204,13 +204,10 @@ namespace ROS2.Executors
         }
 
         /// <summary>
-        /// Interrupt <see cref="TrySpin"/> if waiting for
-        /// work to become available.
+        /// Interrupt the next or current <see cref="TrySpin"/>.
         /// </summary>
         /// <remarks>
-        /// If <see cref="TrySpin"/> is not currently waiting then
-        /// this method does not have any effect.
-        /// Furthermore no work is skipped.
+        /// This method only causes the wait to be skipped, work which is ready will be executed.
         /// </remarks>
         public void Interrupt()
         {
