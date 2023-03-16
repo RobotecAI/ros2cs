@@ -60,17 +60,6 @@ namespace ROS2
             }
         }
 
-        /// <summary>
-        /// Assert that the context has not been disposed.
-        /// </summary>
-        private void AssertOk()
-        {
-            if (this.IsDisposed)
-            {
-                throw new ObjectDisposedException("current ROS context");
-            }
-        }
-
         /// <inheritdoc/>
         public bool Ok()
         {
@@ -80,7 +69,6 @@ namespace ROS2
         /// <inheritdoc/>
         public bool TryCreateNode(string name, out INode node)
         {
-            this.AssertOk();
             if (this.ROSNodes.ContainsKey(name))
             {
                 node = default(INode);

@@ -106,21 +106,9 @@ namespace ROS2
             }
         }
 
-        /// <summary>
-        /// Assert that the client has not been disposed.
-        /// </summary>
-        private void AssertOk()
-        {
-            if (this.IsDisposed)
-            {
-                throw new ObjectDisposedException($"client for topic '{this.Topic}'");
-            }
-        }
-
         /// <inheritdoc/>
         public bool IsServiceAvailable()
         {
-            this.AssertOk();
             bool available = false;
             Utils.CheckReturnEnum(NativeRcl.rcl_service_server_is_available(
                 this.Node.Handle,
@@ -134,11 +122,6 @@ namespace ROS2
         /// <inheritdoc/>
         public bool TryProcess()
         {
-            if (this.IsDisposed)
-            {
-                return false;
-            }
-
             rcl_rmw_request_id_t header = default(rcl_rmw_request_id_t);
             O message = new O();
             (TaskCompletionSource<O>, Task<O>) source;
@@ -154,11 +137,16 @@ namespace ROS2
                 );
                 GC.KeepAlive(this);
 
-                if ((RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_CLIENT_TAKE_FAILED)
+                switch ((RCLReturnEnum)ret)
                 {
-                    return false;
+                    case RCLReturnEnum.RCL_RET_CLIENT_TAKE_FAILED:
+                    case RCLReturnEnum.RCL_RET_CLIENT_INVALID:
+                        return false;
+                    default:
+                        Utils.CheckReturnEnum(ret);
+                        break;
                 }
-                Utils.CheckReturnEnum(ret);
+
                 if (this.Requests.TryGetValue(header.sequence_number, out source))
                 {
                     exists = true;
@@ -200,7 +188,6 @@ namespace ROS2
         /// <inheritdoc/>
         public Task<O> CallAsync(I msg, TaskCreationOptions options)
         {
-            this.AssertOk();
             var source = new TaskCompletionSource<O>(options);
             lock (this.Requests)
             {

@@ -81,11 +81,6 @@ namespace ROS2
         /// <inheritdoc/>
         public bool TryProcess()
         {
-            if (this.IsDisposed)
-            {
-                return false;
-            }
-
             rcl_rmw_request_id_t header = default(rcl_rmw_request_id_t);
             I message = new I();
             int ret = NativeRcl.rcl_take_request(
@@ -95,13 +90,19 @@ namespace ROS2
             );
             GC.KeepAlive(this);
 
-            if ((RCLReturnEnum)ret != RCLReturnEnum.RCL_RET_SERIVCE_TAKE_FAILD)
+            switch ((RCLReturnEnum)ret)
             {
-                Utils.CheckReturnEnum(ret);
-                this.ProcessRequest(header, message);
-                return true;
+                case RCLReturnEnum.RCL_RET_SERIVCE_TAKE_FAILD:
+                case RCLReturnEnum.RCL_RET_SERVICE_INVALID:
+                    return false;
+                default:
+                    Utils.CheckReturnEnum(ret);
+                    break;
             }
-            return false;
+
+            Utils.CheckReturnEnum(ret);
+            this.ProcessRequest(header, message);
+            return true;
         }
 
         /// <inheritdoc/>

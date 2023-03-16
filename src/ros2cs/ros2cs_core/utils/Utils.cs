@@ -35,6 +35,14 @@ namespace ROS2
           throw new InvalidNamespaceException(errorMessage);
         case RCLReturnEnum.RCL_RET_WAIT_SET_EMPTY:
           throw new WaitSetEmptyException(errorMessage);
+        case RCLReturnEnum.RCL_RET_NOT_INIT:
+        case RCLReturnEnum.RCL_RET_NODE_INVALID:
+        case RCLReturnEnum.RCL_RET_PUBLISHER_INVALID:
+        case RCLReturnEnum.RCL_RET_SUBSCRIPTION_INVALID:
+        case RCLReturnEnum.RCL_RET_CLIENT_INVALID:
+        case RCLReturnEnum.RCL_RET_SERVICE_INVALID:
+        case RCLReturnEnum.RCL_RET_WAIT_SET_INVALID:
+          throw new ObjectDisposedException(errorMessage);
         default:
           throw new RuntimeError(errorMessage);
       }

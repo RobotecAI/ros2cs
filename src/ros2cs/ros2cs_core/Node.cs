@@ -76,28 +76,24 @@ namespace ROS2
               this.Options
 
             );
-            if ((RCLReturnEnum)ret != RCLReturnEnum.RCL_RET_OK)
+            switch ((RCLReturnEnum)ret)
             {
-                this.FreeHandles();
-                Utils.CheckReturnEnum(ret);
-            }
-        }
-
-        /// <summary>
-        /// Assert that the instance has not been disposed.
-        /// </summary>
-        private void AssertOk()
-        {
-            if (this.IsDisposed)
-            {
-                throw new ObjectDisposedException($"ROS2 node '{this.Name}'");
+                case RCLReturnEnum.RCL_RET_OK:
+                    break;
+                // does not return RCL_RET_NOT_INIT if the context is NULL
+                case RCLReturnEnum.RCL_RET_INVALID_ARGUMENT:
+                    this.FreeHandles();
+                    throw new ObjectDisposedException("RCL Context");
+                default:
+                    this.FreeHandles();
+                    Utils.CheckReturnEnum(ret);
+                    break;
             }
         }
 
         /// <inheritdoc/>
         public IPublisher<T> CreatePublisher<T>(string topic, QualityOfServiceProfile qos = null) where T : Message, new()
         {
-            this.AssertOk();
             Publisher<T> publisher = new Publisher<T>(topic, this, qos);
             bool success = this.CurrentPublishers.Add(publisher);
             Debug.Assert(success, "publisher already exists");
@@ -120,7 +116,6 @@ namespace ROS2
         /// <inheritdoc/>
         public ISubscription<T> CreateSubscription<T>(string topic, Action<T> callback, QualityOfServiceProfile qos = null) where T : Message, new()
         {
-            this.AssertOk();
             Subscription<T> subscription = new Subscription<T>(topic, this, callback, qos);
             bool success = this.CurrentSubscriptions.Add(subscription);
             Debug.Assert(success, "subscription already exists");
@@ -149,7 +144,6 @@ namespace ROS2
         /// <inheritdoc/>
         public IClient<I, O> CreateClient<I, O>(string topic, QualityOfServiceProfile qos = null) where I : Message, new() where O : Message, new()
         {
-            this.AssertOk();
             Client<I, O> client = new Client<I, O>(topic, this, qos);
             bool success = this.CurrentClients.Add(client);
             Debug.Assert(success, "client already exists");
@@ -178,7 +172,6 @@ namespace ROS2
         /// <inheritdoc/>
         public IService<I, O> CreateService<I, O>(string topic, Func<I, O> callback, QualityOfServiceProfile qos = null) where I : Message, new() where O : Message, new()
         {
-            this.AssertOk();
             Service<I, O> service = new Service<I, O>(topic, this, callback, qos);
             bool success = this.CurrentServices.Add(service);
             Debug.Assert(success, "service already exists");

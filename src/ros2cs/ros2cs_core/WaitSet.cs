@@ -115,17 +115,6 @@ namespace ROS2
             context.OnShutdown += this.Dispose;
         }
 
-        /// <summary>
-        /// Assert that the instance has not been disposed.
-        /// </summary>
-        /// <exception cref="ObjectDisposedException">If the instance was disposed</exception>
-        private void AssertOk()
-        {
-            if (this.IsDisposed)
-            {
-                throw new ObjectDisposedException("rcl wait set");
-            }
-        }
         /// <inheritdoc />
         public IEnumerator<IWaitable> GetEnumerator()
         {
@@ -170,7 +159,7 @@ namespace ROS2
         /// </remarks>
         private void PrepareWaitSet()
         {
-            Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_resize(
+            int ret = NativeRcl.rcl_wait_set_resize(
                 this.Handle,
                 new UIntPtr(Convert.ToUInt32(this.CurrentSubscriptions.Count)),
                 new UIntPtr(Convert.ToUInt32(this.CurrentGuardConditions.Count)),
@@ -178,7 +167,12 @@ namespace ROS2
                 new UIntPtr(Convert.ToUInt32(this.CurrentClients.Count)),
                 new UIntPtr(Convert.ToUInt32(this.CurrentServices.Count)),
                 UIntPtr.Zero
-            ));
+            );
+            if ((RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_INVALID_ARGUMENT)
+            {
+                throw new ObjectDisposedException("RCL wait set");
+            }
+            Utils.CheckReturnEnum(ret);
         }
 
         /// <summary>
@@ -281,7 +275,6 @@ namespace ROS2
         /// <inheritdoc cref="Wait"/>
         public bool TryWait(TimeSpan timeout, out WaitResult result)
         {
-            this.AssertOk();
             // invalidate last wait result
             this.Version += 1;
 
@@ -289,10 +282,6 @@ namespace ROS2
 
             long nanoSeconds = timeout.Ticks * (1_000_000_000 / TimeSpan.TicksPerSecond);
             int ret = NativeRcl.rcl_wait(this.Handle, nanoSeconds);
-            if ((RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_WAIT_SET_EMPTY)
-            {
-                throw new WaitSetEmptyException("empty wait set can not be waited on");
-            }
             if ((RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_TIMEOUT)
             {
                 result = default(WaitResult);

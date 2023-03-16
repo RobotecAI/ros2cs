@@ -75,11 +75,6 @@ namespace ROS2
         /// <inheritdoc/>
         public bool TryProcess()
         {
-            if (this.IsDisposed)
-            {
-                return false;
-            }
-
             T message = new T();
             int ret = NativeRcl.rcl_take(
                 this.Handle,
@@ -89,14 +84,19 @@ namespace ROS2
             );
             GC.KeepAlive(this);
 
-            if ((RCLReturnEnum)ret != RCLReturnEnum.RCL_RET_SUBSCRIPTION_TAKE_FAILED)
+            switch ((RCLReturnEnum)ret)
             {
-                Utils.CheckReturnEnum(ret);
-                (message as MessageInternals).ReadNativeMessage();
-                this.Callback(message);
-                return true;
+                case RCLReturnEnum.RCL_RET_SUBSCRIPTION_TAKE_FAILED:
+                case RCLReturnEnum.RCL_RET_SUBSCRIPTION_INVALID:
+                    return false;
+                default:
+                    Utils.CheckReturnEnum(ret);
+                    break;
             }
-            return false;
+
+            (message as MessageInternals).ReadNativeMessage();
+            this.Callback(message);
+            return true;
         }
 
         /// <inheritdoc/>

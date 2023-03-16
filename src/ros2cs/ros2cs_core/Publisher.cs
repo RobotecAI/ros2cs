@@ -68,21 +68,9 @@ namespace ROS2
             }
         }
 
-        /// <summary>
-        /// Assert that the publisher has not been disposed.
-        /// </summary>
-        private void AssertOk()
-        {
-            if (this.IsDisposed)
-            {
-                throw new ObjectDisposedException($"publisher for topic '{this.Topic}'");
-            }
-        }
-
         /// <inheritdoc/>
         public void Publish(T msg)
         {
-            this.AssertOk();
             MessageInternals msgInternals = msg as MessageInternals;
             msgInternals.WriteNativeMessage();
             Utils.CheckReturnEnum(NativeRcl.rcl_publish(this.Handle, msgInternals.Handle, IntPtr.Zero));

@@ -14,8 +14,8 @@
 // limitations under the License.
 
 using System;
-using NUnit.Framework;
 using example_interfaces.srv;
+using NUnit.Framework;
 
 namespace ROS2.Test
 {
@@ -67,6 +67,60 @@ namespace ROS2.Test
             Node.Dispose();
 
             Assert.That(Node.IsDisposed);
+        }
+
+        [Test]
+        public void DisposedPublisherCreation()
+        {
+            Node.Dispose();
+
+            Assert.Throws<ObjectDisposedException>(() =>
+            {
+                Node.CreatePublisher<std_msgs.msg.Bool>("test_publisher");
+            });
+            Assert.That(Node.Publishers.Count, Is.Zero);
+        }
+
+        [Test]
+        public void DisposedSubscriptionCreation()
+        {
+            Node.Dispose();
+
+            Assert.Throws<ObjectDisposedException>(() =>
+            {
+                Node.CreateSubscription<std_msgs.msg.Bool>(
+                    "test_subscription",
+                    msg => { throw new InvalidOperationException($"subscription called with {msg}"); }
+                );
+            });
+            Assert.That(Node.Subscriptions.Count, Is.Zero);
+        }
+
+        [Test]
+        public void DisposedServiceCreation()
+        {
+            Node.Dispose();
+
+            Assert.Throws<ObjectDisposedException>(() =>
+            {
+                Node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
+                    "service_test",
+                    request => { throw new InvalidOperationException($"received request {request}"); }
+                );
+            });
+            Assert.That(Node.Services.Count, Is.Zero);
+        }
+
+        [Test]
+        public void DisposedClientCreation()
+        {
+            Node.Dispose();
+
+            Assert.Throws<ObjectDisposedException>(() =>
+            {
+                Node.CreateClient<AddTwoInts_Request, AddTwoInts_Response>("client_test");
+            });
+            Assert.That(Node.Clients.Count, Is.Zero);
         }
 
         [Test]
