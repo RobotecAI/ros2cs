@@ -21,7 +21,7 @@ namespace ROS2
     /// ROS Context encapsulating the non-global state of an init/shutdown cycle.
     /// </summary>
     /// <remarks>
-    /// Instances should be disposed with <see cref="Dispose"/> which is NOT automatically performed completely on shutdown. 
+    /// Instances should be disposed with <see cref="Dispose"/> which may NOT automatically performed completely on garbage collection. 
     /// </remarks>
     public interface IContext : IExtendedDisposable
     {

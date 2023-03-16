@@ -20,10 +20,17 @@ namespace ROS2
     /// <summary>
     /// ROS Context encapsulating the non-global state of an init/shutdown cycle.
     /// </summary>
-    /// <remarks>Can be disposed by the garbage collector</remarks>
+    /// <remarks>
+    /// If the instance is not disposed it will be shut down by the garbage collector.
+    /// Since the collection tracking the nodes might be finalized at this point
+    /// the handle will be leaked.
+    /// </remarks>
     public sealed class Context : IContext
     {
-        /// <inheritdoc/>
+        /// <remarks>
+        /// Will be disposed on disposal of this instance.
+        /// Furthermore, access to the collection is thread safe.
+        /// </remarks>
         public IReadOnlyDictionary<string, INode> Nodes { get; private set; }
 
         /// <inheritdoc/>
@@ -32,11 +39,18 @@ namespace ROS2
         /// <inheritdoc/>
         public event Action OnShutdown;
 
+        /// <summary>
+        /// Handle to the <c>rcl_context_t</c>
+        /// </summary>
         internal IntPtr Handle { get; private set; } = IntPtr.Zero;
 
+        /// <summary>
+        /// Collection nodes active in this context.
+        /// </summary>
+        /// <remarks>
+        /// Also used for synchronisation when creating / removing nodes.
+        /// </remarks>
         private Dictionary<string, Node> ROSNodes = new Dictionary<string, Node>();
-
-        private rcl_allocator_t ROSAllocator;
 
         /// <summary>
         /// Get the current RMW implementation.
@@ -47,12 +61,17 @@ namespace ROS2
             return Utils.PtrToString(NativeRmwInterface.rmw_native_interface_get_implementation_identifier());
         }
 
+        /// <summary>
+        /// Create a new ROS Context.
+        /// </summary>
         public Context()
         {
-            this.Nodes = new MappedValueDictionary<string, Node, INode>(this.ROSNodes, node => node);
-            this.ROSAllocator = NativeRcl.rcutils_get_default_allocator();
+            this.Nodes = new MappedValueDictionary<string, Node, INode>(
+                new LockedDictionary<string, Node>(this.ROSNodes),
+                node => node
+            );
             this.Handle = NativeRclInterface.rclcs_get_zero_initialized_context();
-            int ret = NativeRclInterface.rclcs_init(this.Handle, this.ROSAllocator);
+            int ret = NativeRclInterface.rclcs_init(this.Handle, NativeRcl.rcutils_get_default_allocator());
             if ((RCLReturnEnum)ret != RCLReturnEnum.RCL_RET_OK)
             {
                 this.FreeHandles();
@@ -61,25 +80,34 @@ namespace ROS2
         }
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// This method is thread safe.
+        /// </remarks>
         public bool Ok()
         {
             return NativeRclInterface.rclcs_context_is_valid(this.Handle);
         }
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// This method is thread safe.
+        /// </remarks>
         public bool TryCreateNode(string name, out INode node)
         {
-            if (this.ROSNodes.ContainsKey(name))
+            lock (this.ROSNodes)
             {
-                node = default(INode);
-                return false;
-            }
-            else
-            {
-                Node ROSNode = new Node(name, this);
-                this.ROSNodes.Add(name, ROSNode);
-                node = ROSNode;
-                return true;
+                if (this.ROSNodes.ContainsKey(name))
+                {
+                    node = default(INode);
+                    return false;
+                }
+                else
+                {
+                    Node ROSNode = new Node(name, this);
+                    this.ROSNodes.Add(name, ROSNode);
+                    node = ROSNode;
+                    return true;
+                }
             }
         }
 
@@ -88,14 +116,23 @@ namespace ROS2
         /// </summary>
         /// <remarks>
         /// This method is intended to be used by <see cref="Node.Dispose"/> and does not dispose the node.
+        /// Furthermore, it is thread safe.
         /// </remarks>
         /// <param name="name">Name of the node.</param>
         /// <returns>If the node existed in this context and has been removed.</returns>
         internal bool RemoveNode(string name)
         {
-            return this.ROSNodes.Remove(name);
+            lock (this.ROSNodes)
+            {
+                return this.ROSNodes.Remove(name);
+            }
         }
 
+        /// <remarks>
+        /// This method is not thread safe.
+        /// Do not call while the context or any entities
+        /// associated with it are in use.
+        /// </remarks>
         /// <inheritdoc/>
         public void Dispose()
         {
@@ -132,9 +169,13 @@ namespace ROS2
             }
         }
 
+        /// <summary>
+        /// Free the handles of this instance.
+        /// </summary>
         private void FreeHandles()
         {
             NativeRclInterface.rclcs_free_context(this.Handle);
+            // to allow .IsDisposed to work
             this.Handle = IntPtr.Zero;
         }
 
