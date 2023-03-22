@@ -32,6 +32,7 @@ namespace ROS2.Executors
         public bool RescanScheduled
         {
             get { return this._RescanScheduled; }
+            private set { this._RescanScheduled = value; }
         }
 
         /// <inheritdoc/>
@@ -166,7 +167,7 @@ namespace ROS2.Executors
         /// <inheritdoc/>
         public void ScheduleRescan()
         {
-            this._RescanScheduled = true;
+            this.RescanScheduled = true;
         }
 
         /// <inheritdoc/>
@@ -186,7 +187,7 @@ namespace ROS2.Executors
         /// <inheritdoc/>
         public bool TryWait(TimeSpan timeout)
         {
-            if (this._RescanScheduled && this.IsSpinning)
+            if (this.RescanScheduled && this.IsSpinning)
             {
                 try
                 {
@@ -224,7 +225,7 @@ namespace ROS2.Executors
             this.IsIdle.Reset();
             try
             {
-                if (this._RescanScheduled)
+                if (this.RescanScheduled)
                 {
                     return false;
                 }
@@ -250,26 +251,38 @@ namespace ROS2.Executors
         /// <remarks> This clears any scheduled rescans. </remarks>
         public void Rescan()
         {
+            // clear the wait set first to
+            // assert that the removed objects
+            // can be disposed even on error
             this.WaitSet.Subscriptions.Clear();
             this.WaitSet.Services.Clear();
             this.WaitSet.Clients.Clear();
-            // clear it first to prevent clearing rescans
+            // clear the flag to prevent clearing rescans
             // scheduled just after we finished rescaning
-            this._RescanScheduled = false;
-            foreach (INode node in this.Nodes)
+            this.RescanScheduled = false;
+            try
             {
-                foreach (ISubscriptionBase subscription in node.Subscriptions)
+                foreach (INode node in this.Nodes)
                 {
-                    this.WaitSet.Subscriptions.Add(subscription);
+                    foreach (ISubscriptionBase subscription in node.Subscriptions)
+                    {
+                        this.WaitSet.Subscriptions.Add(subscription);
+                    }
+                    foreach (IServiceBase service in node.Services)
+                    {
+                        this.WaitSet.Services.Add(service);
+                    }
+                    foreach (IClientBase client in node.Clients)
+                    {
+                        this.WaitSet.Clients.Add(client);
+                    }
                 }
-                foreach (IServiceBase service in node.Services)
-                {
-                    this.WaitSet.Services.Add(service);
-                }
-                foreach (IClientBase client in node.Clients)
-                {
-                    this.WaitSet.Clients.Add(client);
-                }
+            }
+            catch (Exception)
+            {
+                // schedule rescan since the wait set may not be filled completely
+                this.ScheduleRescan();
+                throw;
             }
         }
 

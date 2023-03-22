@@ -16,11 +16,17 @@ namespace ROS2.Test
 
         private ManualExecutor Executor;
 
+        private WaitSet WaitSet;
+
         [SetUp]
         public void SetUp()
         {
             this.Context = new Context();
-            this.Executor = new ManualExecutor(this.Context);
+            this.WaitSet = new WaitSet(this.Context);
+            this.Executor = new ManualExecutor(
+                this.WaitSet,
+                new GuardCondition(this.Context, () => { })
+            );
         }
 
         [TearDown]
