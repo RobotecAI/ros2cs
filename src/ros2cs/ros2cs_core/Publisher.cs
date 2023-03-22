@@ -18,9 +18,16 @@ using ROS2.Internal;
 
 namespace ROS2
 {
-    /// <summary> Publisher of a topic with a given type. </summary>
+    /// <summary>
+    /// Publisher of a topic with a given type wrapping a rcl publisher.
+    /// </summary>
+    /// <remarks>
+    /// This is the implementation produced by <see cref="Node.CreatePublisher"/>,
+    /// use this method to create new instances.
+    /// </remarks>
+    /// <seealso cref="ROS2.Node"/>
     /// <inheritdoc cref="IPublisher{T}"/>
-    internal sealed class Publisher<T> : IPublisher<T>, IRawPublisher where T : Message, new()
+    public sealed class Publisher<T> : IPublisher<T>, IRawPublisher where T : Message, new()
     {
         /// <inheritdoc/>
         public string Topic { get; private set; }
@@ -36,12 +43,32 @@ namespace ROS2
             }
         }
 
+        /// <summary>
+        /// Handle to the rcl publisher
+        /// </summary>
         private IntPtr Handle = IntPtr.Zero;
 
+        /// <summary>
+        /// Handle to the rcl publisher options
+        /// </summary>
         private IntPtr Options = IntPtr.Zero;
 
+        /// <summary>
+        /// Node associated with this instance.
+        /// </summary>
         private readonly Node Node;
 
+        /// <summary>
+        /// Create a new instance.
+        /// </summary>
+        /// <remarks>
+        /// The caller is responsible for adding the instance to <paramref name="node"/>.
+        /// This action is not thread safe.
+        /// </remarks>
+        /// <param name="topic"> Topic to publish to. </param>
+        /// <param name="node"> Node to associate with. </param>
+        /// <param name="qos"> QOS setting for this publisher. </param>
+        /// <exception cref="ObjectDisposedException"> If <paramref name="node"/> was disposed. </exception>
         internal Publisher(string topic, Node node, QualityOfServiceProfile qos = null)
         {
             this.Topic = topic;
@@ -68,15 +95,30 @@ namespace ROS2
             }
         }
 
+
+        ///<remarks>
+        /// Message memory is copied into native structures and
+        /// the message can be safely changed or disposed after this call.
+        /// This method is not thread safe and may not be called from
+        /// multiple threads simultaneously.
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException"> If the instance was disposed. </exception>
         /// <inheritdoc/>
         public void Publish(T msg)
         {
             MessageInternals msgInternals = msg as MessageInternals;
+            // may not be thread safe
             msgInternals.WriteNativeMessage();
+            // confused by the rcl documentation, assume it is not thread safe
             Utils.CheckReturnEnum(NativeRcl.rcl_publish(this.Handle, msgInternals.Handle, IntPtr.Zero));
             GC.KeepAlive(this);
         }
 
+        /// <remarks>
+        /// This method is not thread safe and may not be called from
+        /// multiple threads simultaneously or while the publisher is in use.
+        /// Disposal is automatically performed on finalization by the GC.
+        /// </remarks>
         /// <inheritdoc/>
         public void Dispose()
         {
@@ -101,11 +143,11 @@ namespace ROS2
                 Debug.Assert(success, "failed to remove publisher");
             }
 
-            this.DisposeFromNode();
+            (this as IRawPublisher).DisposeFromNode();
         }
 
         /// <inheritdoc/>
-        public void DisposeFromNode()
+        void IRawPublisher.DisposeFromNode()
         {
             if (this.Handle == IntPtr.Zero)
             {
@@ -116,6 +158,12 @@ namespace ROS2
             this.FreeHandles();
         }
 
+        /// <summary>
+        /// Free the rcl handles and replace them with null pointers.
+        /// </summary>
+        /// <remarks>
+        /// The handles are not finalised by this method.
+        /// </remarks>
         private void FreeHandles()
         {
             NativeRclInterface.rclcs_free_publisher(this.Handle);
