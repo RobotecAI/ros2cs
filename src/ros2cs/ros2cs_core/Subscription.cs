@@ -19,9 +19,16 @@ using ROS2.Internal;
 
 namespace ROS2
 {
-    /// <summary> Subscription to a topic with a given type. </summary>
+    /// <summary>
+    /// Subscription of a topic with a given type wrapping a rcl subscription.
+    /// </summary>
+    /// <remarks>
+    /// This is the implementation produced by <see cref="Node.CreateSubscription"/>,
+    /// use this method to create new instances.
+    /// </remarks>
+    /// <seealso cref="ROS2.Node"/>
     /// <inheritdoc cref="ISubscription{T}"/>
-    internal sealed class Subscription<T> : ISubscription<T>, IRawSubscription where T : Message, new()
+    public sealed class Subscription<T> : ISubscription<T>, IRawSubscription where T : Message, new()
     {
         /// <inheritdoc/>
         public string Topic { get; private set; }
@@ -37,14 +44,38 @@ namespace ROS2
             }
         }
 
+        /// <summary>
+        /// Handle to the rcl subscription
+        /// </summary>
         public IntPtr Handle { get; private set; } = IntPtr.Zero;
 
+        /// <summary>
+        /// Handle to the rcl subscription options
+        /// </summary>
         private IntPtr Options = IntPtr.Zero;
 
+        /// <summary>
+        /// Node associated with this instance.
+        /// </summary>
         private readonly Node Node;
 
+        /// <summary>
+        /// Callback invoked when a message is received.
+        /// </summary>
         private readonly Action<T> Callback;
 
+        /// <summary>
+        /// Create a new instance.
+        /// </summary>
+        /// <remarks>
+        /// The caller is responsible for adding the instance to <paramref name="node"/>.
+        /// This action is not thread safe.
+        /// </remarks>
+        /// <param name="topic"> Topic to subscribe to. </param>
+        /// <param name="node"> Node to associate with. </param>
+        /// <param name="callback"> Callback invoked when a message is received. </param>
+        /// <param name="qos"> QOS setting for this subscription. </param>
+        /// <exception cref="ObjectDisposedException"> If <paramref name="node"/> was disposed. </exception>
         internal Subscription(string topic, Node node, Action<T> callback, QualityOfServiceProfile qos = null)
         {
             this.Topic = topic;
@@ -72,6 +103,10 @@ namespace ROS2
             }
         }
 
+        /// <remarks>
+        /// Both variants of this method are equivalent
+        /// and not thread safe.
+        /// </remarks>
         /// <inheritdoc/>
         public bool TryProcess()
         {
@@ -99,12 +134,21 @@ namespace ROS2
             return true;
         }
 
+        /// <remarks>
+        /// Both variants of this method are equivalent
+        /// and not thread safe.
+        /// </remarks>
         /// <inheritdoc/>
         public Task<bool> TryProcessAsync()
         {
             return Task.FromResult(this.TryProcess());
         }
 
+        /// <remarks>
+        /// This method is not thread safe and may not be called from
+        /// multiple threads simultaneously or while the subscription is in use.
+        /// Disposal is automatically performed on finalization by the GC.
+        /// </remarks>
         /// <inheritdoc/>
         public void Dispose()
         {
@@ -131,11 +175,11 @@ namespace ROS2
                 this.Node.Executor?.Wait();
             }
 
-            this.DisposeFromNode();
+            (this as IRawSubscription).DisposeFromNode();
         }
 
         /// <inheritdoc/>
-        public void DisposeFromNode()
+        void IRawSubscription.DisposeFromNode()
         {
             if (this.Handle == IntPtr.Zero)
             {
@@ -146,6 +190,12 @@ namespace ROS2
             this.FreeHandles();
         }
 
+        /// <summary>
+        /// Free the rcl handles and replace them with null pointers.
+        /// </summary>
+        /// <remarks>
+        /// The handles are not finalised by this method.
+        /// </remarks>
         private void FreeHandles()
         {
             NativeRclInterface.rclcs_free_subscription(this.Handle);
