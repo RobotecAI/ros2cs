@@ -22,21 +22,37 @@ using ROS2.Internal;
 
 namespace ROS2
 {
-    /// <summary> Client with a topic and Types for Messages. </summary>
+    /// <summary>
+    /// Client with a topic and types for messages wrapping a rcl client.
+    /// </summary>
+    /// <remarks>
+    /// This is the implementation produced by <see cref="Node.CreateClient"/>,
+    /// use this method to create new instances.
+    /// </remarks>
+    /// <seealso cref="ROS2.Node"/>
     /// <inheritdoc cref="IClient{I, O}"/>
-    internal sealed class Client<I, O> : IClient<I, O>, IRawClient
+    public sealed class Client<I, O> : IClient<I, O>, IRawClient
     where I : Message, new()
     where O : Message, new()
     {
         /// <inheritdoc/>
         public string Topic { get; private set; }
 
+        /// <remarks>
+        /// This dictionary is thread safe.
+        /// </remarks>
         /// <inheritdoc/>
         public IReadOnlyDictionary<long, Task<O>> PendingRequests { get; private set; }
 
+        /// <remarks>
+        /// This dictionary is thread safe.
+        /// </remarks>
         /// <inheritdoc/>
         IReadOnlyDictionary<long, Task> IClientBase.PendingRequests { get { return this.UntypedPendingRequests; } }
 
+        /// <summary>
+        /// Wrapper for <see cref="IClientBase.PendingRequests"/>.
+        /// </summary>
         private readonly IReadOnlyDictionary<long, Task> UntypedPendingRequests;
 
         /// <inheritdoc/>
@@ -50,10 +66,19 @@ namespace ROS2
             }
         }
 
-        public IntPtr Handle {get; private set; } = IntPtr.Zero;
+        /// <summary>
+        /// Handle to the rcl client.
+        /// </summary>
+        public IntPtr Handle { get; private set; } = IntPtr.Zero;
 
+        /// <summary>
+        /// Handle to the rcl client options.
+        /// </summary>
         private IntPtr Options = IntPtr.Zero;
 
+        /// <summary>
+        /// Node associated with this instance.
+        /// </summary>
         private readonly Node Node;
 
         /// <summary>
@@ -62,14 +87,22 @@ namespace ROS2
         /// <remarks>
         /// The <see cref="TaskCompletionSource.Task"/> is stored separately to allow
         /// <see cref="Cancel"/> to work even if the source returns multiple tasks.
+        /// Furthermore, this object is used for locking.
         /// </remarks>
         private readonly Dictionary<long, (TaskCompletionSource<O>, Task<O>)> Requests = new Dictionary<long, (TaskCompletionSource<O>, Task<O>)>();
 
         /// <summary>
-        /// Internal constructor for Client
+        /// Create a new instance.
         /// </summary>
-        /// <remarks>Use <see cref="INode.CreateClient"/> to construct new Instances</remarks>
-        public Client(string topic, Node node, QualityOfServiceProfile qos = null)
+        /// <remarks>
+        /// The caller is responsible for adding the instance to <paramref name="node"/>.
+        /// This action is not thread safe.
+        /// </remarks>
+        /// <param name="topic"> Topic to subscribe to. </param>
+        /// <param name="node"> Node to associate with. </param>
+        /// <param name="qos"> QOS setting for this subscription. </param>
+        /// <exception cref="ObjectDisposedException"> If <paramref name="node"/> was disposed. </exception>
+        internal Client(string topic, Node node, QualityOfServiceProfile qos = null)
         {
             this.Topic = topic;
             this.Node = node;
@@ -106,6 +139,10 @@ namespace ROS2
             }
         }
 
+        /// <remarks>
+        /// This method is not thread safe.
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException"> If the instance was disposed. </exception>
         /// <inheritdoc/>
         public bool IsServiceAvailable()
         {
@@ -119,6 +156,10 @@ namespace ROS2
             return available;
         }
 
+        /// <remarks>
+        /// Both variants of this method are equivalent
+        /// and thread safe.
+        /// </remarks>
         /// <inheritdoc/>
         public bool TryProcess()
         {
@@ -165,12 +206,21 @@ namespace ROS2
             return true;
         }
 
+        /// <remarks>
+        /// Both variants of this method are equivalent
+        /// and thread safe.
+        /// </remarks>
         /// <inheritdoc/>
         public Task<bool> TryProcessAsync()
         {
             return Task.FromResult(this.TryProcess());
         }
 
+        /// <remarks>
+        /// The provided message can be modified or disposed after this call.
+        /// Furthermore, this method is thread safe.
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException"> If the instance was disposed. </exception>
         /// <inheritdoc/>
         public O Call(I msg)
         {
@@ -179,12 +229,20 @@ namespace ROS2
             return task.Result;
         }
 
+        /// <remarks>
+        /// This method is thread safe.
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException"> If the instance was disposed. </exception>
         /// <inheritdoc/>
         public Task<O> CallAsync(I msg)
         {
             return CallAsync(msg, TaskCreationOptions.None);
         }
 
+        /// <remarks>
+        /// This method is thread safe.
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException"> If the instance was disposed. </exception>
         /// <inheritdoc/>
         public Task<O> CallAsync(I msg, TaskCreationOptions options)
         {
@@ -232,6 +290,10 @@ namespace ROS2
             return task;
         }
 
+        /// <remarks>
+        /// Tasks are automatically removed on completion and have to be removed only when canceled.
+        /// Furthermore, this method is thread safe.
+        /// </remarks>
         /// <inheritdoc/>
         public bool Cancel(Task task)
         {
@@ -254,6 +316,13 @@ namespace ROS2
             return true;
         }
 
+        /// <remarks>
+        /// This method is not thread safe and may not be called from
+        /// multiple threads simultaneously or while the client is in use.
+        /// Disposal is automatically performed on finalization by the GC.
+        /// Any pending tasks are removed and set to have faulted with
+        /// <see cref="ObjectDisposedException"/>.
+        /// </remarks>
         /// <inheritdoc/>
         public void Dispose()
         {
@@ -286,7 +355,7 @@ namespace ROS2
         }
 
         /// <inheritdoc/>
-        public void DisposeFromNode()
+        void IRawClient.DisposeFromNode()
         {
             if (this.Handle == IntPtr.Zero)
             {
@@ -298,6 +367,9 @@ namespace ROS2
             this.FreeHandles();
         }
 
+        /// <summary>
+        /// Dispose all tasks currently pending.
+        /// </summary>
         private void DisposeAllTasks()
         {
             lock (this.Requests)
@@ -310,6 +382,12 @@ namespace ROS2
             }
         }
 
+        /// <summary>
+        /// Free the rcl handles and replace them with null pointers.
+        /// </summary>
+        /// <remarks>
+        /// The handles are not finalised by this method.
+        /// </remarks>
         private void FreeHandles()
         {
             NativeRclInterface.rclcs_free_client(this.Handle);
