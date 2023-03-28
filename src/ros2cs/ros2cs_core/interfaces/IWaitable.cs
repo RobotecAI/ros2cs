@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 
 namespace ROS2
 {
@@ -16,15 +15,7 @@ namespace ROS2
         /// <summary>
         /// Try to process if this instance is ready.
         /// </summary>
-        /// <remarks>Both variants of this method are equivalent.</remarks>
-        /// <returns>If the instance was ready.</returns>
+        /// <returns> If the instance was ready. </returns>
         bool TryProcess();
-
-        /// <summary>
-        /// Try to process preferably asynchronously if this instance is ready.
-        /// </summary>
-        /// <returns><see cref="Task"/> indicating if the instance was ready.</returns>
-        /// <inheritdoc cref="TryProcess"/>
-        Task<bool> TryProcessAsync();
     }
 }

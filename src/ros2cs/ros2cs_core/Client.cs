@@ -157,8 +157,7 @@ namespace ROS2
         }
 
         /// <remarks>
-        /// Both variants of this method are equivalent
-        /// and thread safe.
+        /// This method is thread safe.
         /// </remarks>
         /// <inheritdoc/>
         public bool TryProcess()
@@ -204,16 +203,6 @@ namespace ROS2
                 Debug.Print("received request which was not pending, maybe canceled");
             }
             return true;
-        }
-
-        /// <remarks>
-        /// Both variants of this method are equivalent
-        /// and thread safe.
-        /// </remarks>
-        /// <inheritdoc/>
-        public Task<bool> TryProcessAsync()
-        {
-            return Task.FromResult(this.TryProcess());
         }
 
         /// <remarks>

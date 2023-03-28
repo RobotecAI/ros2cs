@@ -157,22 +157,5 @@ namespace ROS2.Test
 
             Assert.That(count, Is.EqualTo(5));
         }
-
-        [Test]
-        public void SubscriptionTryProcessAsync()
-        {
-            bool callbackTriggered = false;
-            using var subscription = Node.CreateSubscription<std_msgs.msg.Int32>(
-                TOPIC,
-                (msg) => { callbackTriggered = true; }
-            );
-            Node.CreatePublisher<std_msgs.msg.Int32>(TOPIC).Publish(CreateMessage(0));
-
-            var task = subscription.TryProcessAsync();
-            task.Wait();
-            Assert.That(task.Result);
-
-            Assert.That(callbackTriggered, Is.True);
-        }
     }
 }

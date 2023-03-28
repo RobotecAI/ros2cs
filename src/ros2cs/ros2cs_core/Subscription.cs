@@ -14,7 +14,6 @@
 
 using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using ROS2.Internal;
 
 namespace ROS2
@@ -104,8 +103,7 @@ namespace ROS2
         }
 
         /// <remarks>
-        /// Both variants of this method are equivalent
-        /// and not thread safe.
+        /// This method is not thread safe.
         /// </remarks>
         /// <inheritdoc/>
         public bool TryProcess()
@@ -132,16 +130,6 @@ namespace ROS2
             (message as MessageInternals).ReadNativeMessage();
             this.Callback(message);
             return true;
-        }
-
-        /// <remarks>
-        /// Both variants of this method are equivalent
-        /// and not thread safe.
-        /// </remarks>
-        /// <inheritdoc/>
-        public Task<bool> TryProcessAsync()
-        {
-            return Task.FromResult(this.TryProcess());
         }
 
         /// <remarks>

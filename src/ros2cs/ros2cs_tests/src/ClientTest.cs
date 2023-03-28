@@ -213,22 +213,7 @@ namespace ROS2.Test
         [Test]
         public void ClientTryProcess()
         {
-            this.ClientTryProcessTest(this.Client.TryProcess);
-        }
-
-        [Test]
-        public void ClientTryProcessAsync()
-        {
-            this.ClientTryProcessTest(() => {
-                Task<bool> task = this.Client.TryProcessAsync();
-                task.Wait();
-                return task.Result;
-            });
-        }
-
-        private void ClientTryProcessTest(Func<bool> implementation)
-        {
-            Assert.That(implementation(), Is.False);
+            Assert.That(this.Client.TryProcess(), Is.False);
 
             using var service = Node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
                 SERVICE_NAME,
@@ -237,7 +222,7 @@ namespace ROS2.Test
             Task pendingTask = this.Client.CallAsync(this.CreateRequest(3, 4));
             while (!service.TryProcess())
             {}
-            while (!implementation())
+            while (!this.Client.TryProcess())
             {}
 
             Assert.That(pendingTask.IsCompletedSuccessfully);

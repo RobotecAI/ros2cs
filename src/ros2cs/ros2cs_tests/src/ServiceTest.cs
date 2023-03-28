@@ -69,22 +69,7 @@ namespace ROS2.Test
         [Test]
         public void ServiceTryProcess()
         {
-            ServiceTryProcessTest(Service.TryProcess);
-        }
-
-        [Test]
-        public void ServiceTryProcessAsync()
-        {
-            ServiceTryProcessTest(() => {
-                var task = Service.TryProcessAsync();
-                task.Wait();
-                return task.Result;
-            });
-        }
-
-        private void ServiceTryProcessTest(Func<bool> implementation)
-        {
-            Assert.That(implementation(), Is.False);
+            Assert.That(Service.TryProcess(), Is.False);
         }
     }
 }
