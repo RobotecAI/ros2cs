@@ -19,9 +19,16 @@ using ROS2.Internal;
 
 namespace ROS2
 {
-    /// <summary> Service with a topic and Types for Messages. </summary>
+    /// <summary>
+    /// Service with a topic and types for Messages wrapping a rcl service.
+    /// </summary>
+    /// <remarks>
+    /// This is the implementation produced by <see cref="Node.CreateService"/>,
+    /// use this method to create new instances.
+    /// </remarks>
+    /// <seealso cref="ROS2.Node"/>
     /// <inheritdoc cref="IService{I, O}"/>
-    internal sealed class Service<I, O> : IService<I, O>, IRawService
+    public sealed class Service<I, O> : IService<I, O>, IRawService
     where I : Message, new()
     where O : Message, new()
     {
@@ -39,17 +46,38 @@ namespace ROS2
             }
         }
 
+        /// <summary>
+        /// Handle to the rcl service
+        /// </summary>
         public IntPtr Handle { get; private set; } = IntPtr.Zero;
 
+        /// <summary>
+        /// Handle to the rcl service options
+        /// </summary>
         private IntPtr Options = IntPtr.Zero;
 
+        /// <summary>
+        /// Node associated with this instance.
+        /// </summary>
         private readonly Node Node;
 
         /// <summary>
-        /// Callback to be called to process incoming requests
+        /// Callback to be called to process incoming requests.
         /// </summary>
         private readonly Func<I, O> Callback;
 
+        /// <summary>
+        /// Create a new instance.
+        /// </summary>
+        /// <remarks>
+        /// The caller is responsible for adding the instance to <paramref name="node"/>.
+        /// This action is not thread safe.
+        /// </remarks>
+        /// <param name="topic"> Topic to receive requests from. </param>
+        /// <param name="node"> Node to associate with. </param>
+        /// <param name="callback"> Callback to be called to process incoming requests. </param>
+        /// <param name="qos"> QOS setting for this subscription. </param>
+        /// <exception cref="ObjectDisposedException"> If <paramref name="node"/> was disposed. </exception>
         internal Service(string topic, Node node, Func<I, O> callback, QualityOfServiceProfile qos = null)
         {
             this.Topic = topic;
@@ -78,6 +106,10 @@ namespace ROS2
             }
         }
 
+        /// <remarks>
+        /// Both variants of this method are equivalent
+        /// and not thread safe.
+        /// </remarks>
         /// <inheritdoc/>
         public bool TryProcess()
         {
@@ -105,6 +137,10 @@ namespace ROS2
             return true;
         }
 
+        /// <remarks>
+        /// Both variants of this method are equivalent
+        /// and not thread safe.
+        /// </remarks>
         /// <inheritdoc/>
         public Task<bool> TryProcessAsync()
         {
@@ -140,6 +176,11 @@ namespace ROS2
             GC.KeepAlive(this);
         }
 
+        /// <remarks>
+        /// This method is not thread safe and may not be called from
+        /// multiple threads simultaneously or while the service is in use.
+        /// Disposal is automatically performed on finalization by the GC.
+        /// </remarks>
         /// <inheritdoc/>
         public void Dispose()
         {
@@ -166,11 +207,11 @@ namespace ROS2
                 this.Node.Executor?.Wait();
             }
 
-            this.DisposeFromNode();
+            (this as IRawService).DisposeFromNode();
         }
 
         /// <inheritdoc/>
-        public void DisposeFromNode()
+        void IRawService.DisposeFromNode()
         {
             if (this.Handle == IntPtr.Zero)
             {
@@ -181,6 +222,12 @@ namespace ROS2
             this.FreeHandles();
         }
 
+        /// <summary>
+        /// Free the rcl handles and replace them with null pointers.
+        /// </summary>
+        /// <remarks>
+        /// The handles are not finalised by this method.
+        /// </remarks>
         private void FreeHandles()
         {
             NativeRclInterface.rclcs_free_service(this.Handle);
