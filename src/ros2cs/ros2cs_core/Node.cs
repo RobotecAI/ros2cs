@@ -18,8 +18,16 @@ using System.Diagnostics;
 
 namespace ROS2
 {
+    /// <summary>
+    /// Node wrapping a rcl node.
+    /// </summary>
+    /// <remarks>
+    /// This is the implementation produced by <see cref="Context.TryCreateNode"/>,
+    /// use this method to create instances.
+    /// </remarks>
+    /// <seealso cref="ROS2.Context"/>
     /// <inheritdoc cref="INode"/>
-    internal sealed class Node : INode
+    public sealed class Node : INode
     {
         /// <inheritdoc/>
         public string Name { get; private set; }
@@ -36,36 +44,77 @@ namespace ROS2
             get { return !NativeRclInterface.rclcs_node_is_valid(this.Handle); }
         }
 
-        internal IntPtr Handle = IntPtr.Zero;
+        /// <summary>
+        /// Handle to the rcl node
+        /// </summary>
+        internal IntPtr Handle { get; private set; } = IntPtr.Zero;
 
-        private IntPtr Options;
+        /// <summary>
+        /// Handle to the rcl node options
+        /// </summary>
+        private IntPtr Options = IntPtr.Zero;
 
+        /// <summary>
+        /// Context associated with this instance.
+        /// </summary>
         private readonly Context ROSContext;
 
+        /// <summary>
+        /// Lock used to allow thread safe access to node primitives.
+        /// </summary>
+        private readonly object Lock = new object();
+
+        /// <remarks>
+        /// This collection is thread safe.
+        /// </remarks>
         /// <inheritdoc/>
-        public IReadOnlyCollection<IPublisherBase> Publishers { get { return this.CurrentPublishers; } }
+        public IReadOnlyCollection<IPublisherBase> Publishers { get; private set; }
 
         private readonly HashSet<IRawPublisher> CurrentPublishers = new HashSet<IRawPublisher>();
 
+        /// <remarks>
+        /// This collection is thread safe.
+        /// </remarks>
         /// <inheritdoc/>
-        public IReadOnlyCollection<ISubscriptionBase> Subscriptions { get { return this.CurrentSubscriptions; } }
+        public IReadOnlyCollection<ISubscriptionBase> Subscriptions { get; private set; }
 
         private readonly HashSet<IRawSubscription> CurrentSubscriptions = new HashSet<IRawSubscription>();
 
+        /// <remarks>
+        /// This collection is thread safe.
+        /// </remarks>
         /// <inheritdoc/>
-        public IReadOnlyCollection<IServiceBase> Services { get { return this.CurrentServices; } }
+        public IReadOnlyCollection<IServiceBase> Services { get; private set; }
 
         private readonly HashSet<IRawService> CurrentServices = new HashSet<IRawService>();
 
+        /// <remarks>
+        /// This collection is thread safe.
+        /// </remarks>
         /// <inheritdoc/>
-        public IReadOnlyCollection<IClientBase> Clients { get { return this.CurrentClients; } }
+        public IReadOnlyCollection<IClientBase> Clients { get; private set; }
 
         private readonly HashSet<IRawClient> CurrentClients = new HashSet<IRawClient>();
 
+        /// <summary>
+        /// Create a new instance.
+        /// </summary>
+        /// <remarks>
+        /// The caller is responsible for adding the instance to <paramref name="context"/>.
+        /// This action is not thread safe.
+        /// </remarks>
+        /// <param name="name"> Name of the node. </param>
+        /// <param name="context"> Context to associate with. </param>
+        /// <exception cref="ObjectDisposedException"> If <paramref name="context"/> is disposed. </exception>
         internal Node(string name, Context context)
         {
             this.Name = name;
             this.ROSContext = context;
+            this.Publishers = new LockedCollection<IPublisherBase>(this.CurrentPublishers, this.Lock);
+            this.Subscriptions = new LockedCollection<ISubscriptionBase>(this.CurrentSubscriptions, this.Lock);
+            this.Services = new LockedCollection<IServiceBase>(this.CurrentServices, this.Lock);
+            this.Clients = new LockedCollection<IClientBase>(this.CurrentClients, this.Lock);
+
             this.Options = NativeRclInterface.rclcs_node_create_default_options();
             this.Handle = NativeRclInterface.rclcs_get_zero_initialized_node();
             int ret = NativeRcl.rcl_node_init(
@@ -91,13 +140,21 @@ namespace ROS2
             }
         }
 
+        /// <remarks>
+        /// This method is thread safe.
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException"> If the instance was disposed. </exception>
+        /// <seealso cref="Publisher{T}"/>
         /// <inheritdoc/>
         public IPublisher<T> CreatePublisher<T>(string topic, QualityOfServiceProfile qos = null) where T : Message, new()
         {
-            Publisher<T> publisher = new Publisher<T>(topic, this, qos);
-            bool success = this.CurrentPublishers.Add(publisher);
-            Debug.Assert(success, "publisher already exists");
-            return publisher;
+            lock (this.Lock)
+            {
+                Publisher<T> publisher = new Publisher<T>(topic, this, qos);
+                bool success = this.CurrentPublishers.Add(publisher);
+                Debug.Assert(success, "publisher already exists");
+                return publisher;
+            }
         }
 
         /// <summary>
@@ -105,20 +162,34 @@ namespace ROS2
         /// </summary>
         /// <remarks>
         /// This method is intended to be used by <see cref="Publisher.Dispose"/> and does not dispose the publisher.
+        /// Furthermore, it is thread safe.
         /// </remarks>
         /// <param name="publisher">Publisher to be removed.</param>
         /// <returns>If the publisher existed on this node and has been removed.</returns>
         internal bool RemovePublisher(IRawPublisher publisher)
         {
-            return this.CurrentPublishers.Remove(publisher);
+            lock (this.Lock)
+            {
+                return this.CurrentPublishers.Remove(publisher);
+            }
         }
 
+        /// <remarks>
+        /// This method schedules a rescan on the current executor and is thread safe
+        /// if <see cref="IExecutor.TryScheduleRescan"/> of the current executor is thread safe.
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException"> If the instance was disposed. </exception>
+        /// <seealso cref="Subscription{T}"/>
         /// <inheritdoc/>
         public ISubscription<T> CreateSubscription<T>(string topic, Action<T> callback, QualityOfServiceProfile qos = null) where T : Message, new()
         {
-            Subscription<T> subscription = new Subscription<T>(topic, this, callback, qos);
-            bool success = this.CurrentSubscriptions.Add(subscription);
-            Debug.Assert(success, "subscription already exists");
+            Subscription<T> subscription;
+            lock (this.Lock)
+            {
+                subscription = new Subscription<T>(topic, this, callback, qos);
+                bool success = this.CurrentSubscriptions.Add(subscription);
+                Debug.Assert(success, "subscription already exists");
+            }
             this.Executor?.TryScheduleRescan(this);
             return subscription;
         }
@@ -128,25 +199,40 @@ namespace ROS2
         /// </summary>
         /// <remarks>
         /// This method is intended to be used by <see cref="Subscription.Dispose"/> and does not dispose the subscription.
+        /// Furthermore, it is thread safe if <see cref="IExecutor.TryScheduleRescan"/> of the current executor is thread safe.
         /// </remarks>
         /// <param name="subscription">Subscription to be removed.</param>
         /// <returns>If the subscription existed on this node and has been removed.</returns>
         internal bool RemoveSubscription(IRawSubscription subscription)
         {
-            if (this.CurrentSubscriptions.Remove(subscription))
+            bool removed;
+            lock (this.Lock)
+            {
+                removed = this.CurrentSubscriptions.Remove(subscription);
+            }
+            if (removed)
             {
                 this.Executor?.TryScheduleRescan(this);
-                return true;
             }
-            return false;
+            return removed;
         }
 
+        /// <remarks>
+        /// This method schedules a rescan on the current executor and is thread safe
+        /// if <see cref="IExecutor.TryScheduleRescan"/> of the current executor is thread safe.
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException"> If the instance was disposed. </exception>
+        /// <seealso cref="Client{I, O}"/>
         /// <inheritdoc/>
         public IClient<I, O> CreateClient<I, O>(string topic, QualityOfServiceProfile qos = null) where I : Message, new() where O : Message, new()
         {
-            Client<I, O> client = new Client<I, O>(topic, this, qos);
-            bool success = this.CurrentClients.Add(client);
-            Debug.Assert(success, "client already exists");
+            Client<I, O> client;
+            lock (this.Lock)
+            {
+                client = new Client<I, O>(topic, this, qos);
+                bool success = this.CurrentClients.Add(client);
+                Debug.Assert(success, "client already exists");
+            }
             this.Executor?.TryScheduleRescan(this);
             return client;
         }
@@ -156,25 +242,40 @@ namespace ROS2
         /// </summary>
         /// <remarks>
         /// This method is intended to be used by <see cref="Client.Dispose"/> and does not dispose the client.
+        /// Furthermore, it is thread safe if <see cref="IExecutor.TryScheduleRescan"/> of the current executor is thread safe.
         /// </remarks>
         /// <param name="client">Client to be removed.</param>
         /// <returns>If the client existed on this node and has been removed.</returns>
         internal bool RemoveClient(IRawClient client)
         {
-            if (this.CurrentClients.Remove(client))
+            bool removed;
+            lock (this.Lock)
+            {
+                removed = this.CurrentClients.Remove(client);
+            }
+            if (removed)
             {
                 this.Executor?.TryScheduleRescan(this);
-                return true;
             }
-            return false;
+            return removed;
         }
 
+        /// <remarks>
+        /// This method schedules a rescan on the current executor and is thread safe
+        /// if <see cref="IExecutor.TryScheduleRescan"/> of the current executor is thread safe.
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException"> If the instance was disposed. </exception>
+        /// <seealso cref="Service{I, O}"/>
         /// <inheritdoc/>
         public IService<I, O> CreateService<I, O>(string topic, Func<I, O> callback, QualityOfServiceProfile qos = null) where I : Message, new() where O : Message, new()
         {
-            Service<I, O> service = new Service<I, O>(topic, this, callback, qos);
-            bool success = this.CurrentServices.Add(service);
-            Debug.Assert(success, "service already exists");
+            Service<I, O> service;
+            lock (this.Lock)
+            {
+                service = new Service<I, O>(topic, this, callback, qos);
+                bool success = this.CurrentServices.Add(service);
+                Debug.Assert(success, "service already exists");
+            }
             this.Executor?.TryScheduleRescan(this);
             return service;
         }
@@ -184,19 +285,29 @@ namespace ROS2
         /// </summary>
         /// <remarks>
         /// This method is intended to be used by <see cref="Service.Dispose"/> and does not dispose the service.
+        /// Furthermore, it is thread safe if <see cref="IExecutor.TryScheduleRescan"/> of the current executor is thread safe.
         /// </remarks>
         /// <param name="service">Service to be removed.</param>
         /// <returns>If the service existed on this node and has been removed.</returns>
         internal bool RemoveService(IRawService service)
         {
-            if (this.CurrentServices.Remove(service))
+            bool removed;
+            lock (this.Lock)
+            {
+                removed = this.CurrentServices.Remove(service);
+            }
+            if (removed)
             {
                 this.Executor?.TryScheduleRescan(this);
-                return true;
             }
-            return false;
+            return removed;
         }
 
+        /// <remarks>
+        /// This method is not thread safe and may not be called from
+        /// multiple threads simultaneously or while the node or any of its primitives are in use.
+        /// Furthermore, it is NOT performed on finalization by the GC.
+        /// </remarks>
         /// <inheritdoc/>
         public void Dispose()
         {
@@ -256,6 +367,12 @@ namespace ROS2
             this.FreeHandles();
         }
 
+        /// <summary>
+        /// Free the rcl handles and replace them with null pointers.
+        /// </summary>
+        /// <remarks>
+        /// The handles are not finalised by this method.
+        /// </remarks>
         private void FreeHandles()
         {
             NativeRclInterface.rclcs_free_node(this.Handle);

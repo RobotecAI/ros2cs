@@ -95,6 +95,7 @@ set(CS_NATIVE
 set(CS_UTILS
   utils/Utils.cs
   utils/LockedDictionary.cs
+  utils/LockedCollection.cs
   utils/MappedValueDictionary.cs
 )
 
