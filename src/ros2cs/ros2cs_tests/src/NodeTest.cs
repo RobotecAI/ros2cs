@@ -16,6 +16,7 @@
 using System;
 using example_interfaces.srv;
 using NUnit.Framework;
+using ROS2.Executors;
 
 namespace ROS2.Test
 {
@@ -161,6 +162,19 @@ namespace ROS2.Test
         }
 
         [Test]
+        public void RemoveExecutorOnDispose()
+        {
+            using var executor = new ManualExecutor(this.Context);
+            executor.Add(this.Node);
+            executor.Rescan();
+
+            this.Node.Dispose();
+
+            Assert.That(executor, Is.Empty);
+            Assert.That(this.Node.Executor, Is.Null);
+        }
+
+        [Test]
         public void CreatePublisher()
         {
             string topic = "publisher_topic";
@@ -169,6 +183,20 @@ namespace ROS2.Test
             
             Assert.That(publishers, Contains.Item(publisher));
             Assert.That(publisher.Topic, Is.EqualTo(topic));
+        }
+
+        [Test]
+        public void CreatePublisherWithExecutor()
+        {
+            string topic = "publisher_topic";
+            using var executor = new ManualExecutor(this.Context);
+            executor.Add(this.Node);
+            executor.Rescan();
+
+            using IPublisher<std_msgs.msg.Bool> publisher = Node.CreatePublisher<std_msgs.msg.Bool>(topic);
+
+            // publisher not in executor
+            Assert.That(executor.RescanScheduled, Is.False);
         }
 
         [Test]
@@ -184,6 +212,20 @@ namespace ROS2.Test
         }
 
         [Test]
+        public void DisposePublisherWithExecutor()
+        {
+            using var executor = new ManualExecutor(this.Context);
+            executor.Add(this.Node);
+            IPublisher<std_msgs.msg.Bool> publisher = Node.CreatePublisher<std_msgs.msg.Bool>("test_topic");
+            executor.Rescan();
+
+            publisher.Dispose();
+
+            // publisher not in executor
+            Assert.That(executor.RescanScheduled, Is.False);
+        }
+
+        [Test]
         public void CreateSubscription()
         {
             string topic = "subscription_topic";
@@ -195,6 +237,22 @@ namespace ROS2.Test
 
             Assert.That(subscriptions, Contains.Item(subscription));
             Assert.That(subscription.Topic, Is.EqualTo(topic));
+        }
+
+        [Test]
+        public void CreateSubscriptionWithExecutor()
+        {
+            string topic = "subscription_topic";
+            using var executor = new ManualExecutor(this.Context);
+            executor.Add(this.Node);
+            executor.Rescan();
+
+            using ISubscription<std_msgs.msg.Bool> subscription = Node.CreateSubscription<std_msgs.msg.Bool>(
+                topic,
+                msg => { throw new InvalidOperationException($"received message {msg}"); }
+            );
+
+            Assert.That(executor.RescanScheduled, Is.True);
         }
 
         [Test]
@@ -213,6 +271,22 @@ namespace ROS2.Test
         }
 
         [Test]
+        public void DisposeSubscriptionWithExecutor()
+        {
+            using var executor = new ManualExecutor(this.Context);
+            executor.Add(this.Node);
+            ISubscription<std_msgs.msg.Bool> subscription = Node.CreateSubscription<std_msgs.msg.Bool>(
+                "test_topic",
+                msg => { throw new InvalidOperationException($"received message {msg}"); }
+            );
+            executor.Rescan();
+
+            subscription.Dispose();
+
+            Assert.That(executor.RescanScheduled, Is.True);
+        }
+
+        [Test]
         public void CreateService()
         {
             string topic = "service_topic";
@@ -224,6 +298,22 @@ namespace ROS2.Test
 
             Assert.That(services, Contains.Item(service));
             Assert.That(service.Topic, Is.EqualTo(topic));
+        }
+
+        [Test]
+        public void CreateServiceWithExecutor()
+        {
+            string topic = "service_topic";
+            using var executor = new ManualExecutor(this.Context);
+            executor.Add(this.Node);
+            executor.Rescan();
+
+            using IService<AddTwoInts_Request, AddTwoInts_Response> service = Node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
+                topic,
+                request => { throw new InvalidOperationException($"received request {request}"); }
+            );
+
+            Assert.That(executor.RescanScheduled, Is.True);
         }
 
         [Test]
@@ -242,6 +332,22 @@ namespace ROS2.Test
         }
 
         [Test]
+        public void DisposeServiceWithExecutor()
+        {
+            using var executor = new ManualExecutor(this.Context);
+            executor.Add(this.Node);
+            IService<AddTwoInts_Request, AddTwoInts_Response> service = Node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
+                "test_topic",
+                request => { throw new InvalidOperationException($"received request {request}"); }
+            );
+            executor.Rescan();
+
+            service.Dispose();
+
+            Assert.That(executor.RescanScheduled, Is.True);
+        }
+
+        [Test]
         public void CreateClient()
         {
             string topic = "client_topic";
@@ -252,6 +358,21 @@ namespace ROS2.Test
 
             Assert.That(clients, Contains.Item(client));
             Assert.That(client.Topic, Is.EqualTo(topic));
+        }
+
+        [Test]
+        public void CreateClientWithExecutor()
+        {
+            string topic = "client_topic";
+            using var executor = new ManualExecutor(this.Context);
+            executor.Add(this.Node);
+            executor.Rescan();
+
+            using IClient<AddTwoInts_Request, AddTwoInts_Response> client = Node.CreateClient<AddTwoInts_Request, AddTwoInts_Response>(
+                topic
+            );
+
+            Assert.That(executor.RescanScheduled, Is.True);
         }
 
         [Test]
@@ -266,6 +387,21 @@ namespace ROS2.Test
             client.Dispose();
 
             Assert.That(Node.Clients, Does.Not.Contain(client));
+        }
+
+        [Test]
+        public void DisposeClientWithExecutor()
+        {
+            using var executor = new ManualExecutor(this.Context);
+            executor.Add(this.Node);
+            IClient<AddTwoInts_Request, AddTwoInts_Response> client = Node.CreateClient<AddTwoInts_Request, AddTwoInts_Response>(
+                "test_topic"
+            );
+            executor.Rescan();
+
+            client.Dispose();
+
+            Assert.That(executor.RescanScheduled, Is.True);
         }
     }
 }
