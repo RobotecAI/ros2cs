@@ -24,16 +24,25 @@ namespace ROS2.Executors
             get { return this.WaitSet.Context; }
         }
 
+        /// <summary>
+        /// Whether the executor is currently spinning.
+        /// </summary>
         public bool IsSpinning
         {
             get { return !this.IsIdle.IsSet; }
         }
 
+        /// <summary>
+        /// Whether a rescan is scheduled.
+        /// </summary>
         public bool RescanScheduled
         {
             get { return this._RescanScheduled; }
             private set { this._RescanScheduled = value; }
         }
+
+        // volatile since it may be changed by multiple threads
+        private volatile bool _RescanScheduled = false;
 
         /// <inheritdoc/>
         public bool IsDisposed
@@ -41,34 +50,62 @@ namespace ROS2.Executors
             get { return this.WaitSet.IsDisposed || this.InterruptCondition.IsDisposed; }
         }
 
+        /// <remarks>
+        /// This property is thread safe.
+        /// </remarks>
         /// <inheritdoc/>
         public int Count
         {
-            get { return this.Nodes.Count; }
+            get
+            {
+                lock (this.Nodes)
+                {
+                    return this.Nodes.Count;
+                }
+            }
         }
 
+        /// <remarks>
+        /// This property is thread safe.
+        /// </remarks>
         /// <inheritdoc/>
         public bool IsReadOnly
         {
             get { return false; }
         }
 
+        /// <summary>
+        /// Wait set used while spinning.
+        /// </summary>
         private readonly WaitSet WaitSet;
 
+        /// <summary>
+        /// Guard condition used for interrupting waits.
+        /// </summary>
         private readonly GuardCondition InterruptCondition;
 
+        /// <summary>
+        /// Nodes in the executor.
+        /// </summary>
         private readonly HashSet<INode> Nodes = new HashSet<INode>();
 
+        /// <summary>
+        /// Event signaling whether the executor is not spinning.
+        /// </summary>
         private readonly ManualResetEventSlim IsIdle = new ManualResetEventSlim(true);
 
-        private volatile bool _RescanScheduled = false;
-
+        /// <summary>
+        /// Create a new instance.
+        /// </summary>
+        /// <param name="context"> Context to associate with. </param>
+        /// <exception cref="ObjectDisposedException"> If <paramref name="context"/> is disposed. </exception>
         public ManualExecutor(Context context) : this(
             new WaitSet(context),
             new GuardCondition(context, () => { })
         )
         { }
 
+        /// <inheritdoc/>
         internal ManualExecutor(WaitSet waitSet, GuardCondition interruptCondition)
         {
             this.WaitSet = waitSet;
@@ -76,6 +113,12 @@ namespace ROS2.Executors
             this.WaitSet.GuardConditions.Add(this.InterruptCondition);
         }
 
+        /// <remarks>
+        /// This method is thread safe when setting
+        /// <see cref="INode.Executor"/> is thread safe
+        /// and not changed concurrently.
+        /// </remarks>
+        /// <exception cref="InvalidOperationException"> If the node already has an executor. </exception>
         /// <inheritdoc/>
         public void Add(INode node)
         {
@@ -83,50 +126,80 @@ namespace ROS2.Executors
             {
                 throw new InvalidOperationException("node already has an executor");
             }
-            this.Nodes.Add(node);
+            // make sure the node knows its
+            // new executor before it can be added to the wait set
             node.Executor = this;
+            lock (this.Nodes)
+            {
+                this.Nodes.Add(node);
+            }
             this.ScheduleRescan();
         }
 
+        /// <remarks>
+        /// This method is thread safe when setting
+        /// <see cref="INode.Executor"/> is thread safe.
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException"> If the executor was disposed. </exception>
         /// <inheritdoc/>
         public bool Remove(INode node)
         {
-            if (this.Nodes.Remove(node))
+            bool removed;
+            lock (this.Nodes)
             {
-                Debug.Assert(
-                    Object.ReferenceEquals(node.Executor, this),
-                    "node has different executor"
-                );
-                node.Executor = null;
-                this.ScheduleRescan();
-                this.Wait();
-                return true;
+                removed = this.Nodes.Remove(node);
             }
-            return false;
+            if (removed)
+            {
+                try
+                {
+                    Debug.Assert(
+                        Object.ReferenceEquals(node.Executor, this),
+                        "node has different executor"
+                    );
+                    this.ScheduleRescan();
+                    this.Wait();
+                }
+                finally
+                {
+                    // clear executor after it
+                    // is safe to do so
+                    node.Executor = null;
+                }
+            }
+            return removed;
         }
 
+        /// <remarks>
+        /// This method is thread safe when setting
+        /// <see cref="INode.Executor"/> is thread safe.
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException"> If the executor was disposed. </exception>
         /// <inheritdoc/>
         public void Clear()
         {
-            if (this.Nodes.Count == 0)
+            // use thread safe enumerator
+            foreach (INode node in this)
             {
-                return;
+                this.Remove(node);
             }
-            foreach (INode node in this.Nodes.ToArray())
-            {
-                this.Nodes.Remove(node);
-                node.Executor = null;
-            }
-            this.ScheduleRescan();
-            this.Wait();
         }
 
+        /// <remarks>
+        /// This method is thread safe.
+        /// </remarks>
         /// <inheritdoc/>
         public bool Contains(INode node)
         {
-            return this.Nodes.Contains(node);
+            lock (this.Nodes)
+            {
+                return this.Nodes.Contains(node);
+            }
         }
 
+        /// <remarks>
+        /// This method is thread safe.
+        /// </remarks>
         /// <inheritdoc/>
         public void CopyTo(INode[] array, int index)
         {
@@ -138,24 +211,33 @@ namespace ROS2.Executors
             {
                 throw new ArgumentOutOfRangeException("index is less than 0");
             }
-            foreach (var item in this)
+            lock (this.Nodes)
             {
-                try
+                foreach (INode item in this.Nodes)
                 {
-                    array[index] = item;
+                    try
+                    {
+                        array[index] = item;
+                    }
+                    catch (IndexOutOfRangeException e)
+                    {
+                        throw new ArgumentException("array is too small", e);
+                    }
+                    index += 1;
                 }
-                catch (IndexOutOfRangeException e)
-                {
-                    throw new ArgumentException("array is too small", e);
-                }
-                index += 1;
             }
         }
 
+        /// <remarks>
+        /// The enumerator is thread safe.
+        /// </remarks>
         /// <inheritdoc/>
         public IEnumerator<INode> GetEnumerator()
         {
-            return this.Nodes.GetEnumerator();
+            lock (this.Nodes)
+            {
+                return this.Nodes.ToArray().AsEnumerable().GetEnumerator();
+            }
         }
 
         /// <inheritdoc/>
@@ -164,12 +246,18 @@ namespace ROS2.Executors
             return this.GetEnumerator();
         }
 
+        /// <remarks>
+        /// This method is thread safe.
+        /// </remarks>
         /// <inheritdoc/>
         public void ScheduleRescan()
         {
             this.RescanScheduled = true;
         }
 
+        /// <remarks>
+        /// This method is an alias for <see cref="ScheduleRescan"/>.
+        /// </remarks>
         /// <inheritdoc/>
         public bool TryScheduleRescan(INode node)
         {
@@ -177,6 +265,9 @@ namespace ROS2.Executors
             return true;
         }
 
+        /// <remarks>
+        /// This method is thread safe and uses <see cref="TryWait"/>.
+        /// </remarks>
         /// <inheritdoc/>
         public void Wait()
         {
@@ -184,6 +275,10 @@ namespace ROS2.Executors
             Debug.Assert(success, "infinite wait timed out");
         }
 
+        /// <remarks>
+        /// This method is thread safe.
+        /// </remarks>
+        /// <exception cref="ObjectDisposedException"> If the executor was disposed. </exception>
         /// <inheritdoc/>
         public bool TryWait(TimeSpan timeout)
         {
@@ -209,7 +304,9 @@ namespace ROS2.Executors
         /// </summary>
         /// <remarks>
         /// This method only causes the wait to be skipped, work which is ready will be executed.
+        /// This method is thread safe.
         /// </remarks>
+        /// <exception cref="ObjectDisposedException"> If the executor or context was disposed. </exception>
         public void Interrupt()
         {
             this.InterruptCondition.Trigger();
@@ -218,13 +315,19 @@ namespace ROS2.Executors
         /// <summary>
         /// Try to process work if no rescan is scheduled.
         /// </summary>
+        /// <remarks>
+        /// This method is thread safe if it itself or <see cref="Rescan"/> is not executed concurrently.
+        /// </remarks>
         /// <param name="timeout"> Maximum time to wait for work to become available. </param>
+        /// <exception cref="ObjectDisposedException"> If the executor or context was disposed. </exception>
         /// <returns> Whether work could be processed since no rescan was scheduled. </returns>
         public bool TrySpin(TimeSpan timeout)
         {
             this.IsIdle.Reset();
             try
             {
+                // check after resetting IsIdle to
+                // prevent race condition
                 if (this.RescanScheduled)
                 {
                     return false;
@@ -246,9 +349,12 @@ namespace ROS2.Executors
 
         /// <summary>
         /// Rescan the nodes of this executor for
-        /// new objects to wait for.
+        /// new objects to wait for and clear scheduled rescans.
         /// </summary>
-        /// <remarks> This clears any scheduled rescans. </remarks>
+        /// <remarks>
+        /// This method is thread safe if it itself or <see cref="TrySpin"/> is not executed concurrently
+        /// and enumerating the primitives of the nodes is thread safe.
+        /// </remarks>
         public void Rescan()
         {
             // clear the wait set first to
@@ -262,7 +368,8 @@ namespace ROS2.Executors
             this.RescanScheduled = false;
             try
             {
-                foreach (INode node in this.Nodes)
+                // use the thread safe GetEnumerator wrapper
+                foreach (INode node in this)
                 {
                     foreach (ISubscriptionBase subscription in node.Subscriptions)
                     {
@@ -292,7 +399,7 @@ namespace ROS2.Executors
         /// <param name="timeout"> Maximum time to wait for work to become available. </param>
         /// <returns>
         /// <see cref="IEnumerator{bool}"/> trying to spin in each iteration
-        /// and yielding if a rescan had to be performed.
+        /// and yielding if a rescan had to be performed instead.
         /// </returns>
         public IEnumerator<bool> Spin(TimeSpan timeout)
         {
@@ -310,10 +417,26 @@ namespace ROS2.Executors
             }
         }
 
+        /// <remarks>
+        /// This method is not thread safe and may not be called from
+        /// multiple threads simultaneously or while the executor is in use.
+        /// Furthermore, it does not dispose the nodes of this executor.
+        /// Remember that <see cref="Clear"/> is called when disposing
+        /// with nodes in the executor.
+        /// </remarks>
         /// <inheritdoc/>
         public void Dispose()
         {
-            this.Clear();
+            // remove nodes one by one to
+            // prevent node.Executor from being out
+            // of sync if an exception occurs
+            foreach (INode node in this.Nodes.ToArray())
+            {
+                this.Nodes.Remove(node);
+                // waiting not required since the executor
+                // should not be running
+                node.Executor = null;
+            }
             this.WaitSet.Dispose();
             this.InterruptCondition.Dispose();
             this.IsIdle.Dispose();
