@@ -1,4 +1,4 @@
-# ros2cs - Ubuntu 20.04 and Ubuntu 22.04
+# ROS2CS - Ubuntu 20.04 and Ubuntu 22.04
 
 ## Building
 
@@ -8,7 +8,7 @@
 
 - ROS2 installed on the system, along with `test-msgs`, `cyclonedds` and `fastrtps` packages
 - vcstool package - [see here](https://github.com/dirk-thomas/vcstool)
-- .NET core 6.0 sdk - [see here](https://www.microsoft.com/net/learn/get-started)
+- .NET 6.0 sdk - [see here](https://www.microsoft.com/net/learn/get-started)
 
 
 ```bash
@@ -22,7 +22,7 @@ curl -s https://packagecloud.io/install/repositories/dirk-thomas/vcstool/script.
 sudo apt-get update
 sudo apt-get install -y python3-vcstool
 
-# Install Microsoft packages
+# Install Microsoft packages (Ubuntu 20.04 only)
 wget https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
 sudo dpkg -i packages-microsoft-prod.deb
 rm packages-microsoft-prod.deb
