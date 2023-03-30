@@ -155,12 +155,11 @@ namespace ROS2
             }
 
             // only do if Node.CurrentSubscriptions has not been finalized
+            // save since if we are being finalized we are not in a wait set anymore
             if (disposing)
             {
                 bool success = this.Node.RemoveSubscription(this);
                 Debug.Assert(success, "failed to remove subscription");
-                // not required if we are being finalized since the executor cant be running
-                this.Node.Executor?.Wait();
             }
 
             (this as IRawSubscription).DisposeFromNode();

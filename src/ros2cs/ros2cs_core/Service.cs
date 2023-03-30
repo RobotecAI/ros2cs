@@ -187,12 +187,11 @@ namespace ROS2
             }
 
             // only do if Node.CurrentServices has not been finalized
+            // save since if we are being finalized we are not in a wait set anymore
             if (disposing)
             {
                 bool success = this.Node.RemoveService(this);
                 Debug.Assert(success, "failed to remove service");
-                // not required if we are being finalized since the executor cant be running
-                this.Node.Executor?.Wait();
             }
 
             (this as IRawService).DisposeFromNode();

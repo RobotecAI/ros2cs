@@ -330,12 +330,11 @@ namespace ROS2
             }
 
             // only do if Node.CurrentClients and this.Requests have not been finalized
+            // save since if we are being finalized we are not in a wait set anymore
             if (disposing)
             {
                 bool success = this.Node.RemoveClient(this);
                 Debug.Assert(success, "failed to remove client");
-                // not required if we are being finalized since the executor cant be running
-                this.Node.Executor?.Wait();
                 this.DisposeAllTasks();
             }
 

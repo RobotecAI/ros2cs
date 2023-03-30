@@ -35,8 +35,28 @@ namespace ROS2
         /// <inheritdoc/>
         public IContext Context { get { return this.ROSContext; } }
 
+        /// <remarks>
+        /// Users have to guarantee that a node is associated with at most one executor at any given time
+        /// to prevent undefined behaviour when multithreading is used.
+        /// It is recommended to not set this property directly and leave this task to the executor.
+        /// Setting this property is thread safe.
+        /// </remarks>
         /// <inheritdoc/>
-        public IExecutor Executor { get; set; }
+        public IExecutor Executor 
+        {
+            get { return this._Executor; }
+            set
+            {
+                // prevent a executor switch while
+                // a primitive is being removed
+                lock (this.Lock)
+                {
+                    this._Executor = value;
+                }
+            }
+        }
+
+        private IExecutor _Executor = null;
 
         /// <inheritdoc/>
         public bool IsDisposed
@@ -194,27 +214,10 @@ namespace ROS2
             return subscription;
         }
 
-        /// <summary>
-        /// Remove a subscription.
-        /// </summary>
-        /// <remarks>
-        /// This method is intended to be used by <see cref="Subscription.Dispose"/> and does not dispose the subscription.
-        /// Furthermore, it is thread safe if <see cref="IExecutor.TryScheduleRescan"/> of the current executor is thread safe.
-        /// </remarks>
-        /// <param name="subscription">Subscription to be removed.</param>
-        /// <returns>If the subscription existed on this node and has been removed.</returns>
-        internal bool RemoveSubscription(IRawSubscription subscription)
+        /// <inheritdoc cref="RemovePrimitive"/>
+        internal bool RemoveSubscription(IRawSubscription primitive)
         {
-            bool removed;
-            lock (this.Lock)
-            {
-                removed = this.CurrentSubscriptions.Remove(subscription);
-            }
-            if (removed)
-            {
-                this.Executor?.TryScheduleRescan(this);
-            }
-            return removed;
+            return this.RemovePrimitive(primitive, this.CurrentSubscriptions);
         }
 
         /// <remarks>
@@ -237,27 +240,10 @@ namespace ROS2
             return client;
         }
 
-        /// <summary>
-        /// Remove a client.
-        /// </summary>
-        /// <remarks>
-        /// This method is intended to be used by <see cref="Client.Dispose"/> and does not dispose the client.
-        /// Furthermore, it is thread safe if <see cref="IExecutor.TryScheduleRescan"/> of the current executor is thread safe.
-        /// </remarks>
-        /// <param name="client">Client to be removed.</param>
-        /// <returns>If the client existed on this node and has been removed.</returns>
-        internal bool RemoveClient(IRawClient client)
+        /// <inheritdoc cref="RemovePrimitive"/>
+        internal bool RemoveClient(IRawClient primitive)
         {
-            bool removed;
-            lock (this.Lock)
-            {
-                removed = this.CurrentClients.Remove(client);
-            }
-            if (removed)
-            {
-                this.Executor?.TryScheduleRescan(this);
-            }
-            return removed;
+            return this.RemovePrimitive(primitive, this.CurrentClients);
         }
 
         /// <remarks>
@@ -280,25 +266,40 @@ namespace ROS2
             return service;
         }
 
+        /// <inheritdoc cref="RemovePrimitive"/>
+        internal bool RemoveService(IRawService primitive)
+        {
+            return this.RemovePrimitive(primitive, this.CurrentServices);
+        }
+
         /// <summary>
-        /// Remove a service.
+        /// Remove a primitive and wait for it to be disposable.
         /// </summary>
         /// <remarks>
-        /// This method is intended to be used by <see cref="Service.Dispose"/> and does not dispose the service.
-        /// Furthermore, it is thread safe if <see cref="IExecutor.TryScheduleRescan"/> of the current executor is thread safe.
+        /// This method is intended to be used by <see cref="IDisposable.Dispose"/>
+        /// of the primitive and does not dispose it.
+        /// Furthermore, it is thread safe if <see cref="IExecutor.TryScheduleRescan"/> and
+        /// <see cref="IExecutor.Wait"/> of the current executor are thread safe.
         /// </remarks>
-        /// <param name="service">Service to be removed.</param>
-        /// <returns>If the service existed on this node and has been removed.</returns>
-        internal bool RemoveService(IRawService service)
+        /// <typeparam name="T"> Type of the primitive. </typeparam>
+        /// <param name="primitive"> Primitive to remove. </param>
+        /// <param name="collection"> Collection of the current primitives. </param>
+        /// <returns> Whether the primitive existed. </returns>
+        private bool RemovePrimitive<T>(T primitive, ICollection<T> collection)
         {
             bool removed;
+            IExecutor currentExecutor;
             lock (this.Lock)
             {
-                removed = this.CurrentServices.Remove(service);
+                removed = collection.Remove(primitive);
+                // use the executor in use when removing the primitive,
+                // new executors will only see the updated collection
+                currentExecutor = this.Executor;
             }
-            if (removed)
+            if (removed && !(currentExecutor is null))
             {
-                this.Executor?.TryScheduleRescan(this);
+                currentExecutor.TryScheduleRescan(this);
+                currentExecutor.Wait();
             }
             return removed;
         }
