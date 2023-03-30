@@ -13,23 +13,31 @@
 // limitations under the License.
 
 using System;
+using System.Collections;
 using ROS2;
+using ROS2.Executors;
 
 namespace Examples
 {
-  /// <summary> A simple listener class to illustrate Ros2cs in action </summary>
-  public class ROS2Listener
-  {
-    public static void Main(string[] args)
+    /// <summary> A simple listener class to illustrate Ros2cs in action </summary>
+    public class ROS2Listener
     {
-      Ros2cs.Init();
-      INode node = Ros2cs.CreateNode("listener");
+        public static void Main(string[] args)
+        {
+            Console.WriteLine("Listener starting");
 
-      ISubscription<std_msgs.msg.String> chatter_sub = node.CreateSubscription<std_msgs.msg.String>(
-        "chatter", msg => Console.WriteLine("I heard: [" + msg.Data + "]"));
+            // everything is disposed when disposing the context
+            using Context context = new Context();
+            using ManualExecutor executor = new ManualExecutor(context);
+            context.TryCreateNode("listener", out INode node);
+            executor.Add(node);
+            ISubscription<std_msgs.msg.String> chatter_sub = node.CreateSubscription<std_msgs.msg.String>(
+                "chatter",
+                msg => Console.WriteLine($"I heard: [{msg.Data}]")
+            );
 
-      Ros2cs.Spin(node);
-      Ros2cs.Shutdown();
+            for (IEnumerator spin = executor.Spin(TimeSpan.FromSeconds(0.1)); spin.MoveNext();)
+            {}
+        }
     }
-  }
 }

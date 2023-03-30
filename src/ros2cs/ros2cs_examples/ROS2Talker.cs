@@ -16,32 +16,29 @@
 using System;
 using System.Threading;
 using ROS2;
-using std_msgs;
 
 namespace Examples
 {
-  /// <summary> A simple talker class to illustrate Ros2cs in action </summary>
-  public class ROS2Talker
-  {
-    public static void Main(string[] args)
+    /// <summary> A simple talker class to illustrate Ros2cs in action </summary>
+    public class ROS2Talker
     {
-      Console.WriteLine("Talker starting");
-      Ros2cs.Init();
-      INode node = Ros2cs.CreateNode("talker");
-      Publisher<std_msgs.msg.String> chatter_pub = node.CreatePublisher<std_msgs.msg.String>("chatter");
-      std_msgs.msg.String msg = new std_msgs.msg.String();
+        public static void Main(string[] args)
+        {
+            Console.WriteLine("Talker starting");
 
-      int i = 1;
+            // everything is disposed when disposing the context
+            using IContext context = new Context();
+            context.TryCreateNode("talker", out INode node);
+            IPublisher<std_msgs.msg.String> chatter_pub = node.CreatePublisher<std_msgs.msg.String>("chatter");
+            std_msgs.msg.String msg = new std_msgs.msg.String();
 
-      while (Ros2cs.Ok())
-      {
-        Thread.Sleep(1000); //1s
-        msg.Data = "Hello World: " + i;
-        i++;
-        Console.WriteLine(msg.Data);
-        chatter_pub.Publish(msg);
-      }
-      Ros2cs.Shutdown();
+            for (int i = 1; context.Ok(); i++)
+            {
+                Thread.Sleep(TimeSpan.FromSeconds(1));
+                msg.Data = $"Hello World: {i}";
+                Console.WriteLine(msg.Data);
+                chatter_pub.Publish(msg);
+            }
+        }
     }
-  }
 }
