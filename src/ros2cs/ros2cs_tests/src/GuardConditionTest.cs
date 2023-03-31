@@ -71,7 +71,7 @@ namespace ROS2.Test
             );
     
             Assert.That(waitSet.TryWait(TimeSpan.FromSeconds(0.5), out var result), Is.True);
-            Assert.That(result.ReadyGuardConditions.Values.Contains(this.GuardCondition), Is.True);
+            Assert.That(result.ReadyGuardConditions, Does.Contain(this.GuardCondition));
         }
 
         [Test]

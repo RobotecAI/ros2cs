@@ -341,33 +341,11 @@ uint8_t rclcs_wait_set_get_subscription(rcl_wait_set_t * wait_set, size_t index,
 }
 
 ROSIDL_GENERATOR_C_EXPORT
-uint8_t rclcs_wait_set_set_subscription(rcl_wait_set_t * wait_set, size_t index, const rcl_subscription_t * subscription)
-{
-  if (index < wait_set->size_of_subscriptions)
-  {
-    wait_set->subscriptions[index] = subscription;
-    return 1;
-  }
-  return 0;
-}
-
-ROSIDL_GENERATOR_C_EXPORT
 uint8_t rclcs_wait_set_get_client(rcl_wait_set_t * wait_set, size_t index, const rcl_client_t ** client)
 {
   if (index < wait_set->size_of_clients)
   {
     *client = wait_set->clients[index];
-    return 1;
-  }
-  return 0;
-}
-
-ROSIDL_GENERATOR_C_EXPORT
-uint8_t rclcs_wait_set_set_client(rcl_wait_set_t * wait_set, size_t index, const rcl_client_t * client)
-{
-  if (index < wait_set->size_of_clients)
-  {
-    wait_set->clients[index] = client;
     return 1;
   }
   return 0;
@@ -385,33 +363,11 @@ uint8_t rclcs_wait_set_get_service(rcl_wait_set_t * wait_set, size_t index, cons
 }
 
 ROSIDL_GENERATOR_C_EXPORT
-uint8_t rclcs_wait_set_set_service(rcl_wait_set_t * wait_set, size_t index, const rcl_service_t * service)
-{
-  if (index < wait_set->size_of_services)
-  {
-    wait_set->services[index] = service;
-    return 1;
-  }
-  return 0;
-}
-
-ROSIDL_GENERATOR_C_EXPORT
 uint8_t rclcs_wait_set_get_guard_condition(rcl_wait_set_t * wait_set, size_t index, const rcl_guard_condition_t ** guard_condition)
 {
   if (index < wait_set->size_of_guard_conditions)
   {
     *guard_condition = wait_set->guard_conditions[index];
-    return 1;
-  }
-  return 0;
-}
-
-ROSIDL_GENERATOR_C_EXPORT
-uint8_t rclcs_wait_set_set_guard_condition(rcl_wait_set_t * wait_set, size_t index, const rcl_guard_condition_t * guard_condition)
-{
-  if (index < wait_set->size_of_guard_conditions)
-  {
-    wait_set->guard_conditions[index] = guard_condition;
     return 1;
   }
   return 0;

@@ -158,6 +158,7 @@ namespace ROS2.Test
 
             publisher.Publish(new std_msgs.msg.Int32());
             Assert.That(this.WaitSet.TryWait(TimeSpan.FromSeconds(0.1), out _), Is.True);
+            Assert.That(this.WaitSet.TryWait(TimeSpan.FromSeconds(0.1), out _), Is.True);
             Assert.That(subscription.TryProcess(), Is.True);
 
             Assert.That(this.WaitSet.TryWait(TimeSpan.FromSeconds(0.1), out _), Is.False);
@@ -191,7 +192,7 @@ namespace ROS2.Test
         }
 
         [Test]
-        public void TestReadyDictionary()
+        public void TestResult()
         {
             this.Context.TryCreateNode("TestNode", out var node);
 
@@ -200,21 +201,11 @@ namespace ROS2.Test
                 SUBSCRIPTION_TOPIC,
                 msg => { }
             );
-            using var subscriptionDummy = node.CreateSubscription<std_msgs.msg.Int32>(
-                SUBSCRIPTION_TOPIC,
-                msg => { throw new InvalidOperationException($"callback was triggered with {msg}"); }
-            );
             using var client = node.CreateClient<AddTwoInts_Request, AddTwoInts_Response>(SERVICE_TOPIC);
-            using var clientDummy = node.CreateClient<AddTwoInts_Request, AddTwoInts_Response>(SERVICE_TOPIC);
             using var service = node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
                 SERVICE_TOPIC,
                 request => new AddTwoInts_Response()
             );
-            using var serviceDummy = node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
-                SERVICE_TOPIC,
-                request => { throw new InvalidOperationException($"received request ${request}"); }
-            );
-
             this.WaitSet.Subscriptions.Add(subscription);
             this.WaitSet.Clients.Add(client);
             this.WaitSet.Services.Add(service);
@@ -223,82 +214,55 @@ namespace ROS2.Test
             client.CallAsync(new AddTwoInts_Request());
 
             Assert.That(this.WaitSet.TryWait(TimeSpan.FromSeconds(0.1), out var result1), Is.True);
-            this.TestReadyDictionary(result1.ReadySubscriptions, subscription, subscriptionDummy);
-            this.TestReadyDictionary(result1.ReadyServices, service, serviceDummy);
-            Assert.That(result1.ReadyClients.Count, Is.Zero);
+            Assert.That(result1.ReadySubscriptions, Does.Contain(subscription).And.Exactly(1).Items);
+            Assert.That(result1.ReadyServices, Does.Contain(service).And.Exactly(1).Items);
+            Assert.That(result1, Has.Exactly(2).Items);
 
             Assert.That(subscription.TryProcess(), Is.True);
             Assert.That(service.TryProcess(), Is.True);
 
             Assert.That(this.WaitSet.TryWait(TimeSpan.FromSeconds(0.1), out var result2), Is.True);
-            Assert.Catch<InvalidOperationException>(() => { _ = result1.ReadySubscriptions.Count; });
-            Assert.Catch<InvalidOperationException>(() => { _ = result1.ReadyClients.Count; });
-            Assert.Catch<InvalidOperationException>(() => { _ = result1.ReadyServices.Count; });
-            Assert.That(result2.ReadySubscriptions.Count, Is.Zero);
-            Assert.That(result2.ReadyServices.Count, Is.Zero);
-            this.TestReadyDictionary(result2.ReadyClients, client, clientDummy);
+            Assert.Catch<InvalidOperationException>(() => { _ = result1.ReadySubscriptions.GetEnumerator().MoveNext(); });
+            Assert.Catch<InvalidOperationException>(() => { _ = result1.ReadyClients.GetEnumerator().MoveNext(); });
+            Assert.Catch<InvalidOperationException>(() => { _ = result1.ReadyServices.GetEnumerator().MoveNext(); });
+            Assert.That(result2.ReadyClients, Does.Contain(client).And.Exactly(1).Items);
+            Assert.That(result2, Has.Exactly(1).Items);
 
             this.WaitSet.Dispose();
-            Assert.Catch<InvalidOperationException>(() => { _ = result2.ReadySubscriptions.Count; });
-            Assert.Catch<InvalidOperationException>(() => { _ = result2.ReadyClients.Count; });
-            Assert.Catch<InvalidOperationException>(() => { _ = result2.ReadyServices.Count; });
+            Assert.Catch<InvalidOperationException>(() => { _ = result2.ReadySubscriptions.GetEnumerator().MoveNext(); });
+            Assert.Catch<InvalidOperationException>(() => { _ = result2.ReadyClients.GetEnumerator().MoveNext(); });
+            Assert.Catch<InvalidOperationException>(() => { _ = result2.ReadyServices.GetEnumerator().MoveNext(); });
         }
 
-        private void TestReadyDictionary<T>(IDictionary<int, T> dictionary, T waitable, T dummy) where T : IWaitable
+        [Test]
+        public void TestResultMultiple()
         {
-            Assert.That(dictionary.Count, Is.EqualTo(1));
-            Assert.That(dictionary.Count(), Is.EqualTo(1));
+            this.Context.TryCreateNode("TestNode", out var node);
+            using var publisher1 = node.CreatePublisher<std_msgs.msg.Int32>(SUBSCRIPTION_TOPIC + "1");
+            using var publisher2 = node.CreatePublisher<std_msgs.msg.Int32>(SUBSCRIPTION_TOPIC + "2");
+            using var publisher3 = node.CreatePublisher<std_msgs.msg.Int32>(SUBSCRIPTION_TOPIC + "3");
+            using var subscription1 = node.CreateSubscription<std_msgs.msg.Int32>(
+                SUBSCRIPTION_TOPIC + "1",
+                msg => { }
+            );
+            using var subscription2 = node.CreateSubscription<std_msgs.msg.Int32>(
+                SUBSCRIPTION_TOPIC + "2",
+                msg => { }
+            );
+            using var subscription3 = node.CreateSubscription<std_msgs.msg.Int32>(
+                SUBSCRIPTION_TOPIC + "3",
+                msg => { }
+            );
+            this.WaitSet.Subscriptions.Add(subscription1);
+            this.WaitSet.Subscriptions.Add(subscription2);
+            this.WaitSet.Subscriptions.Add(subscription3);
 
-            Assert.Throws<NotSupportedException>(() => { dictionary[1] = waitable; });
-            Assert.Throws<NotSupportedException>(() => { dictionary.Add(1, waitable); });
+            publisher1.Publish(new std_msgs.msg.Int32());
+            publisher3.Publish(new std_msgs.msg.Int32());
 
-            var pair = dictionary.First();
-            Assert.That(pair.Value, Is.EqualTo(waitable));
-
-            Assert.That(dictionary.Contains(new KeyValuePair<int, T>(pair.Key, waitable)), Is.True);
-            Assert.That(dictionary.Contains(new KeyValuePair<int, T>(pair.Key + 1, waitable)), Is.False);
-            Assert.That(dictionary.Contains(new KeyValuePair<int, T>(pair.Key, dummy)), Is.False);
-
-            Assert.That(dictionary.ContainsKey(pair.Key), Is.True);
-            Assert.That(dictionary.ContainsKey(pair.Key + 1), Is.False);
-
-            Assert.That(dictionary.TryGetValue(pair.Key, out var result), Is.True);
-            Assert.That(result, Is.EqualTo(waitable));
-            Assert.That(dictionary.TryGetValue(pair.Key + 1, out _), Is.False);
-
-            this.TestReadyDictionaryKeys(dictionary.Keys, pair.Key);
-            this.TestReadyDictionaryValues(dictionary.Values, waitable, dummy);
-
-            Assert.That(dictionary.Remove(pair.Key + 1), Is.False);
-            Assert.That(dictionary.Remove(pair), Is.True);
-            Assert.That(dictionary.Remove(pair), Is.False);
-            Assert.That(dictionary.Count, Is.EqualTo(0));
-        }
-
-        private void TestReadyDictionaryKeys(ICollection<int> keys, int key)
-        {
-            Assert.That(keys.Count, Is.EqualTo(1));
-            Assert.That(keys.Count(), Is.EqualTo(1));
-
-            Assert.Throws<NotSupportedException>(() => { keys.Add(key + 1); });
-
-            Assert.That(keys.Contains(key), Is.True);
-            Assert.That(keys.Contains(key + 1), Is.False);
-
-            Assert.That(keys.First(), Is.EqualTo(key));
-        }
-
-        private void TestReadyDictionaryValues<T>(ICollection<T> values, T value, T dummy) where T : IWaitable
-        {
-            Assert.That(values.Count, Is.EqualTo(1));
-            Assert.That(values.Count(), Is.EqualTo(1));
-
-            Assert.Throws<NotSupportedException>(() => { values.Add(value); });
-
-            Assert.That(values.Contains(value), Is.True);
-            Assert.That(values.Contains(dummy), Is.False);
-
-            Assert.That(values.First(), Is.EqualTo(value));
+            Assert.That(this.WaitSet.TryWait(TimeSpan.FromSeconds(0.1), out var result1), Is.True);
+            Assert.That(result1.ReadySubscriptions, Is.EquivalentTo(new ISubscriptionBase[]{ subscription1, subscription3 }));
+            Assert.That(result1, Has.Exactly(2).Items);
         }
     }
 }

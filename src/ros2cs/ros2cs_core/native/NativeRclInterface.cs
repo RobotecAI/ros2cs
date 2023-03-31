@@ -355,23 +355,12 @@ namespace ROS2
     [return: MarshalAs(UnmanagedType.U1)]
     internal delegate bool WaitSetGetType(IntPtr waitSet, UIntPtr index, out IntPtr value);
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    [return: MarshalAs(UnmanagedType.U1)]
-    internal delegate bool WaitSetSetType(IntPtr waitSet, UIntPtr index, IntPtr value);
-
     internal static WaitSetGetType
         rclcs_wait_set_get_subscription =
         (WaitSetGetType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
         nativeROS2CS,
         "rclcs_wait_set_get_subscription"),
         typeof(WaitSetGetType));
-
-    internal static WaitSetSetType
-        rclcs_wait_set_set_subscription =
-        (WaitSetSetType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-        nativeROS2CS,
-        "rclcs_wait_set_set_subscription"),
-        typeof(WaitSetSetType));
 
     internal static WaitSetGetType
         rclcs_wait_set_get_client =
@@ -380,13 +369,6 @@ namespace ROS2
         "rclcs_wait_set_get_client"),
         typeof(WaitSetGetType));
 
-    internal static WaitSetSetType
-        rclcs_wait_set_set_client =
-        (WaitSetSetType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-        nativeROS2CS,
-        "rclcs_wait_set_set_client"),
-        typeof(WaitSetSetType));
-
     internal static WaitSetGetType
         rclcs_wait_set_get_service =
         (WaitSetGetType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
@@ -394,26 +376,12 @@ namespace ROS2
         "rclcs_wait_set_get_service"),
         typeof(WaitSetGetType));
 
-    internal static WaitSetSetType
-        rclcs_wait_set_set_service =
-        (WaitSetSetType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-        nativeROS2CS,
-        "rclcs_wait_set_set_service"),
-        typeof(WaitSetSetType));
-
     internal static WaitSetGetType
         rclcs_wait_set_get_guard_condition =
         (WaitSetGetType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
         nativeROS2CS,
         "rclcs_wait_set_get_guard_condition"),
         typeof(WaitSetGetType));
-
-    internal static WaitSetSetType
-        rclcs_wait_set_set_guard_condition =
-        (WaitSetSetType)Marshal.GetDelegateForFunctionPointer(dllLoadUtils.GetProcAddress(
-        nativeROS2CS,
-        "rclcs_wait_set_set_guard_condition"),
-        typeof(WaitSetSetType));
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr ServiceCreateOptionsType(IntPtr qos);

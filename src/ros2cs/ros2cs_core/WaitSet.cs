@@ -21,6 +21,7 @@ namespace ROS2
 {
     /// <summary>
     /// Collection used for waiting on resources to become ready.
+    /// All methods and properties are NOT thread safe.
     /// </summary>
     internal sealed class WaitSet : IReadOnlyCollection<IWaitable>, IExtendedDisposable
     {
@@ -72,6 +73,9 @@ namespace ROS2
             }
         }
 
+        /// <summary>
+        /// Handle to the rcl wait set.
+        /// </summary>
         private IntPtr Handle = IntPtr.Zero;
 
         /// <summary>
@@ -289,32 +293,7 @@ namespace ROS2
             }
             Utils.CheckReturnEnum(ret);
 
-            result = new WaitResult(
-                new ReadyDictionary<ISubscriptionBase>(
-                    this,
-                    NativeRclInterface.rclcs_wait_set_get_subscription,
-                    NativeRclInterface.rclcs_wait_set_set_subscription,
-                    this.CurrentSubscriptions
-                ),
-                new ReadyDictionary<IClientBase>(
-                    this,
-                    NativeRclInterface.rclcs_wait_set_get_client,
-                    NativeRclInterface.rclcs_wait_set_set_client,
-                    this.CurrentClients
-                ),
-                new ReadyDictionary<IServiceBase>(
-                    this,
-                    NativeRclInterface.rclcs_wait_set_get_service,
-                    NativeRclInterface.rclcs_wait_set_set_service,
-                    this.CurrentServices
-                ),
-                new ReadyDictionary<GuardCondition>(
-                    this,
-                    NativeRclInterface.rclcs_wait_set_get_guard_condition,
-                    NativeRclInterface.rclcs_wait_set_set_guard_condition,
-                    this.CurrentGuardConditions
-                )
-            );
+            result = new WaitResult(this);
             return true;
         }
 
@@ -358,223 +337,119 @@ namespace ROS2
         }
 
         /// <summary>
-        /// Dictionary representing the containts of a wait set.
+        /// Result of waiting on a wait set.
         /// </summary>
-        /// <typeparam name="T">Type of resource being represented</typeparam>
-        private sealed class ReadyDictionary<T> : IDictionary<int, T> where T : IWaitable
+        /// <remarks>
+        /// The enumerables are invalidated when waiting on the wait set again,
+        /// which is only done for debugging purposes and not done when the
+        /// collections containing the primitives change.
+        /// </remarks>
+        public struct WaitResult : IEnumerable<IWaitable>
         {
-            /// <inheritdoc />
-            public T this[int key]
+            /// <summary>
+            /// Subscriptions which are ready.
+            /// </summary>
+            public IEnumerable<ISubscriptionBase> ReadySubscriptions
             {
-                get
-                {
-                    if (this.TryGetValue(key, out T value))
-                    {
-                        return value;
-                    }
-                    throw new KeyNotFoundException($"key {key} was not found");
-                }
-                set { this.Add(key, value); }
+                get => this.CurrentPrimitives(
+                    NativeRclInterface.rclcs_wait_set_get_subscription,
+                    this.WaitSet.CurrentSubscriptions
+                );
             }
 
-            /// <inheritdoc />
-            public int Count { get { return this.Keys.Count; } }
+            /// <summary>
+            /// Clients which are ready.
+            /// </summary>
+            public IEnumerable<IClientBase> ReadyClients
+            {
+                get => this.CurrentPrimitives(
+                    NativeRclInterface.rclcs_wait_set_get_client,
+                    this.WaitSet.CurrentClients
+                );
+            }
 
-            /// <inheritdoc />
-            public bool IsReadOnly { get { return true; } }
+            /// <summary>
+            /// Services which are ready.
+            /// </summary>
+            public IEnumerable<IServiceBase> ReadyServices
+            {
+                get => this.CurrentPrimitives(
+                    NativeRclInterface.rclcs_wait_set_get_service,
+                    this.WaitSet.CurrentServices
+                );
+            }
 
-            /// <inheritdoc />
-            public ICollection<int> Keys { get; private set; }
+            /// <summary>
+            /// Guard conditions which are ready.
+            /// </summary>
+            public IEnumerable<GuardCondition> ReadyGuardConditions
+            {
+                get => this.CurrentPrimitives(
+                    NativeRclInterface.rclcs_wait_set_get_guard_condition,
+                    this.WaitSet.CurrentGuardConditions
+                );
+            }
 
-            /// <inheritdoc />
-            public ICollection<T> Values { get; private set; }
-
+            /// <summary>
+            /// Wait set associated with this result.
+            /// </summary>
             private readonly WaitSet WaitSet;
 
             /// <summary>
-            /// Modification version of wait set when created.
+            /// Version when this result was created.
             /// </summary>
             private readonly uint CreatedVersion;
 
-            /// <summary>
-            /// Delegate used to read the wait set.
-            /// </summary>
-            private readonly NativeRclInterface.WaitSetGetType Getter;
-
-            /// <summary>
-            /// Delegate used to change the wait set.
-            /// </summary>
-            private readonly NativeRclInterface.WaitSetSetType Setter;
-
-            /// <summary>
-            /// Mapping between wait set index and wrapper.
-            /// </summary>
-            private readonly IList<T> Wrappers;
-
-            internal ReadyDictionary(WaitSet waitSet, NativeRclInterface.WaitSetGetType getter, NativeRclInterface.WaitSetSetType setter, IList<T> wrappers)
+            internal WaitResult(WaitSet waitSet)
             {
                 this.WaitSet = waitSet;
                 this.CreatedVersion = waitSet.Version;
-                this.Getter = getter;
-                this.Setter = setter;
-                this.Wrappers = wrappers;
-                this.Keys = new KeysCollection(this);
-                this.Values = new ValuesCollection(this);
             }
 
             /// <summary>
-            /// Check if the wait set is not disposed or was modified.
+            /// Assert that the wait set is valid and has not been waited on.
             /// </summary>
-            /// <exception cref="ObjectDisposedException">The wait set has been disposed</exception>
-            /// <exception cref="InvalidOperationException">The wait set has been modified</exception>
+            /// <exception cref="ObjectDisposedException"> If the wait set was disposed. </exception>
             private void AssertOk()
             {
-                if (this.WaitSet.IsDisposed)
+                if (this.WaitSet.Version != this.CreatedVersion || this.WaitSet.IsDisposed)
                 {
-                    throw new ObjectDisposedException("backing rcl wait set");
-                }
-                if (this.CreatedVersion != this.WaitSet.Version)
-                {
-                    throw new InvalidOperationException("wait set has been waited on");
+                    throw new ObjectDisposedException("rcl wait set");
                 }
             }
 
             /// <summary>
-            /// Try to convert a key to a native index.
+            /// Primitives currently in the wait set.
             /// </summary>
-            /// <param name="key">Key to convert</param>
-            /// <param name="nativeIndex">Native index</param>
-            /// <returns>Whether the conversion was successful</returns>
-            private bool TryConvertKey(int key, out UIntPtr nativeIndex)
-            {
-                try
-                {
-                    nativeIndex = new UIntPtr(Convert.ToUInt32(key));
-                }
-                catch (OverflowException)
-                {
-                    nativeIndex = UIntPtr.Zero;
-                    return false;
-                }
-                return true;
-            }
-
-            /// <summary>
-            /// Get the pointer stored at an index.
-            /// </summary>
-            /// <param name="index">Index of the pointer</param>
-            /// <param name="ptr">Pointer stored at index</param>
-            /// <returns>Whether the index existed</returns>
-            private bool TryGetPtr(UIntPtr index, out IntPtr ptr)
-            {
-                return this.Getter(this.WaitSet.Handle, index, out ptr);
-            }
-
-            /// <summary>
-            /// Set the pointer stored at an index.
-            /// </summary>
-            /// <param name="index">Index of the pointer</param>
-            /// <param name="ptr">Pointer to be stored at index</param>
-            /// <returns>Whether the index existed</returns>
-            private bool TrySetPtr(UIntPtr index, IntPtr ptr)
-            {
-                return this.Setter(this.WaitSet.Handle, index, ptr);
-            }
-
-            /// <inheritdoc />
-            public void Add(int key, T value)
-            {
-                throw new NotSupportedException("adding new elements can only be done on WaitSet");
-            }
-
-            /// <inheritdoc />
-            public void Add(KeyValuePair<int, T> item)
-            {
-                this.Add(item.Key, item.Value);
-            }
-
-            /// <inheritdoc />
-            public bool ContainsKey(int key)
+            /// <remarks>
+            /// After waiting the only primitives left in
+            /// the wait set are ready.
+            /// </remarks>
+            /// <typeparam name="T"> Primitive type </typeparam>
+            /// <param name="getter"> Function to access the wait set array. </param>
+            /// <param name="primitives"> List holding the primitives. </param>
+            /// <returns>Enumerable of the primitives. </returns>
+            private IEnumerable<T> CurrentPrimitives<T>(NativeRclInterface.WaitSetGetType getter, IList<T> primitives) where T : IWaitable
             {
                 this.AssertOk();
-                return this.TryConvertKey(key, out UIntPtr index) &&
-                    this.TryGetPtr(index, out IntPtr ptr) &&
-                    ptr != IntPtr.Zero;
-            }
-
-            /// <inheritdoc />
-            public bool Contains(KeyValuePair<int, T> item)
-            {
-                return this.TryGetValue(item.Key, out T value) &&
-                    EqualityComparer<T>.Default.Equals(item.Value, value);
-            }
-
-            /// <inheritdoc />
-            public bool Remove(int key)
-            {
-                this.AssertOk();
-                if (this.TryConvertKey(key, out UIntPtr index) &&
-                    this.TryGetPtr(index, out IntPtr ptr) &&
-                    ptr != IntPtr.Zero)
+                for (UIntPtr index = UIntPtr.Zero; getter(this.WaitSet.Handle, index, out IntPtr ptr); index += 1)
                 {
-                    return this.TrySetPtr(index, IntPtr.Zero);
-                }
-                return false;
-            }
-
-            /// <inheritdoc />
-            public bool Remove(KeyValuePair<int, T> item)
-            {
-                return this.Contains(item) && this.Remove(item.Key);
-            }
-
-            /// <inheritdoc />
-            public void Clear()
-            {
-                foreach (int key in this.Keys)
-                {
-                    this.TrySetPtr(new UIntPtr(Convert.ToUInt32(key)), IntPtr.Zero);
-                }
-            }
-
-            /// <inheritdoc />
-            public bool TryGetValue(int key, out T value)
-            {
-                this.AssertOk();
-                if (this.TryConvertKey(key, out UIntPtr index) && this.TryGetPtr(index, out IntPtr ptr) && ptr != IntPtr.Zero)
-                {
-                    value = this.Wrappers[key];
-                    return true;
-                }
-                value = default(T);
-                return false;
-            }
-
-            /// <inheritdoc />
-            public void CopyTo(KeyValuePair<int, T>[] array, int arrayIndex)
-            {
-                if (arrayIndex < 0)
-                {
-                    throw new ArgumentOutOfRangeException("arrayIndex is less than 0");
-                }
-                foreach (var item in this)
-                {
-                    try
+                    if (ptr != IntPtr.Zero)
                     {
-                        array[arrayIndex] = item;
+                        yield return primitives[Convert.ToInt32(index.ToUInt32())];
+                        this.AssertOk();
                     }
-                    catch (IndexOutOfRangeException e)
-                    {
-                        throw new ArgumentException("array is too small", e);
-                    }
-                    arrayIndex += 1;
                 }
             }
 
             /// <inheritdoc />
-            public IEnumerator<KeyValuePair<int, T>> GetEnumerator()
+            public IEnumerator<IWaitable> GetEnumerator()
             {
-                return this.Keys.Select(key => new KeyValuePair<int, T>(key, this.Wrappers[key])).GetEnumerator();
+                return this.ReadySubscriptions
+                    .Concat<IWaitable>(this.ReadyClients)
+                    .Concat(this.ReadyServices)
+                    .Concat(this.ReadyGuardConditions)
+                    .GetEnumerator();
             }
 
             /// <inheritdoc />
@@ -584,276 +459,19 @@ namespace ROS2
             }
 
             /// <summary>
-            /// Collection representing the indexes being ready.
+            /// Deconstruct the result into the resources which are ready.
             /// </summary>
-            private sealed class KeysCollection : ICollection<int>
+            public void Deconstruct(
+                out IEnumerable<ISubscriptionBase> subscriptions,
+                out IEnumerable<IClientBase> clients,
+                out IEnumerable<IServiceBase> services,
+                out IEnumerable<GuardCondition> guard_conditions)
             {
-                /// <inheritdoc />
-                public int Count
-                {
-                    get
-                    {
-                        // cant use Enumerable.Count() since it
-                        // just returns .Count since we are a collection
-                        IEnumerator<int> e = this.GetEnumerator();
-                        int count = 0;
-                        while (e.MoveNext())
-                        {
-                            checked
-                            {
-                                count += 1;
-                            }
-                        }
-                        return count;
-                    }
-                }
-
-                /// <inheritdoc />
-                public bool IsReadOnly
-                {
-                    get { return this.ReadyDictionary.IsReadOnly; }
-                }
-
-                private readonly ReadyDictionary<T> ReadyDictionary;
-
-                internal KeysCollection(ReadyDictionary<T> readyDictionary)
-                {
-                    this.ReadyDictionary = readyDictionary;
-                }
-
-                /// <inheritdoc cref="ReadyDictionary{T}.AssertOk"/>
-                private void AssertOk()
-                {
-                    this.ReadyDictionary.AssertOk();
-                }
-
-                /// <inheritdoc />
-                public void Add(int key)
-                {
-                    throw new NotSupportedException("adding new elements can only be done on WaitSet");
-                }
-
-                /// <inheritdoc />
-                public void Clear()
-                {
-                    this.ReadyDictionary.Clear();
-                }
-
-                /// <inheritdoc />
-                public bool Contains(int key)
-                {
-                    return this.ReadyDictionary.ContainsKey(key);
-                }
-
-                /// <inheritdoc />
-                public void CopyTo(int[] array, int arrayIndex)
-                {
-                    if (arrayIndex < 0)
-                    {
-                        throw new ArgumentOutOfRangeException("arrayIndex is less than 0");
-                    }
-                    foreach (int key in this)
-                    {
-                        try
-                        {
-                            array[arrayIndex] = key;
-                        }
-                        catch (IndexOutOfRangeException e)
-                        {
-                            throw new ArgumentException("array too small", e);
-                        }
-                        arrayIndex += 1;
-                    }
-                }
-
-                /// <inheritdoc />
-                public bool Remove(int key)
-                {
-                    return this.ReadyDictionary.Remove(key);
-                }
-
-                /// <inheritdoc />
-                public IEnumerator<int> GetEnumerator()
-                {
-                    this.AssertOk();
-                    for (int key = 0; this.ReadyDictionary.TryConvertKey(key, out UIntPtr index) && this.ReadyDictionary.TryGetPtr(index, out IntPtr ptr); key += 1)
-                    {
-                        if (ptr != IntPtr.Zero)
-                        {
-                            yield return key;
-                            // can be invalidated before being resumed
-                            this.AssertOk();
-                        }
-                    }
-                }
-
-                /// <inheritdoc />
-                IEnumerator IEnumerable.GetEnumerator()
-                {
-                    return this.GetEnumerator();
-                }
+                subscriptions = this.ReadySubscriptions;
+                clients = this.ReadyClients;
+                services = this.ReadyServices;
+                guard_conditions = this.ReadyGuardConditions;
             }
-
-            /// <summary>
-            /// Collection representing the wrappers which are ready.
-            /// </summary>
-            private sealed class ValuesCollection : ICollection<T>
-            {
-                /// <inheritdoc />
-                public int Count
-                {
-                    get { return this.ReadyDictionary.Count; }
-                }
-
-                /// <inheritdoc />
-                public bool IsReadOnly
-                {
-                    get { return this.ReadyDictionary.IsReadOnly; }
-                }
-
-                private readonly ReadyDictionary<T> ReadyDictionary;
-
-                internal ValuesCollection(ReadyDictionary<T> readDictionary)
-                {
-                    this.ReadyDictionary = readDictionary;
-                }
-
-                /// <inheritdoc />
-                public void Add(T value)
-                {
-                    throw new NotSupportedException("adding new elements can only be done on WaitSet");
-                }
-
-                /// <inheritdoc />
-                public void Clear()
-                {
-                    this.ReadyDictionary.Clear();
-                }
-
-                /// <inheritdoc />
-                public bool Contains(T value)
-                {
-                    return this.Any(v => EqualityComparer<T>.Default.Equals(v, value));
-                }
-
-                /// <inheritdoc />
-                public void CopyTo(T[] array, int arrayIndex)
-                {
-                    if (arrayIndex < 0)
-                    {
-                        throw new ArgumentOutOfRangeException("arrayIndex is less than 0");
-                    }
-                    foreach (T value in this)
-                    {
-                        try
-                        {
-                            array[arrayIndex] = value;
-                        }
-                        catch (IndexOutOfRangeException e)
-                        {
-                            throw new ArgumentException("array too small", e);
-                        }
-                        arrayIndex += 1;
-                    }
-                }
-
-                /// <inheritdoc />
-                public bool Remove(T value)
-                {
-                    foreach (var item in this.ReadyDictionary)
-                    {
-                        if (EqualityComparer<T>.Default.Equals(item.Value, value))
-                        {
-                            return this.ReadyDictionary.Remove(item.Key);
-                        }
-                    }
-                    return false;
-                }
-
-                /// <inheritdoc />
-                public IEnumerator<T> GetEnumerator()
-                {
-                    return this.ReadyDictionary.Select(item => item.Value).GetEnumerator();
-                }
-
-                /// <inheritdoc />
-                IEnumerator IEnumerable.GetEnumerator()
-                {
-                    return this.GetEnumerator();
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Result of waiting on a wait set.
-    /// </summary>
-    /// <remarks>
-    /// The dictionaries are invalidated when waiting on the wait set again.
-    /// </remarks>
-    internal sealed class WaitResult : IEnumerable<IWaitable>
-    {
-        /// <summary>
-        /// Mapping from index to subscriptions which are ready.
-        /// </summary>
-        public IDictionary<int, ISubscriptionBase> ReadySubscriptions { get; private set; }
-
-        /// <summary>
-        /// Mapping from index to clients which are ready.
-        /// </summary>
-        public IDictionary<int, IClientBase> ReadyClients { get; private set; }
-
-        /// <summary>
-        /// Mapping from index to services which are ready.
-        /// </summary>
-        public IDictionary<int, IServiceBase> ReadyServices { get; private set; }
-
-        /// <summary>
-        /// Mapping from index to guard conditions which are ready.
-        /// </summary>
-        public IDictionary<int, GuardCondition> ReadyGuardConditions { get; private set; }
-
-        internal WaitResult(
-            IDictionary<int, ISubscriptionBase> subscriptions,
-            IDictionary<int, IClientBase> clients,
-            IDictionary<int, IServiceBase> services,
-            IDictionary<int, GuardCondition> guard_conditions)
-        {
-            this.ReadySubscriptions = subscriptions;
-            this.ReadyClients = clients;
-            this.ReadyServices = services;
-            this.ReadyGuardConditions = guard_conditions;
-        }
-
-        /// <inheritdoc />
-        public IEnumerator<IWaitable> GetEnumerator()
-        {
-            return this.ReadySubscriptions.Values
-                .Concat<IWaitable>(this.ReadyClients.Values)
-                .Concat(this.ReadyServices.Values)
-                .Concat(this.ReadyGuardConditions.Values)
-                .GetEnumerator();
-        }
-
-        /// <inheritdoc />
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return this.GetEnumerator();
-        }
-
-        /// <summary>
-        /// Deconstruct the result into the resources which are ready.
-        /// </summary>
-        public void Deconstruct(
-            out IDictionary<int, ISubscriptionBase> subscriptions,
-            out IDictionary<int, IClientBase> clients,
-            out IDictionary<int, IServiceBase> services,
-            out IDictionary<int, GuardCondition> guard_conditions)
-        {
-            subscriptions = this.ReadySubscriptions;
-            clients = this.ReadyClients;
-            services = this.ReadyServices;
-            guard_conditions = this.ReadyGuardConditions;
         }
     }
 }
