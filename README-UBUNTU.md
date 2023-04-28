@@ -47,8 +47,8 @@ sudo apt install patchelf
 - Clone this project
 - Source your ROS2 installation
   ```bash
-  # Change foxy to whatever version you are using
-  source /opt/ros/foxy/setup.bash
+  # Change humble to whatever version you are using
+  source /opt/ros/humble/setup.bash
   ```
 - Navigate to the top project folder and pull required repositories
   ```bash

@@ -4,7 +4,7 @@
 
 ### Prerequisites
 
-*  ROS2 installed on the system (additionally you should go to [Building ROS2 section](https://docs.ros.org/en/foxy/Installation/Windows-Development-Setup.html) and check if all `pip` [Install dependencies](https://docs.ros.org/en/foxy/Installation/Windows-Development-Setup.html#install-dependencies) and [Developer tools](https://docs.ros.org/en/foxy/Installation/Windows-Development-Setup.html#install-developer-tools) are installed)
+*  ROS2 installed on the system (additionally you should go to [Building ROS2 section](https://docs.ros.org/en/humble/Installation/Windows-Development-Setup.html) and check if all [Prerequisites](https://docs.ros.org/en/humble/Installation/Windows-Development-Setup.html#installing-prerequisites) are installed.
 *  vcstool package - [see here](https://github.com/dirk-thomas/vcstool)
 *  .NET 6.0 sdk - [see here](https://dotnet.microsoft.com/download/dotnet/6.0)
 *  For tests only: xUnit testing framework - [see here](https://xunit.net/)
@@ -24,7 +24,7 @@
 ### Steps
 
 - Clone this project.
-- Source your ROS2 installation (`C:\dev\ros2_foxy\local_setup.ps1`)
+- Source your ROS2 installation (`C:\dev\ros2_humble\local_setup.ps1`)
 - Navigate to the top project folder and pull required repositories (`get_repos.ps1`)
   - You can run script with `--get-custom-messages` argument to fetch extra messages from `custom_messages.repos` file.
   - It will use `vcstool` to download required ROS2 packages. By default, this will get repositories as set in `${ROS_DISTRO}`.
