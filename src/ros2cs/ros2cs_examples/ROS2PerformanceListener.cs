@@ -125,13 +125,7 @@ namespace Examples
                 new QualityOfServiceProfile(QosPresetProfile.SENSOR_DATA)
             );
 
-            for (IEnumerator spin = executor.Spin(TimeSpan.FromSeconds(0.1)); spin.MoveNext();)
-            {
-                if (exitScheduled)
-                {
-                    break;
-                }
-            }
+            executor.SpinWhile(() => !exitScheduled);
         }
     }
 }

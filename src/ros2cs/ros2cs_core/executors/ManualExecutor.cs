@@ -394,25 +394,27 @@ namespace ROS2.Executors
         }
 
         /// <summary>
-        /// Utility which handles automatic rescaning.
+        /// Utility which spins while a condition is true
+        /// and handles automatic rescanning.
         /// </summary>
-        /// <param name="timeout"> Maximum time to wait for work to become available. </param>
-        /// <returns>
-        /// <see cref="IEnumerator{bool}"/> trying to spin in each iteration
-        /// and yielding if a rescan had to be performed instead.
-        /// </returns>
-        public IEnumerator<bool> Spin(TimeSpan timeout)
+        /// <remarks>
+        /// The condition check is performed before each spin.
+        /// </remarks>
+        /// <param name="condition"> Condition which has to be true to continue spinning. </param>
+        public void SpinWhile(Func<bool> condition)
         {
-            while (true)
+            this.SpinWhile(condition, TimeSpan.FromSeconds(0.1));
+        }
+
+        /// <inheritdoc cref="SpinWhile"/>
+        /// <param name="timeout"> Maximum time to wait for work to become available. </param>
+        public void SpinWhile(Func<bool> condition, TimeSpan timeout)
+        {
+            while (condition())
             {
-                if (this.TrySpin(timeout))
-                {
-                    yield return false;
-                }
-                else
+                if (!this.TrySpin(timeout))
                 {
                     this.Rescan();
-                    yield return true;
                 }
             }
         }

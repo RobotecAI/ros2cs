@@ -47,14 +47,8 @@ namespace Examples
             }
 
             Task<AddTwoInts_Response> rsp = my_client.CallAsync(msg);
-            for (IEnumerator spin = executor.Spin(TimeSpan.FromSeconds(0.1)); spin.MoveNext();)
-            {
-                if (rsp.IsCompleted)
-                {
-                    break;
-                }
-            }
-            
+            executor.SpinWhile(() => !rsp.IsCompleted);
+
             Console.WriteLine("Sum = {0}", rsp.Result.Sum);
         }
     }

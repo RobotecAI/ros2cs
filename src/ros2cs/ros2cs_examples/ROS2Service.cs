@@ -45,8 +45,7 @@ namespace Examples
                 }
             );
 
-            for (IEnumerator spin = executor.Spin(TimeSpan.FromSeconds(0.1)); spin.MoveNext();)
-            {}
+            executor.SpinWhile(() => true);
         }
     }
 }

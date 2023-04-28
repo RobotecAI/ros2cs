@@ -36,8 +36,7 @@ namespace Examples
                 msg => Console.WriteLine($"I heard: [{msg.Data}]")
             );
 
-            for (IEnumerator spin = executor.Spin(TimeSpan.FromSeconds(0.1)); spin.MoveNext();)
-            {}
+            executor.SpinWhile(() => true);
         }
     }
 }
