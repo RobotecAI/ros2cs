@@ -19,10 +19,6 @@ repositories:
     type: git
     url: https://github.com/ros2/rcl_interfaces.git
     version: galactic
-  ros2/geometry2:
-    type: git
-    url: https://github.com/ros2/geometry2.git
-    version: galactic
   ros2/test_interface_files:
     type: git
     url: https://github.com/ros2/test_interface_files.git
