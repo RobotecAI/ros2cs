@@ -1,11 +1,11 @@
-# NOTE: Use this file if you want to build with custom messages that reside in a separate remote repo.
+# NOTE: Use this file if you want to build with custom packages that reside in a separate remote repo.
 # NOTE: use the following format
 
 #repositories:
-#  custom_messages/<package_name>:
+#  custom_packages/<package_name>:
 #    type: git
 #    url: <repo_url>
 #    version: <repo_branch>
-#  custom_messages/<package2_name>:
+#  custom_packages/<package2_name>:
 #    ...
 #    ...
