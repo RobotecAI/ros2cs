@@ -56,7 +56,7 @@ namespace ROS2
         void DisposeFromNode();
     }
 
-    /// <summary> Generic base interface for all subscriptions </summary>
+    /// <summary> Generic base interface for all clients. </summary>
     /// <typeparam name="I"> Message Type to be send. </typeparam>
     /// <typeparam name="O"> Message Type to be received. </typeparam>
     public interface IClient<I, O> : IClientBase
