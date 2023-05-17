@@ -1,4 +1,5 @@
-// Copyright 2019-2021 Robotec.ai
+// Copyright 2023 ADVITEC Informatik GmbH - www.advitec.de
+// Copyright 2019-2022 Robotec.ai
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
