@@ -38,7 +38,6 @@ find_package(DotNETExtra REQUIRED)
 find_package(rcl REQUIRED)
 find_package(rcutils REQUIRED)
 find_package(rmw REQUIRED)
-find_package(rosidl_generator_c REQUIRED)
 
 # Only build the library if a C typesupport exists
 get_rmw_typesupport(typesupport_impls "rmw_implementation" LANGUAGE "c")
@@ -133,20 +132,6 @@ option(STANDALONE_BUILD "Deploy standalone libraries with build" OFF)
 
 set(ros2_distro "$ENV{ROS_DISTRO}")
 
-# There is an issue with resolving environment variable paths in runtime for "rcpputils" library on ros2 foxy.
-# We replacing this library with our patched version. See "resources/rcpputils.diff".
-if(ros2_distro STREQUAL "foxy")
-  if(WIN32)
-    install(FILES "${CMAKE_CURRENT_LIST_DIR}/../../../resources/foxy/Windows/x86_64/rcpputils.dll"
-    DESTINATION resources
-    )
-  elseif(UNIX)
-    install(FILES "${CMAKE_CURRENT_LIST_DIR}/../../../resources/foxy/Linux/x86_64/librcpputils.so"
-      DESTINATION resources
-    )
-  endif()
-endif()
-
 if(STANDALONE_BUILD)
   find_program(PATCHELF "patchelf")
   if(UNIX)
@@ -232,7 +217,7 @@ if(STANDALONE_BUILD)
     endif()
 
     # Get cyclonedds iceoryx dependency for ros2 galaxy (unix only)
-    if(UNIX AND NOT ros2_distro STREQUAL "foxy")
+    if(UNIX)
       if("${_library_name}" STREQUAL "iceoryx_binding_c" )
         fetch_target_lib(iceoryx_binding_c::iceoryx_binding_c)
         list(APPEND REQ_STANDALONE_LIBS ${iceoryx_binding_c_iceoryx_binding_c_LIB_PATH})
@@ -358,7 +343,7 @@ if(STANDALONE_BUILD)
     yaml
   )
   
-  if(UNIX AND NOT ros2_distro STREQUAL "foxy")
+  if(UNIX)
     if(ros2_distro STREQUAL "galactic")
       list(APPEND ros2_standalone_libs iceoryx_binding_c iceoryx_posh iceoryx_utils)
     else()

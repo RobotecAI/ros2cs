@@ -137,7 +137,7 @@ file(MAKE_DIRECTORY "${_output_path}")
 
 message(STATUS "Generating C# code for ROS interfaces ${_generated_msg_cs_files} and ${_generated_srv_cs_files}")
 set(ros2_distro "$ENV{ROS_DISTRO}")
-if(ros2_distro STREQUAL "foxy" OR ros2_distro STREQUAL "galactic")
+if(ros2_distro STREQUAL "galactic")
   set(PYTHON_CMD ${PYTHON_EXECUTABLE})
 else()
   set(PYTHON_CMD Python3::Interpreter)

@@ -1,0 +1,67 @@
+name: Test on Ubuntu
+on:
+    workflow_dispatch:
+    push:
+        branches: [master]
+    pull_request:
+        branches: [master]
+
+jobs:
+    test_ubuntu:
+        strategy:
+            matrix:
+                os: [ubuntu-22.04]
+                ros-distribution: [humble]
+
+        runs-on: ${{ matrix.os }}
+
+        steps:
+        - name: Checkout source
+          uses: actions/checkout@v3
+            
+        - name: Install .NET SDK 6.0
+          uses: actions/setup-dotnet@v3
+          with:
+              dotnet-version: "6"
+
+        - name: Update apt sources
+          run: sudo apt update
+
+        - name: Set locale
+          run: |
+            sudo apt install -y locales
+            sudo locale-gen en_US en_US.UTF-8
+            sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+
+        - name: Setup ROS2 apt sources
+          run: |
+            sudo apt install -y software-properties-common curl
+            sudo add-apt-repository universe
+            sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+            sudo apt update
+
+        - name: Setup ROS2
+          env:
+            LANG: en_US.UTF-8
+          run: |
+            sudo apt install -y \
+            ros-${{ matrix.ros-distribution }}-ros-base ros-dev-tools ros-${{ matrix.ros-distribution }}-test-msgs \
+            ros-${{ matrix.ros-distribution }}-fastrtps ros-${{ matrix.ros-distribution }}-rmw-fastrtps-cpp \
+            ros-${{ matrix.ros-distribution }}-cyclonedds ros-${{ matrix.ros-distribution }}-rmw-cyclonedds-cpp \
+            python3-vcstool 
+
+        - name: Invoke build script
+          env:
+            LANG: en_US.UTF-8
+          run: |
+            source /opt/ros/humble/setup.bash
+            ./get_repos.sh
+            ./build.sh --with-tests
+
+        - name: Invoke test script
+          env:
+            LANG: en_US.UTF-8
+          run: |
+            source /opt/ros/humble/setup.bash
+            ./test.sh

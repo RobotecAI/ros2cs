@@ -14,17 +14,10 @@
   <buildtool_export_depend>ament_cmake</buildtool_export_depend>
   <buildtool_export_depend>rosidl_cmake</buildtool_export_depend>
 
-  <build_depend>ros2cs_common</build_depend>
-  <build_depend>rcl</build_depend>
-  <build_depend>rcutils</build_depend>
-  <build_depend>rmw</build_depend>
-  <build_depend>rosidl_generator_c</build_depend>
-
-  <exec_depend>rcl</exec_depend>
-
-  <test_depend>ros2cs_common</test_depend>
-  <test_depend>std_msgs</test_depend>
-  <test_depend>test_msgs</test_depend>
+  <depend>rcl</depend>
+  <depend>rmw</depend>
+  <depend>rcutils</depend>
+  <depend>ros2cs_common</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

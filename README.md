@@ -18,7 +18,7 @@ Supported OSes:
 - Ubuntu 22.04 (bash)
 - Ubuntu 20.04 (bash)
 - Windows 10 (powershell)
-- Windows 11* (powershel)
+- Windows 11* (powershell)
 
 > \* ROS2 Galactic and Humble support only Windows 10 ([ROS 2 Windows system requirements](https://docs.ros.org/en/humble/Installation/Windows-Install-Binary.html#system-requirements)), but it is proven that it also works fine on Windows 11.
 
@@ -36,7 +36,7 @@ Supported ROS2 distributions:
 
 ### Generating custom messages
 
-After cloning the project and importing .repos, you can simply put your message package next to other packages in the `src/ros2` sub-folder. Then, build your project, and you have all messages generated. You can also modify and use the `custom_message.repos` template to automate the process with the `get_repos` script.
+After cloning the project and importing .repos, you can simply put your message package next to other packages in the `src/custom_packages` directory. Then, build your project, and you have all messages generated. You can also modify and use the `custom_messages.repos` template to automate the process with the `get_repos` script.
 
 ### Build instructions
 
@@ -44,6 +44,12 @@ Please follow the  OS-specific instructions for your build:
 
 - [Ubuntu 20.04 Instructions](README-UBUNTU.md)
 - [Windows 10 Instructions](README-WINDOWS.md)
+
+## Examples
+
+To built the examples pass the `--with-examples` flag to the OS-specific build script.
+After sourcing your ROS2 workspace you can execute examples with `ros2 run ros2cs_examples <example>`.
+Example commands are shown in the testing section.
 
 ## Testing
 
@@ -59,7 +65,7 @@ Make sure your NuGet repositories can resolve `xUnit` dependency. You can call `
     ```powershell
     test.sp1
     ```
-- Run a manual test with basic listener/publisher examples (you have to source your ROS2 first):
+- Run a manual test with basic listener/publisher examples (you have to source your ROS2 first and built with examples):
     - ubuntu
     ```bash
     ros2 run ros2cs_examples ros2cs_talker
@@ -70,7 +76,7 @@ Make sure your NuGet repositories can resolve `xUnit` dependency. You can call `
     ros2 run ros2cs_examples ros2cs_talker.exe
     ros2 run ros2cs_examples ros2cs_listener.exe
     ```
-- Run a manual performance test (you have to source your ROS2 first):
+- Run a manual performance test (you have to source your ROS2 first and built with examples):
     - ubuntu
     ```bash
     ros2 run ros2cs_examples ros2cs_performance_talker
