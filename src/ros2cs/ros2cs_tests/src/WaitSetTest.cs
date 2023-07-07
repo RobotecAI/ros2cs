@@ -36,7 +36,7 @@ namespace ROS2.Test
         public void SetUp()
         {
             this.Context = new Context();
-            this.WaitSet = new WaitSet(this.Context);
+            this.WaitSet = this.Context.CreateWaitSet();
         }
 
         [TearDown]
@@ -63,6 +63,14 @@ namespace ROS2.Test
             this.WaitSet.Dispose();
 
             Assert.That(this.WaitSet.IsDisposed, Is.True);
+        }
+
+        [Test]
+        public void OnShutdownDisposal()
+        {
+            this.Context.OnShutdown += () => Assert.That(this.WaitSet.IsDisposed, Is.False);
+
+            this.Context.Dispose();
         }
 
         [Test]

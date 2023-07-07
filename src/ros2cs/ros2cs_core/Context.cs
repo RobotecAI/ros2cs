@@ -61,6 +61,14 @@ namespace ROS2
         private HashSet<GuardCondition> GuardConditions = new HashSet<GuardCondition>();
 
         /// <summary>
+        /// Collection of wait sets active in this context;
+        /// </summary>
+        /// <remarks>
+        /// Also used for synchronisation when creating / removing guard conditions.
+        /// </remarks>
+        private HashSet<WaitSet> WaitSets = new HashSet<WaitSet>();
+
+        /// <summary>
         /// Get the current RMW implementation.
         /// </summary>
         /// <returns>The current implementation as string.</returns>
@@ -171,6 +179,40 @@ namespace ROS2
             }
         }
 
+        /// <summary>
+        /// Create a wait set.
+        /// </summary>
+        /// <remarks>
+        /// This method is thread safe.
+        /// </remarks>
+        /// <returns> A new wait set instance. </returns>
+        internal WaitSet CreateWaitSet()
+        {
+            lock (this.WaitSets)
+            {
+                WaitSet waitSet = new WaitSet(this);
+                this.WaitSets.Add(waitSet);
+                return waitSet;
+            }
+        }
+
+        /// <summary>
+        /// Remove a wait set.
+        /// </summary>
+        /// <remarks>
+        /// This method is intended to be used by <see cref="WaitSet.Dispose"/> and does not dispose the wait set.
+        /// Furthermore, it is thread safe.
+        /// </remarks>
+        /// <param name="waitSet"> Wait set to remove. </param>
+        /// <returns> If the wait set existed in this context and has been removed. </returns>
+        internal bool RemoveWaitSet(WaitSet waitSet)
+        {
+            lock (this.WaitSets)
+            {
+                return this.WaitSets.Remove(waitSet);
+            }
+        }
+
         /// <remarks>
         /// This method is not thread safe.
         /// Do not call while the context or any entities
@@ -197,7 +239,7 @@ namespace ROS2
             {
                 Utils.CheckReturnEnum(ret);
             }
-            // only continue if ROSNodes and GuardConditions has not been finalized
+            // only continue if the collections of the active primitives have not been finalized
             if (disposing)
             {
                 this.OnShutdown?.Invoke();
@@ -211,7 +253,12 @@ namespace ROS2
                     guardCondition.DisposeFromContext();
                 }
                 this.GuardConditions.Clear();
-                // only safe when all nodes are gone, not calling Dispose() will leak the Handle
+                foreach (var waitSet in this.WaitSets)
+                {
+                    waitSet.DisposeFromContext();
+                }
+                this.WaitSets.Clear();
+                // only safe when all primitives are gone, not calling Dispose() will leak the Handle
                 Utils.CheckReturnEnum(NativeRcl.rcl_context_fini(this.Handle));
                 this.FreeHandles();
             }

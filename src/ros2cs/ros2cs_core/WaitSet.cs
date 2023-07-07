@@ -16,6 +16,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace ROS2
@@ -49,7 +50,12 @@ namespace ROS2
         /// <summary>
         /// Context associated with this wait set.
         /// </summary>
-        public IContext Context { get; private set; }
+        public IContext Context
+        {
+            get => this.ROSContext;
+        }
+
+        private Context ROSContext;
 
         /// <inheritdoc />
         public bool IsDisposed
@@ -99,7 +105,7 @@ namespace ROS2
         /// <param name="context">Associated context</param>
         internal WaitSet(Context context)
         {
-            this.Context = context;
+            this.ROSContext = context;
             this.Handle = NativeRclInterface.rclcs_get_zero_initialized_wait_set();
             int ret = NativeRcl.rcl_wait_set_init(
                 this.Handle,
@@ -117,7 +123,6 @@ namespace ROS2
                 this.FreeHandles();
                 Utils.CheckReturnEnum(ret);
             }
-            context.OnShutdown += this.Dispose;
         }
 
         /// <inheritdoc />
@@ -314,16 +319,37 @@ namespace ROS2
                 return;
             }
 
-            Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_fini(this.Handle));
-            this.FreeHandles();
-
             if (disposing)
             {
-                this.Context.OnShutdown -= this.Dispose;
-                this.Subscriptions.Clear();
-                this.Clients.Clear();
-                this.Services.Clear();
+                bool success = this.ROSContext.RemoveWaitSet(this);
+                Debug.Assert(success, "failed to remove wait set");
+                this.ClearCollections();
             }
+
+            Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_fini(this.Handle));
+            this.FreeHandles();
+        }
+
+        /// <summary> Dispose without modifying the context. </summary>
+        internal void DisposeFromContext()
+        {
+            if (this.Handle == IntPtr.Zero)
+            {
+                return;
+            }
+
+            this.ClearCollections();
+
+            Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_fini(this.Handle));
+            this.FreeHandles();
+        }
+
+        private void ClearCollections()
+        {
+            this.Subscriptions.Clear();
+            this.Clients.Clear();
+            this.Services.Clear();
+            this.GuardConditions.Clear();
         }
 
         private void FreeHandles()
