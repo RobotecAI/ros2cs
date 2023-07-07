@@ -53,6 +53,14 @@ namespace ROS2
         private Dictionary<string, Node> ROSNodes = new Dictionary<string, Node>();
 
         /// <summary>
+        /// Collection of guard conditions active in this context.
+        /// </summary>
+        /// <remarks>
+        /// Also used for synchronisation when creating / removing guard conditions.
+        /// </remarks>
+        private HashSet<GuardCondition> GuardConditions = new HashSet<GuardCondition>();
+
+        /// <summary>
         /// Get the current RMW implementation.
         /// </summary>
         /// <returns>The current implementation as string.</returns>
@@ -128,6 +136,41 @@ namespace ROS2
             }
         }
 
+        /// <summary>
+        /// Create a guard condition.
+        /// </summary>
+        /// <remarks>
+        /// This method is thread safe.
+        /// </remarks>
+        /// <param name="callback"> Callback executed by the executor when the guard condition is triggered. </param>
+        /// <returns> A new guard condition instance. </returns>
+        internal GuardCondition CreateGuardCondition(Action callback)
+        {
+            lock (this.GuardConditions)
+            {
+                GuardCondition guardCondition = new GuardCondition(this, callback);
+                this.GuardConditions.Add(guardCondition);
+                return guardCondition;
+            }
+        }
+
+        /// <summary>
+        /// Remove a guard condition.
+        /// </summary>
+        /// <remarks>
+        /// This method is intended to be used by <see cref="GuardCondition.Dispose"/> and does not dispose the guard condition.
+        /// Furthermore, it is thread safe.
+        /// </remarks>
+        /// <param name="guardCondition"> Guard condition to remove. </param>
+        /// <returns> If the guard condition existed in this context and has been removed. </returns>
+        internal bool RemoveGuardCondition(GuardCondition guardCondition)
+        {
+            lock (this.GuardConditions)
+            {
+                return this.GuardConditions.Remove(guardCondition);
+            }
+        }
+
         /// <remarks>
         /// This method is not thread safe.
         /// Do not call while the context or any entities
@@ -154,7 +197,7 @@ namespace ROS2
             {
                 Utils.CheckReturnEnum(ret);
             }
-            // only continue if ROSNodes has not been finalized
+            // only continue if ROSNodes and GuardConditions has not been finalized
             if (disposing)
             {
                 this.OnShutdown?.Invoke();
@@ -163,6 +206,11 @@ namespace ROS2
                     node.DisposeFromContext();
                 }
                 this.ROSNodes.Clear();
+                foreach (var guardCondition in this.GuardConditions)
+                {
+                    guardCondition.DisposeFromContext();
+                }
+                this.GuardConditions.Clear();
                 // only safe when all nodes are gone, not calling Dispose() will leak the Handle
                 Utils.CheckReturnEnum(NativeRcl.rcl_context_fini(this.Handle));
                 this.FreeHandles();

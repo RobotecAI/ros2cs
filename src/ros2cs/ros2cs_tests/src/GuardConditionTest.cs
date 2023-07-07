@@ -29,8 +29,7 @@ namespace ROS2.Test
         public void SetUp()
         {
             this.Context = new Context();
-            this.GuardCondition = new GuardCondition(
-                this.Context,
+            this.GuardCondition = this.Context.CreateGuardCondition(
                 () => { throw new InvalidOperationException("guard condition was called"); }
             );
         }
@@ -62,11 +61,19 @@ namespace ROS2.Test
         }
 
         [Test]
+        public void OnShutdownDisposal()
+        {
+            this.Context.OnShutdown += () => Assert.That(this.GuardCondition.IsDisposed, Is.False);
+
+            this.Context.Dispose();
+        }
+
+        [Test]
         public void DisposedContextHandling()
         {
             this.Context.Dispose();
 
-            Assert.Throws<ObjectDisposedException>(() => new GuardCondition(this.Context, () => {}));
+            Assert.Throws<ObjectDisposedException>(() => this.Context.CreateGuardCondition(() => { }));
         }
 
         [Test]

@@ -115,7 +115,7 @@ namespace ROS2.Executors
         /// <exception cref="ObjectDisposedException"> If <paramref name="context"/> is disposed. </exception>
         public ManualExecutor(Context context) : this(
             new WaitSet(context),
-            new GuardCondition(context, () => { })
+            context.CreateGuardCondition(() => { })
         )
         { }
 

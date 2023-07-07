@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Diagnostics;
 
 namespace ROS2
 {
@@ -68,7 +69,6 @@ namespace ROS2
             }
             Utils.CheckReturnEnum(ret);
             this.Handle = handle;
-            context.OnShutdown += this.Dispose;
         }
 
         /// <summary>
@@ -123,13 +123,26 @@ namespace ROS2
                 return;
             }
 
-            Utils.CheckReturnEnum(NativeRcl.rcl_guard_condition_fini(this.Handle));
-            this.FreeHandles();
-
+            // only do if Context.GuardConditions has not been finalized
             if (disposing)
             {
-                this.Context.OnShutdown -= this.Dispose;
+                bool success = this.Context.RemoveGuardCondition(this);
+                Debug.Assert(success, message: "failed to remove guard condition");
             }
+
+            this.DisposeFromContext();
+        }
+
+        /// <summary> Dispose without modifying the context. </summary>
+        internal void DisposeFromContext()
+        {
+            if (this.Handle == IntPtr.Zero)
+            {
+                return;
+            }
+
+            Utils.CheckReturnEnum(NativeRcl.rcl_guard_condition_fini(this.Handle));
+            this.FreeHandles();
         }
 
         /// <summary>
