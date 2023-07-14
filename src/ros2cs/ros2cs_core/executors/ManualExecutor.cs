@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace ROS2.Executors
 {
@@ -431,6 +432,27 @@ namespace ROS2.Executors
                     this.Rescan();
                 }
             }
+        }
+
+        /// <summary>
+        /// Create a task which calls <see cref="SpinWhile"/> when started.
+        /// </summary>
+        /// <remarks>
+        /// The resulting task prevents <see cref="TrySpin"/> and <see cref="Rescan"/> from being called
+        /// and this instance as well as its context from being disposed safely while it is running.
+        /// </remarks>
+        /// <param name="timeout"> Maximum time to wait for work to become available. </param>
+        /// <param name="cancellationToken"> Token to cancel the task. </param>
+        /// <returns> Task representing the spin operation. </returns>
+        public Task CreateSpinTask(TimeSpan timeout, CancellationToken cancellationToken)
+        {
+            return new Task(() => {
+                using (cancellationToken.Register(this.Interrupt))
+                {
+                    this.SpinWhile(() => !cancellationToken.IsCancellationRequested, timeout);
+                }
+                cancellationToken.ThrowIfCancellationRequested();
+            }, cancellationToken, TaskCreationOptions.LongRunning);
         }
 
         /// <remarks>

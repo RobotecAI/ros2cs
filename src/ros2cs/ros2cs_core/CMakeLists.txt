@@ -114,6 +114,7 @@ set(CS_SOURCES
   Context.cs
   GuardCondition.cs
   executors/ManualExecutor.cs
+  executors/TaskExecutor.cs
   properties/AssemblyInfo.cs
 )
 

@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using ROS2.Executors;
 
@@ -319,6 +320,92 @@ namespace ROS2.Test
             Assert.That(this.Executor.RescanScheduled, Is.True);
         }
 
+        [Test]
+        public void SpinInTask()
+        {
+            using ManualResetEventSlim wasSpun = new ManualResetEventSlim(false);
+            using var guardCondition = this.Context.CreateGuardCondition(wasSpun.Set);
+            this.WaitSet.GuardConditions.Add(guardCondition);
+
+            using var cancellationSource = new CancellationTokenSource();
+            using Task spinTask = this.Executor.CreateSpinTask(TimeSpan.FromSeconds(0.5), cancellationSource.Token);
+
+            Assert.That(spinTask.Status, Is.EqualTo(TaskStatus.Created));
+
+            spinTask.Start();
+            try
+            {
+                while (spinTask.Status != TaskStatus.Running)
+                {
+                    Thread.Yield(); // wait for task to be scheduled
+                }
+                Assert.That(wasSpun.Wait(TimeSpan.FromSeconds(1)), Is.False);
+                guardCondition.Trigger();
+                Assert.That(wasSpun.Wait(TimeSpan.FromSeconds(1)), Is.True);
+                wasSpun.Reset();
+            }
+            finally
+            {
+                cancellationSource.Cancel();
+                try
+                {
+                    spinTask.Wait();
+                }
+                catch (AggregateException e)
+                {
+                    e.Handle(inner => inner is TaskCanceledException);
+                }
+            }
+
+            Assert.That(spinTask.Status, Is.EqualTo(TaskStatus.Canceled));
+            guardCondition.Trigger();
+            Assert.That(wasSpun.Wait(TimeSpan.FromSeconds(1)), Is.False);
+        }
+
+        [Test]
+        public void ExceptionWhileSpinningInTask()
+        {
+            using var guardCondition = this.Context.CreateGuardCondition(() =>
+            {
+                throw new SimulatedException("simulating runtime exception");
+            });
+            this.WaitSet.GuardConditions.Add(guardCondition);
+
+            using var cancellationSource = new CancellationTokenSource();
+            using Task spinTask = this.Executor.CreateSpinTask(TimeSpan.FromSeconds(0.5), cancellationSource.Token);
+
+            spinTask.Start();
+            try
+            {
+                while (spinTask.Status != TaskStatus.Running)
+                {
+                    Thread.Yield(); // wait for task to be scheduled
+                }
+                guardCondition.Trigger();
+                var exception = Assert.Throws<AggregateException>(() => spinTask.Wait(TimeSpan.FromSeconds(1)));
+                Assert.That(exception.InnerExceptions, Has.Some.Matches(new Predicate<Exception>(e => e is SimulatedException)));
+                Assert.That(spinTask.Status, Is.EqualTo(TaskStatus.Faulted));
+            }
+            finally
+            {
+                cancellationSource.Cancel();
+                try
+                {
+                    spinTask.Wait();
+                }
+                catch (AggregateException e)
+                {
+                    e.Handle(inner => inner is TaskCanceledException || inner is SimulatedException);
+                }
+            }
+        }
+
+        private sealed class SimulatedException : Exception
+        {
+            public SimulatedException(string msg) : base(msg)
+            { }
+        }
+
         private sealed class DummyExecutor : HashSet<INode>, IExecutor
         {
             public bool IsDisposed
@@ -343,7 +430,7 @@ namespace ROS2.Test
             }
 
             public void Dispose()
-            {}
+            { }
         }
     }
 }
