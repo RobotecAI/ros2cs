@@ -227,7 +227,7 @@ if(STANDALONE_BUILD)
       endif()
 
       # Get spdlog and dependency
-      if("${_library_name}" STREQUAL "spdlog")
+      if(UNIX AND "${_library_name}" STREQUAL "spdlog")
         include(${${_library_name}_CONFIG})
         fetch_target_lib(spdlog::spdlog)
         list(APPEND REQ_STANDALONE_LIBS ${spdlog_spdlog_LIB_PATH})
