@@ -231,8 +231,10 @@ if(STANDALONE_BUILD)
         include(${${_library_name}_CONFIG})
         fetch_target_lib(spdlog::spdlog)
         list(APPEND REQ_STANDALONE_LIBS ${spdlog_spdlog_LIB_PATH})
-        fetch_target_lib(fmt::fmt)
-        list(APPEND REQ_STANDALONE_LIBS ${fmt_fmt_LIB_PATH})
+        if(ros2_distro STREQUAL "humble")
+          fetch_target_lib(fmt::fmt)
+          list(APPEND REQ_STANDALONE_LIBS ${fmt_fmt_LIB_PATH})
+        endif()
       endif()
 
       # Get rmw_cyclonedds_cpp for humble
