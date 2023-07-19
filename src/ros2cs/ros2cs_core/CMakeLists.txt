@@ -188,87 +188,109 @@ if(STANDALONE_BUILD)
   endmacro()
 
   macro(get_standalone_dependencies _library_name)
-    find_package(${_library_name} REQUIRED)
-    
-    # Get rmw_dds_common typesupports for dds implementations
-    if("${_library_name}" STREQUAL "rmw_dds_common")
-      ament_index_get_resources(middleware_implementations "rmw_typesupport")
-      foreach(rmw_impl ${middleware_implementations})
-        string(REGEX REPLACE "rmw_" "" rmw_impl ${rmw_impl})
-        list(APPEND REQ_STANDALONE_LIBS ${rmw_dds_common_LIBRARIES__rosidl_typesupport_${rmw_impl}})
-      endforeach()
-    endif()
+    find_package(${_library_name} QUIET)
 
-    # Get cyclonedds DDSC
-    if("${_library_name}" STREQUAL "CycloneDDS")
+    if(${${_library_name}_FOUND})
+      # Get rmw_dds_common typesupports for dds implementations
+      if("${_library_name}" STREQUAL "rmw_dds_common")
+        ament_index_get_resources(middleware_implementations "rmw_typesupport")
+        foreach(rmw_impl ${middleware_implementations})
+          string(REGEX REPLACE "rmw_" "" rmw_impl ${rmw_impl})
+          list(APPEND REQ_STANDALONE_LIBS ${rmw_dds_common_LIBRARIES__rosidl_typesupport_${rmw_impl}})
+        endforeach()
+      endif()
+
+      # Get cyclonedds DDSC
+      if("${_library_name}" STREQUAL "CycloneDDS")
+        if(WIN32)
+          if(NOT ros2_distro STREQUAL "humble")
+            fetch_target_lib(CycloneDDS::ddsc)
+            list(APPEND REQ_STANDALONE_LIBS 
+              ${CycloneDDS_ddsc_LIB_PATH})
+          else()
+            fetch_target_lib(CycloneDDS::ddsc)
+            fetch_target_lib(CycloneDDS::idl)
+            fetch_target_lib(CycloneDDS::dds_security_ac)
+            fetch_target_lib(CycloneDDS::dds_security_auth)
+            fetch_target_lib(CycloneDDS::dds_security_crypto)
+            list(APPEND REQ_STANDALONE_LIBS 
+              ${CycloneDDS_ddsc_LIB_PATH}
+              ${CycloneDDS_idl_LIB_PATH}
+              ${CycloneDDS_dds_security_ac_LIB_PATH}
+              ${CycloneDDS_dds_security_auth_LIB_PATH}
+              ${CycloneDDS_dds_security_crypto_LIB_PATH})
+          endif()
+        elseif(UNIX)
+          fetch_target_lib(CycloneDDS::ddsc)
+          list(APPEND REQ_STANDALONE_LIBS ${CycloneDDS_ddsc_LIB_PATH})
+        endif()
+      endif()
+
+      # Get spdlog and dependency
+      if(UNIX AND "${_library_name}" STREQUAL "spdlog")
+        include(${${_library_name}_CONFIG})
+        fetch_target_lib(spdlog::spdlog)
+        list(APPEND REQ_STANDALONE_LIBS ${spdlog_spdlog_LIB_PATH})
+        if(ros2_distro STREQUAL "humble")
+          fetch_target_lib(fmt::fmt)
+          list(APPEND REQ_STANDALONE_LIBS ${fmt_fmt_LIB_PATH})
+        endif()
+      endif()
+
+      # Get rmw_cyclonedds_cpp for humble
+      if("${_library_name}" STREQUAL "rmw_cyclonedds_cpp" AND (ros2_distro STREQUAL "humble" OR ros2_distro STREQUAL "rolling"))
+        fetch_target_lib(rmw_cyclonedds_cpp::rmw_cyclonedds_cpp)
+        list(APPEND REQ_STANDALONE_LIBS ${rmw_cyclonedds_cpp_rmw_cyclonedds_cpp_LIB_PATH})
+      endif()
+
+      # Get cyclonedds iceoryx dependency for ros2 galaxy (unix only)
+      if(UNIX AND NOT ros2_distro STREQUAL "foxy")
+        if("${_library_name}" STREQUAL "iceoryx_binding_c" )
+          fetch_target_lib(iceoryx_binding_c::iceoryx_binding_c)
+          list(APPEND REQ_STANDALONE_LIBS ${iceoryx_binding_c_iceoryx_binding_c_LIB_PATH})
+        elseif("${_library_name}" STREQUAL "iceoryx_posh")
+          fetch_target_lib(iceoryx_posh::iceoryx_posh)
+          list(APPEND REQ_STANDALONE_LIBS ${iceoryx_posh_iceoryx_posh_LIB_PATH})
+        elseif("${_library_name}" STREQUAL "iceoryx_utils")
+          fetch_target_lib(iceoryx_utils::iceoryx_utils)
+          fetch_target_lib(iceoryx_utils::iceoryx_platform)
+          list(APPEND REQ_STANDALONE_LIBS
+            ${iceoryx_utils_iceoryx_utils_LIB_PATH}
+            ${iceoryx_utils_iceoryx_platform_LIB_PATH})
+        elseif("${_library_name}" STREQUAL "iceoryx_hoofs")
+          fetch_target_lib(iceoryx_hoofs::iceoryx_hoofs)
+          fetch_target_lib(iceoryx_hoofs::iceoryx_platform)
+          list(APPEND REQ_STANDALONE_LIBS
+            ${iceoryx_hoofs_iceoryx_hoofs_LIB_PATH}
+            ${iceoryx_hoofs_iceoryx_platform_LIB_PATH})
+        endif()
+      endif()
+
+      # We skip python libs
       if(WIN32)
-        if(NOT ros2_distro STREQUAL "humble")
-          fetch_target_lib(CycloneDDS::ddsc)
-          list(APPEND REQ_STANDALONE_LIBS 
-            ${CycloneDDS_ddsc_LIB_PATH})
-        else()
-          fetch_target_lib(CycloneDDS::ddsc)
-          fetch_target_lib(CycloneDDS::idl)
-          fetch_target_lib(CycloneDDS::dds_security_ac)
-          fetch_target_lib(CycloneDDS::dds_security_auth)
-          fetch_target_lib(CycloneDDS::dds_security_crypto)
-          list(APPEND REQ_STANDALONE_LIBS 
-            ${CycloneDDS_ddsc_LIB_PATH}
-            ${CycloneDDS_idl_LIB_PATH}
-            ${CycloneDDS_dds_security_ac_LIB_PATH}
-            ${CycloneDDS_dds_security_auth_LIB_PATH}
-            ${CycloneDDS_dds_security_crypto_LIB_PATH})
-        endif()
-      elseif(UNIX)
-        fetch_target_lib(CycloneDDS::ddsc)
-        list(APPEND REQ_STANDALONE_LIBS ${CycloneDDS_ddsc_LIB_PATH})
+        foreach(entry ${${_library_name}_LIBRARIES})
+          string(REGEX MATCH ".*libs\/python[0-9]*\.lib" _found ${entry})
+          if(_found STREQUAL "")
+            list(APPEND REQ_STANDALONE_LIBS ${entry})
+          endif()
+        endforeach()
+      else()
+        foreach(entry ${${_library_name}_LIBRARIES})
+          string(REGEX MATCH ".*python[0-9]*\.[0-9]*\.so" _found ${entry})
+          if(_found STREQUAL "")
+            list(APPEND REQ_STANDALONE_LIBS ${entry})
+          endif()
+        endforeach()
       endif()
-    endif()
-
-    # Get rmw_cyclonedds_cpp for humble
-    if("${_library_name}" STREQUAL "rmw_cyclonedds_cpp" AND (ros2_distro STREQUAL "humble" OR ros2_distro STREQUAL "rolling"))
-      fetch_target_lib(rmw_cyclonedds_cpp::rmw_cyclonedds_cpp)
-      list(APPEND REQ_STANDALONE_LIBS ${rmw_cyclonedds_cpp_rmw_cyclonedds_cpp_LIB_PATH})
-    endif()
-
-    # Get cyclonedds iceoryx dependency for ros2 galaxy (unix only)
-    if(UNIX AND NOT ros2_distro STREQUAL "foxy")
-      if("${_library_name}" STREQUAL "iceoryx_binding_c" )
-        fetch_target_lib(iceoryx_binding_c::iceoryx_binding_c)
-        list(APPEND REQ_STANDALONE_LIBS ${iceoryx_binding_c_iceoryx_binding_c_LIB_PATH})
-      elseif("${_library_name}" STREQUAL "iceoryx_posh")
-        fetch_target_lib(iceoryx_posh::iceoryx_posh)
-        list(APPEND REQ_STANDALONE_LIBS ${iceoryx_posh_iceoryx_posh_LIB_PATH})
-      elseif("${_library_name}" STREQUAL "iceoryx_utils")
-        fetch_target_lib(iceoryx_utils::iceoryx_utils)
-        fetch_target_lib(iceoryx_utils::iceoryx_platform)
-        list(APPEND REQ_STANDALONE_LIBS
-          ${iceoryx_utils_iceoryx_utils_LIB_PATH}
-          ${iceoryx_utils_iceoryx_platform_LIB_PATH})
-      elseif("${_library_name}" STREQUAL "iceoryx_hoofs")
-        fetch_target_lib(iceoryx_hoofs::iceoryx_hoofs)
-        fetch_target_lib(iceoryx_hoofs::iceoryx_platform)
-        list(APPEND REQ_STANDALONE_LIBS
-          ${iceoryx_hoofs_iceoryx_hoofs_LIB_PATH}
-          ${iceoryx_hoofs_iceoryx_platform_LIB_PATH})
-      endif()
-    endif()
-
-    # We skip python libs
-    if(WIN32)
-      foreach(entry ${${_library_name}_LIBRARIES})
-        string(REGEX MATCH ".*libs\/python[0-9]*\.lib" _found ${entry})
-        if(_found STREQUAL "")
-          list(APPEND REQ_STANDALONE_LIBS ${entry})
-        endif()
-      endforeach()
     else()
-      foreach(entry ${${_library_name}_LIBRARIES})
-        string(REGEX MATCH ".*python[0-9]*\.[0-9]*\.so" _found ${entry})
-        if(_found STREQUAL "")
-          list(APPEND REQ_STANDALONE_LIBS ${entry})
-        endif()
-      endforeach()
+      # Try to use pkg config to look for the packages
+      find_package(PkgConfig REQUIRED)
+      pkg_check_modules(${_library_name} QUIET ${_library_name})
+      if (${${_library_name}_FOUND})
+        list(APPEND REQ_STANDALONE_LIBS ${${_library_name}_LINK_LIBRARIES})
+      else()
+        message(FATAL_ERROR "Could not find ${_library_name}")
+      endif()
     endif()
   endmacro()
 
@@ -356,6 +378,7 @@ if(STANDALONE_BUILD)
     spdlog
     tracetools
     yaml
+    tinyxml2
   )
   
   if(UNIX AND NOT ros2_distro STREQUAL "foxy")
