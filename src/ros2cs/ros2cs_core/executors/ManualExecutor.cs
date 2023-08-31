@@ -44,20 +44,28 @@ namespace ROS2.Executors
         /// </summary>
         public bool IsSpinning
         {
-            get { return !this.IsIdle.IsSet; }
+            get => this._IsSpinning;
+            private set => this._IsSpinning = value;
         }
+
+        private volatile bool _IsSpinning = false;
 
         /// <summary>
         /// Whether a rescan is scheduled.
         /// </summary>
         public bool RescanScheduled
         {
-            get { return this._RescanScheduled; }
-            private set { this._RescanScheduled = value; }
+            get => this._RescanScheduled;
+            private set => this._RescanScheduled = value;
         }
 
         // volatile since it may be changed by multiple threads
         private volatile bool _RescanScheduled = false;
+
+        /// <summary>
+        /// To prevent <see cref="TryWait"/> from being starved by multiple spins.
+        /// </summary>
+        private long SpinId = 0;
 
         /// <inheritdoc/>
         public bool IsDisposed
@@ -92,6 +100,9 @@ namespace ROS2.Executors
         /// <summary>
         /// Wait set used while spinning.
         /// </summary>
+        /// <remarks>
+        /// Is also used to notify <see cref="TryWait"/> when the executor finished spinning.
+        /// </remarks>
         private readonly WaitSet WaitSet;
 
         /// <summary>
@@ -103,11 +114,6 @@ namespace ROS2.Executors
         /// Nodes in the executor.
         /// </summary>
         private readonly HashSet<INode> Nodes = new HashSet<INode>();
-
-        /// <summary>
-        /// Event signaling whether the executor is not spinning.
-        /// </summary>
-        private readonly ManualResetEventSlim IsIdle = new ManualResetEventSlim(true);
 
         /// <summary>
         /// Create a new instance.
@@ -286,21 +292,55 @@ namespace ROS2.Executors
         /// <inheritdoc/>
         public void Wait()
         {
-            bool success = this.TryWait(TimeSpan.FromMilliseconds(-1));
-            Debug.Assert(success, "infinite wait timed out");
+            if (this.RescanScheduled)
+            {
+                lock (this.WaitSet)
+                {
+                    this.WaitUntilDone(this.SpinId);
+                }
+            }
         }
 
         /// <remarks>
         /// This method is thread safe.
         /// </remarks>
         /// <exception cref="ObjectDisposedException"> If the executor was disposed. </exception>
+        /// <exception cref="ArgumentOutOfRangeException"> If the timeout is negative or too big. </exception>
         /// <inheritdoc/>
         public bool TryWait(TimeSpan timeout)
         {
-            if (this.RescanScheduled && this.IsSpinning)
+            if (timeout.Ticks < 0)
+            {
+                throw new ArgumentOutOfRangeException("timeout is negative");
+            }
+            if (this.RescanScheduled)
+            {
+                lock (this.WaitSet)
+                {
+                    // read id inside the lock to prevent an outdated id from being copied
+                    return this.WaitUntilDone(this.SpinId, timeout);
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Utility method to wait until the current spin has finished.
+        /// </summary>
+        /// <remarks>
+        /// This replaces a <see cref="ManualResetEventSlim"/> which did starve waiters
+        /// when spinning multiple times.
+        /// </remarks>
+        /// <param name="spinId"> Current spin id. </param>
+        private void WaitUntilDone(long spinId)
+        {
+            // the condition is checked with the lock held to prevent
+            // a the spin from pulsing before the wait can be started
+            while (this.IsSpinning && this.SpinId == spinId)
             {
                 try
                 {
+                    // stop a possible current spin
                     this.Interrupt();
                 }
                 catch (ObjectDisposedException)
@@ -309,7 +349,59 @@ namespace ROS2.Executors
                     // guard condition might be disposed but
                     // nodes still have to be removed
                 }
-                return this.IsIdle.Wait(timeout);
+                Monitor.Wait(this.WaitSet);
+            }
+        }
+
+        /// <summary>
+        /// Utility method to wait until the current spin has finished.
+        /// </summary>
+        /// <param name="spinId"> Current spin id. </param>
+        /// <param name="timeout"> Timeout when waiting </param>
+        /// <returns> Whether the wait did not time out. </returns>
+        /// <exception cref="ArgumentOutOfRangeException"> Timeout is too big. </exception>
+        private bool WaitUntilDone(long spinId, TimeSpan timeout)
+        {
+            int milliSeconds;
+            try
+            {
+                milliSeconds = Convert.ToInt32(timeout.TotalMilliseconds);
+            }
+            catch (OverflowException e)
+            {
+                throw new ArgumentOutOfRangeException("timeout too big", e);
+            }
+            int remainingTimeout = milliSeconds;
+            uint startTime = (uint)Environment.TickCount;
+            while (this.IsSpinning && this.SpinId == spinId)
+            {
+                try
+                {
+                    // stop a possible current spin
+                    this.Interrupt();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // if the context is shut down then the
+                    // guard condition might be disposed but
+                    // nodes still have to be removed
+                }
+                if (!Monitor.Wait(this.WaitSet, remainingTimeout))
+                {
+                    // if the wait timed out return immediately
+                    return false;
+                }
+                // update the timeout for the next wait
+                uint elapsed = (uint)Environment.TickCount - startTime;
+                if (elapsed > int.MaxValue)
+                {
+                    return false;
+                }
+                remainingTimeout = milliSeconds - (int)elapsed;
+                if (remainingTimeout <= 0)
+                {
+                    return false;
+                }
             }
             return true;
         }
@@ -338,10 +430,10 @@ namespace ROS2.Executors
         /// <returns> Whether work could be processed since no rescan was scheduled. </returns>
         public bool TrySpin(TimeSpan timeout)
         {
-            this.IsIdle.Reset();
+            this.IsSpinning = true;
             try
             {
-                // check after resetting IsIdle to
+                // check after setting IsSpinning to
                 // prevent race condition
                 if (this.RescanScheduled)
                 {
@@ -357,7 +449,16 @@ namespace ROS2.Executors
             }
             finally
             {
-                this.IsIdle.Set();
+                // update flag before waking threads
+                this.IsSpinning = false;
+                lock (this.WaitSet)
+                {
+                    // prevent other threads from reading stale result
+                    // overflow is acceptable
+                    unchecked { this.SpinId++; }
+                    // notify other threads that we finished spinning
+                    Monitor.PulseAll(this.WaitSet);
+                }
             }
             return true;
         }
@@ -477,7 +578,6 @@ namespace ROS2.Executors
             }
             this.WaitSet.Dispose();
             this.InterruptCondition.Dispose();
-            this.IsIdle.Dispose();
         }
     }
 }

@@ -58,6 +58,7 @@ namespace ROS2.Test
 
             this.Context.TryCreateNode("test_node", out var node);
             this.Executor.Add(node);
+            this.Executor.Rescan();
             this.Executor.Dispose();
 
             Assert.That(this.Executor.IsDisposed, Is.True);
@@ -125,6 +126,7 @@ namespace ROS2.Test
             this.Executor.ScheduleRescan();
 
             Assert.That(this.Executor.TryWait(TimeSpan.Zero), Is.True);
+            this.Executor.Wait();
             Assert.That(this.Executor.RescanScheduled, Is.True);
         }
 
@@ -132,6 +134,7 @@ namespace ROS2.Test
         public void TryWaitUnscheduled()
         {
             Assert.That(this.Executor.TryWait(TimeSpan.Zero), Is.True);
+            this.Executor.Wait();
             Assert.That(this.Executor.RescanScheduled, Is.False);
         }
 
