@@ -296,7 +296,7 @@ if(STANDALONE_BUILD)
 
   macro(install_standalone_dependencies)
     # Filter valid libraries
-    list(FILTER REQ_STANDALONE_LIBS INCLUDE REGEX ".*(lib|dll|so)(\.[0-9])*$")
+    list(FILTER REQ_STANDALONE_LIBS INCLUDE REGEX ".*(lib|dll|so)(\.[0-9]+)*$")
     list(REMOVE_DUPLICATES REQ_STANDALONE_LIBS)
 
     if(WIN32)
