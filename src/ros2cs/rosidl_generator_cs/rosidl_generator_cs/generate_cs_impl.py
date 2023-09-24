@@ -113,7 +113,7 @@ BASIC_IDL_TYPES_TO_MARSHAL_ARRAY = {
     'boolean': 'byte',
     'octet': 'byte',
     'uint8': 'byte',
-    'int8': 'char',
+    'int8': 'byte',
     'uint16': 'short',
     'int16': 'short',
     'uint32': 'int',
