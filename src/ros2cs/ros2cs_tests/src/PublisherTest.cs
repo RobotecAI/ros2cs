@@ -1,4 +1,4 @@
-// Copyright 2019-2023 Robotec.ai
+// Copyright 2023 ADVITEC Informatik GmbH - www.advitec.de
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,30 +14,26 @@
 
 using System;
 using NUnit.Framework;
-using example_interfaces.srv;
 
 namespace ROS2.Test
 {
     [TestFixture]
-    public class ServiceTest
+    public class PublisherTest
     {
-        private static readonly string SERVICE_NAME = "test_service";
+        private static readonly string TOPIC = "test_publisher";
 
         private Context Context;
 
         private INode Node;
 
-        private IService<AddTwoInts_Request, AddTwoInts_Response> Service;
+        private IPublisher<std_msgs.msg.Int32> Publisher;
 
         [SetUp]
         public void SetUp()
         {
             Context = new Context();
-            Context.TryCreateNode("service_test_node", out Node);
-            Service = Node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
-                SERVICE_NAME,
-                request => { throw new InvalidOperationException($"received request ${request}"); }
-            );
+            Context.TryCreateNode("publisher_test_node", out Node);
+            Publisher = Node.CreatePublisher<std_msgs.msg.Int32>(TOPIC);
         }
 
         [TearDown]
@@ -47,29 +43,33 @@ namespace ROS2.Test
         }
 
         [Test]
-        public void DisposedServiceHandling()
+        public void DisposedPublisherHandling()
         {
-            Assert.That(Service.IsDisposed, Is.False);
+            Assert.That(Publisher.IsDisposed, Is.False);
 
-            Service.Dispose();
+            Publisher.Dispose();
 
-            Assert.That(Service.IsDisposed);
-            Assert.That(Node.Services, Does.Not.Contain(Service));
+            Assert.That(Publisher.IsDisposed);
+            Assert.That(Node.Publishers, Does.Not.Contain(Publisher));
         }
 
         [Test]
-        public void DoubleDisposeService()
+        public void DoubleDisposePublisher()
         {
-            Service.Dispose();
-            Service.Dispose();
+            Publisher.Dispose();
+            Publisher.Dispose();
 
-            Assert.That(Service.IsDisposed);
+            Assert.That(Publisher.IsDisposed);
         }
 
         [Test]
-        public void ServiceTryProcess()
+        public void PublishDisposed()
         {
-            Assert.That(Service.TryProcess(), Is.False);
+            var msg = new std_msgs.msg.Int32();
+            msg.Data = 42;
+            Publisher.Dispose();
+
+            Assert.Throws<ObjectDisposedException>(() => Publisher.Publish(msg));
         }
     }
 }

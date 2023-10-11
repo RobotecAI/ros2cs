@@ -1,5 +1,4 @@
-﻿// Copyright 2019 Dyno Robotics (by Samuel Lindgren samuel@dynorobotics.se)
-// Copyright 2019-2021 Robotec.ai
+// Copyright 2023 ADVITEC Informatik GmbH - www.advitec.de
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,30 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using NUnit.Framework;
+using System;
 
-namespace ROS2.Test
+namespace ROS2
 {
-    [TestFixture]
-    public class CreateNodeTest
+    /// <summary>
+    /// Object which can process becoming ready.
+    /// </summary>
+    public interface IWaitable
     {
-        [SetUp]
-        public void SetUp()
-        {
-            Ros2cs.Init();
-        }
+        /// <summary>
+        /// The handle used for adding to a wait set.
+        /// </summary>
+        IntPtr Handle { get; }
 
-        [TearDown]
-        public void TearDown()
-        {
-            Ros2cs.Shutdown();
-        }
-
-        [Test]
-        public void CreateNode()
-        {
-            string nodeName = "create_node_test";
-            Ros2cs.CreateNode(nodeName).Dispose();
-        }
+        /// <summary>
+        /// Try to process if this instance is ready.
+        /// </summary>
+        /// <returns> If the instance was ready. </returns>
+        bool TryProcess();
     }
 }

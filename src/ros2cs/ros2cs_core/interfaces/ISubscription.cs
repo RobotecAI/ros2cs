@@ -1,4 +1,4 @@
-// Copyright 2019-2021 Robotec.ai
+// Copyright 2019-2023 Robotec.ai
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,27 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-
 namespace ROS2
 {
-  /// <summary> Non-generic base interface for all subscriptions </summary>
-  /// <description> Use Ros2cs.CreateSubscription to construct </description>
-  public interface ISubscriptionBase : IExtendedDisposable
-  {
-    // TODO(adamdbrw) this should not be public - add an internal interface
-    void TakeMessage();
+    /// <summary> Non-generic base interface for all subscriptions. </summary>
+    /// <remarks>
+    /// This interface is useful for managing subscription collections and disposal.
+    /// Create instances with <see cref="INode.CreateSubscription"/>.
+    /// </remarks>
+    public interface ISubscriptionBase : IExtendedDisposable, IWaitable
+    {
+        /// <summary> Topic of this subscription. </summary>
+        string Topic { get; }
+    }
 
-    /// <summary> topic name which was used when calling Ros2cs.CreateSubscription </summary>
-    string Topic {get;}
+    /// <summary> Internal subscription extensions. </summary>
+    internal interface IRawSubscription : ISubscriptionBase
+    {
+        /// <summary> Dispose without modifying the node. </summary>
+        void DisposeFromNode();
+    }
 
-    // TODO(adamdbrw) this should not be public - add an internal interface
-    rcl_subscription_t Handle {get;}
-
-    /// <summary> subscription mutex for internal use </summary>
-    object Mutex { get; }
-  }
-
-  /// <summary> Generic base interface for all subscriptions </summary>
-  public interface ISubscription<T>: ISubscriptionBase where T: Message {}
+    /// <summary> Generic base interface for all subscriptions. </summary>
+    /// <typeparam name="T"> Message Type to be received. </typeparam>
+    public interface ISubscription<T> : ISubscriptionBase where T : Message { }
 }

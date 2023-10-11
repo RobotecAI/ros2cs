@@ -20,6 +20,11 @@ namespace ROS2
   /// <description> Use instead of IDisposable </description>
   public interface IExtendedDisposable : IDisposable
   {
+    /// <summary> If the object is in a disposed state. </summary>
+    /// <remarks>
+    /// Being in a disposed state does not mean that an object has ben disposed successfully.
+    /// Call <see cref="Dispose"/> to assert that an object has been disposed successfully.
+    /// </remarks>
     bool IsDisposed { get; }
   }
 

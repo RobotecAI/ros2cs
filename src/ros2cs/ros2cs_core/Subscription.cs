@@ -1,4 +1,4 @@
-// Copyright 2019-2021 Robotec.ai
+// Copyright 2019-2023 Robotec.ai
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,122 +13,187 @@
 // limitations under the License.
 
 using System;
+using System.Diagnostics;
 using ROS2.Internal;
 
 namespace ROS2
 {
-  /// <summary> Subscription to a topic with a given type </summary>
-  /// <description> Subscriptions are created through INode interface (CreateSubscription) </description>
-  public class Subscription<T>: ISubscription<T> where T : Message, new ()
-  {
-    public rcl_subscription_t Handle { get { return subscriptionHandle; } }
-    private rcl_subscription_t subscriptionHandle;
-
-    public string Topic { get { return topic; } }
-    private string topic;
-
-    public bool IsDisposed { get { return disposed; } }
-    private bool disposed = false;
-
-    private rcl_node_t nodeHandle;
-    private readonly Action<T> callback;
-    private IntPtr subscriptionOptions;
-
-    public object Mutex { get { return mutex; } }
-    private object mutex = new object();
-
-    /// <summary> Tries to get a message from rcl/rmw layers. Calls the callback if successful </summary>
-    // TODO(adamdbrw) this should not be public - add an internal interface
-    public void TakeMessage()
+    /// <summary>
+    /// Subscription of a topic with a given type wrapping a rcl subscription.
+    /// </summary>
+    /// <remarks>
+    /// This is the implementation produced by <see cref="Node.CreateSubscription"/>,
+    /// use this method to create new instances.
+    /// </remarks>
+    /// <seealso cref="ROS2.Node"/>
+    /// <inheritdoc cref="ISubscription{T}"/>
+    public sealed class Subscription<T> : ISubscription<T>, IRawSubscription where T : Message, new()
     {
-      RCLReturnEnum ret;
-      MessageInternals message;
-      lock (mutex)
-      {
-        if (disposed || !Ros2cs.Ok())
+        /// <inheritdoc/>
+        public string Topic { get; private set; }
+
+        /// <inheritdoc/>
+        public bool IsDisposed
         {
-          return;
+            get
+            {
+                bool ok = NativeRclInterface.rclcs_subscription_is_valid(this.Handle);
+                GC.KeepAlive(this);
+                return !ok;
+            }
         }
 
-        message = CreateMessage();
-        ret = (RCLReturnEnum)NativeRcl.rcl_take(ref subscriptionHandle, message.Handle, IntPtr.Zero, IntPtr.Zero);
-      }
+        /// <summary>
+        /// Handle to the rcl subscription
+        /// </summary>
+        public IntPtr Handle { get; private set; } = IntPtr.Zero;
 
-      bool gotMessage = ret == RCLReturnEnum.RCL_RET_OK;
+        /// <summary>
+        /// Handle to the rcl subscription options
+        /// </summary>
+        private IntPtr Options = IntPtr.Zero;
 
-      if (gotMessage)
-      {
-        TriggerCallback(message);
-      }
-    }
+        /// <summary>
+        /// Node associated with this instance.
+        /// </summary>
+        private readonly Node Node;
 
-    /// <summary> Construct a message of the subscription type </summary>
-    private MessageInternals CreateMessage()
-    {
-      return new T() as MessageInternals;
-    }
+        /// <summary>
+        /// Callback invoked when a message is received.
+        /// </summary>
+        private readonly Action<T> Callback;
 
-    /// <summary> Populates managed fields with native values and calls the callback with created message </summary>
-    /// <param name="message"> Message that will be populated and returned through callback </param>
-    private void TriggerCallback(MessageInternals message)
-    {
-      message.ReadNativeMessage();
-      callback((T)message);
-    }
-
-    /// <summary> Internal constructor for Subscription. Use INode.CreateSubscription to construct </summary>
-    /// <see cref="INode.CreateSubscription"/>
-    internal Subscription(string subTopic, Node node, Action<T> cb, QualityOfServiceProfile qos = null)
-    {
-      callback = cb;
-      nodeHandle = node.nodeHandle;
-      topic = subTopic;
-      subscriptionHandle = NativeRcl.rcl_get_zero_initialized_subscription();
-
-      QualityOfServiceProfile qualityOfServiceProfile = qos;
-      if (qualityOfServiceProfile == null)
-      {
-        qualityOfServiceProfile = new QualityOfServiceProfile();
-      }
-
-      subscriptionOptions = NativeRclInterface.rclcs_subscription_create_options(qualityOfServiceProfile.handle);
-
-      T msg = new T();
-      MessageInternals msgInternals = msg as MessageInternals;
-      IntPtr typeSupportHandle = msgInternals.TypeSupportHandle;
-      msg.Dispose();
-
-      Utils.CheckReturnEnum(NativeRcl.rcl_subscription_init(
-        ref subscriptionHandle,
-        ref node.nodeHandle,
-        typeSupportHandle,
-        topic,
-        subscriptionOptions));
-    }
-
-    ~Subscription()
-    {
-      DestroySubscription();
-    }
-
-    public void Dispose()
-    {
-      DestroySubscription();
-    }
-
-    /// <summary> "Destructor" supporting disposable model </summary>
-    private void DestroySubscription()
-    {
-      lock (mutex)
-      {
-        if (!disposed)
+        /// <summary>
+        /// Create a new instance.
+        /// </summary>
+        /// <remarks>
+        /// The caller is responsible for adding the instance to <paramref name="node"/>.
+        /// This action is not thread safe.
+        /// </remarks>
+        /// <param name="topic"> Topic to subscribe to. </param>
+        /// <param name="node"> Node to associate with. </param>
+        /// <param name="callback"> Callback invoked when a message is received. </param>
+        /// <param name="qos"> QOS setting for this subscription. </param>
+        /// <exception cref="ObjectDisposedException"> If <paramref name="node"/> was disposed. </exception>
+        internal Subscription(string topic, Node node, Action<T> callback, QualityOfServiceProfile qos = null)
         {
-          Utils.CheckReturnEnum(NativeRcl.rcl_subscription_fini(ref subscriptionHandle, ref nodeHandle));
-          NativeRclInterface.rclcs_node_dispose_options(subscriptionOptions);
-          disposed = true;
-          Ros2csLogger.GetInstance().LogInfo("Subscription destroyed");
+            this.Topic = topic;
+            this.Node = node;
+            this.Callback = callback;
+
+            QualityOfServiceProfile qualityOfServiceProfile = qos ?? new QualityOfServiceProfile();
+
+            this.Options = NativeRclInterface.rclcs_subscription_create_options(qualityOfServiceProfile.handle);
+
+            IntPtr typeSupportHandle = MessageTypeSupportHelper.GetTypeSupportHandle<T>();
+
+            this.Handle = NativeRclInterface.rclcs_get_zero_initialized_subscription();
+            int ret = NativeRcl.rcl_subscription_init(
+                this.Handle,
+                this.Node.Handle,
+                typeSupportHandle,
+                this.Topic,
+                this.Options
+            );
+            if ((RCLReturnEnum)ret != RCLReturnEnum.RCL_RET_OK)
+            {
+                this.FreeHandles();
+                Utils.CheckReturnEnum(ret);
+            }
         }
-      }
+
+        /// <remarks>
+        /// This method is not thread safe.
+        /// </remarks>
+        /// <inheritdoc/>
+        public bool TryProcess()
+        {
+            T message = new T();
+            int ret = NativeRcl.rcl_take(
+                this.Handle,
+                (message as MessageInternals).Handle,
+                IntPtr.Zero,
+                IntPtr.Zero
+            );
+            GC.KeepAlive(this);
+
+            switch ((RCLReturnEnum)ret)
+            {
+                case RCLReturnEnum.RCL_RET_SUBSCRIPTION_TAKE_FAILED:
+                case RCLReturnEnum.RCL_RET_SUBSCRIPTION_INVALID:
+                    return false;
+                default:
+                    Utils.CheckReturnEnum(ret);
+                    break;
+            }
+
+            (message as MessageInternals).ReadNativeMessage();
+            this.Callback(message);
+            return true;
+        }
+
+        /// <remarks>
+        /// This method is not thread safe and may not be called from
+        /// multiple threads simultaneously or while the subscription is in use.
+        /// Disposal is automatically performed on finalization by the GC.
+        /// </remarks>
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            this.Dispose(true);
+            // finalizer not needed when we disposed successfully
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>Disposal logic.</summary>
+        /// <param name="disposing">If this method is not called in a finalizer.</param>
+        private void Dispose(bool disposing)
+        {
+            if (this.Handle == IntPtr.Zero)
+            {
+                return;
+            }
+
+            // only do if Node.CurrentSubscriptions has not been finalized
+            // save since if we are being finalized we are not in a wait set anymore
+            if (disposing)
+            {
+                bool success = this.Node.RemoveSubscription(this);
+                Debug.Assert(success, "failed to remove subscription");
+            }
+
+            (this as IRawSubscription).DisposeFromNode();
+        }
+
+        /// <inheritdoc/>
+        void IRawSubscription.DisposeFromNode()
+        {
+            if (this.Handle == IntPtr.Zero)
+            {
+                return;
+            }
+
+            Utils.CheckReturnEnum(NativeRcl.rcl_subscription_fini(this.Handle, this.Node.Handle));
+            this.FreeHandles();
+        }
+
+        /// <summary>
+        /// Free the rcl handles and replace them with null pointers.
+        /// </summary>
+        /// <remarks>
+        /// The handles are not finalised by this method.
+        /// </remarks>
+        private void FreeHandles()
+        {
+            NativeRclInterface.rclcs_free_subscription(this.Handle);
+            this.Handle = IntPtr.Zero;
+            NativeRclInterface.rclcs_subscription_dispose_options(this.Options);
+            this.Options = IntPtr.Zero;
+        }
+
+        ~Subscription()
+        {
+            this.Dispose(false);
+        }
     }
-  }
 }

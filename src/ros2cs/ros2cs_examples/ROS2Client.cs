@@ -1,4 +1,4 @@
-// Copyright 2019-2021 Robotec.ai
+// Copyright 2019-2023 Robotec.ai
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,38 +14,42 @@
 
 
 using System;
+using System.Collections;
 using System.Threading;
+using System.Threading.Tasks;
 using ROS2;
-using std_msgs;
-using sensor_msgs;
-using example_interfaces;
+using ROS2.Executors;
+using example_interfaces.srv;
 
 namespace Examples
 {
-  /// <summary> A simple service client class to illustrate Ros2cs in action </summary>
-  public class ROS2Client
-  {
-    public static void Main(string[] args)
+    /// <summary> A simple service client class to illustrate Ros2cs in action </summary>
+    public class ROS2Client
     {
-      Console.WriteLine("Client start");
-      Ros2cs.Init();
-      INode node = Ros2cs.CreateNode("talker");
-      Client<example_interfaces.srv.AddTwoInts_Request, example_interfaces.srv.AddTwoInts_Response> my_client = node.CreateClient<example_interfaces.srv.AddTwoInts_Request, example_interfaces.srv.AddTwoInts_Response>("add_two_ints");
+        public static void Main(string[] args)
+        {
+            Console.WriteLine("Client start");
 
-      example_interfaces.srv.AddTwoInts_Request msg = new example_interfaces.srv.AddTwoInts_Request();
-      msg.A = 7;
-      msg.B = 2;
+            // everything is disposed when disposing the context
+            using Context context = new Context();
+            using ManualExecutor executor = new ManualExecutor(context);
+            context.TryCreateNode("client", out INode node);
+            executor.Add(node);
 
-      while (!my_client.IsServiceAvailable())
-      {
-        Thread.Sleep(TimeSpan.FromSeconds(0.25));
-      }
+            IClient<AddTwoInts_Request, AddTwoInts_Response> my_client = node.CreateClient<AddTwoInts_Request, AddTwoInts_Response>("add_two_ints");
+            AddTwoInts_Request msg = new AddTwoInts_Request();
+            msg.A = 7;
+            msg.B = 2;
 
-      example_interfaces.srv.AddTwoInts_Response rsp = my_client.Call(msg);
-      Console.WriteLine("Sum = " + rsp.Sum);
+            while (!my_client.IsServiceAvailable())
+            {
+                Thread.Sleep(TimeSpan.FromSeconds(0.25));
+            }
 
-      Console.WriteLine("Client shutdown");
-      Ros2cs.Shutdown();
+            Task<AddTwoInts_Response> rsp = my_client.CallAsync(msg);
+            executor.SpinWhile(() => !rsp.IsCompleted);
+
+            Console.WriteLine("Sum = {0}", rsp.Result.Sum);
+        }
     }
-  }
 }

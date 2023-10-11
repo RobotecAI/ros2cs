@@ -1,4 +1,4 @@
-// Copyright 2019-2021 Robotec.ai
+// Copyright 2019-2023 Robotec.ai
 // Copyright 2019 Dyno Robotics (by Samuel Lindgren samuel@dynorobotics.se)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,18 +20,6 @@ namespace ROS2.Test
     [TestFixture]
     public class ClockTest
     {
-        [SetUp]
-        public void SetUp()
-        {
-            Ros2cs.Init();
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            Ros2cs.Shutdown();
-        }
-
         [Test]
         public void CreateClock()
         {

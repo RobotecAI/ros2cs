@@ -1,4 +1,4 @@
-// Copyright 2019-2021 Robotec.ai
+// Copyright 2019-2023 Robotec.ai
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,150 +13,219 @@
 // limitations under the License.
 
 using System;
+using System.Diagnostics;
 using ROS2.Internal;
 
 namespace ROS2
 {
-    /// <summary>Service with a topic and Types for Messages</summary>
-    /// <remarks>Instances are created by <see cref="INode.CreateService"/></remarks>
-    /// <typeparam name="I">Message Type to be received</typeparam>
-    /// <typeparam name="O">Message Type to be send</typeparam>
-    public class Service<I, O>: IService<I, O>
-    where I : Message, new ()
-    where O : Message, new ()
-  {
-    public rcl_service_t Handle { get { return serviceHandle; } }
-    private rcl_service_t serviceHandle;
-
     /// <summary>
-    /// Topic of this Service
+    /// Service with a topic and types for Messages wrapping a rcl service.
     /// </summary>
-    public string Topic { get { return topic; } }
-    private string topic;
-
-    /// <inheritdoc/>
-    public bool IsDisposed { get { return disposed; } }
-    private bool disposed = false;
-
-    /// <inheritdoc/>
-    private rcl_node_t nodeHandle;
-
-    /// <summary>
-    /// Callback to be called to process incoming requests
-    /// </summary>
-    private readonly Func<I, O> callback;
-    private IntPtr serviceOptions;
-
-    /// <inheritdoc/>
-    public object Mutex { get { return mutex; } }
-    private object mutex = new object();
-
-    /// <summary>
-    /// Internal constructor for Service
-    /// </summary>
-    /// <remarks>Use <see cref="INode.CreateService"/> to construct new Instances</remarks>
-    internal Service(string subTopic, Node node, Func<I, O> cb, QualityOfServiceProfile qos = null)
+    /// <remarks>
+    /// This is the implementation produced by <see cref="Node.CreateService"/>,
+    /// use this method to create new instances.
+    /// </remarks>
+    /// <seealso cref="ROS2.Node"/>
+    /// <inheritdoc cref="IService{I, O}"/>
+    public sealed class Service<I, O> : IService<I, O>, IRawService
+    where I : Message, new()
+    where O : Message, new()
     {
-      callback = cb;
-      nodeHandle = node.nodeHandle;
-      topic = subTopic;
-      serviceHandle = NativeRcl.rcl_get_zero_initialized_service();
+        /// <inheritdoc/>
+        public string Topic { get; private set; }
 
-      QualityOfServiceProfile qualityOfServiceProfile = qos;
-      if (qualityOfServiceProfile == null)
-      {
-        qualityOfServiceProfile = new QualityOfServiceProfile(QosPresetProfile.SERVICES_DEFAULT);
-      }
-
-      serviceOptions = NativeRclInterface.rclcs_service_create_options(qualityOfServiceProfile.handle);
-
-      I msg = new I();
-      MessageInternals msgInternals = msg as MessageInternals;
-      IntPtr typeSupportHandle = msgInternals.TypeSupportHandle;
-      msg.Dispose();
-
-      Utils.CheckReturnEnum(NativeRcl.rcl_service_init(
-        ref serviceHandle,
-        ref node.nodeHandle,
-        typeSupportHandle,
-        topic,
-        serviceOptions));
-    }
-
-    /// <summary>
-    /// Send Response Message with rcl/rmw layers
-    /// </summary>
-    /// <param name="header">request id received when taking the Request</param>
-    /// <param name="msg">Message to be send</param>
-    private void SendResp(rcl_rmw_request_id_t header, O msg)
-    {
-      RCLReturnEnum ret;
-      MessageInternals msgInternals = msg as MessageInternals;
-      msgInternals.WriteNativeMessage();
-      ret = (RCLReturnEnum)NativeRcl.rcl_send_response(ref serviceHandle, ref header, msgInternals.Handle);
-    }
-
-    /// <inheritdoc/>
-    // TODO(adamdbrw) this should not be public - add an internal interface
-    public void TakeMessage()
-    {
-      RCLReturnEnum ret;
-      rcl_rmw_request_id_t header = default(rcl_rmw_request_id_t);
-      MessageInternals message;
-
-      lock (mutex)
-      {
-        if (disposed || !Ros2cs.Ok())
+        /// <inheritdoc/>
+        public bool IsDisposed
         {
-          return;
+            get
+            {
+                bool ok = NativeRclInterface.rclcs_service_is_valid(this.Handle);
+                GC.KeepAlive(this);
+                return !ok;
+            }
         }
-        message = new I() as MessageInternals;
 
-        ret = (RCLReturnEnum)NativeRcl.rcl_take_request(ref serviceHandle, ref header,  message.Handle);
-      }
+        /// <summary>
+        /// Handle to the rcl service
+        /// </summary>
+        public IntPtr Handle { get; private set; } = IntPtr.Zero;
 
-      if ((RCLReturnEnum)ret == RCLReturnEnum.RCL_RET_OK)
-      {
-        ProcessRequest(header, message);
-      }
-    }
+        /// <summary>
+        /// Handle to the rcl service options
+        /// </summary>
+        private IntPtr Options = IntPtr.Zero;
 
-    /// <summary>
-    /// Populates managed fields with native values and calls the callback with the created message
-    /// </summary>
-    /// <remarks>Sending the Response is also takes care of by this method</remarks>
-    /// <param name="message">Message that will be populated and provided to the callback</param>
-    /// <param name="header">request id received when taking the Request</param>
-    private void ProcessRequest(rcl_rmw_request_id_t header, MessageInternals message)
-    {
-      message.ReadNativeMessage();
-      O response = callback((I)message);
-      SendResp(header, response);
-    }
+        /// <summary>
+        /// Node associated with this instance.
+        /// </summary>
+        private readonly Node Node;
 
-    ~Service()
-    {
-      DestroyService();
-    }
+        /// <summary>
+        /// Callback to be called to process incoming requests.
+        /// </summary>
+        private readonly Func<I, O> Callback;
 
-    public void Dispose()
-    {
-      DestroyService();
-    }
-
-    /// <summary> "Destructor" supporting disposable model </summary>
-    private void DestroyService()
-    {
-      lock (mutex)
-      {
-        if (!disposed)
+        /// <summary>
+        /// Create a new instance.
+        /// </summary>
+        /// <remarks>
+        /// The caller is responsible for adding the instance to <paramref name="node"/>.
+        /// This action is not thread safe.
+        /// </remarks>
+        /// <param name="topic"> Topic to receive requests from. </param>
+        /// <param name="node"> Node to associate with. </param>
+        /// <param name="callback"> Callback to be called to process incoming requests. </param>
+        /// <param name="qos"> QOS setting for this subscription. </param>
+        /// <exception cref="ObjectDisposedException"> If <paramref name="node"/> was disposed. </exception>
+        internal Service(string topic, Node node, Func<I, O> callback, QualityOfServiceProfile qos = null)
         {
-          Utils.CheckReturnEnum(NativeRcl.rcl_service_fini(ref serviceHandle, ref nodeHandle));
-          NativeRclInterface.rclcs_node_dispose_options(serviceOptions);
-          disposed = true;
-          Ros2csLogger.GetInstance().LogInfo("Service destroyed");
+            this.Topic = topic;
+            this.Node = node;
+            this.Callback = callback;
+
+            QualityOfServiceProfile qualityOfServiceProfile = qos ?? new QualityOfServiceProfile(QosPresetProfile.SERVICES_DEFAULT);
+
+            this.Options = NativeRclInterface.rclcs_service_create_options(qualityOfServiceProfile.handle);
+
+            IntPtr typeSupportHandle = MessageTypeSupportHelper.GetTypeSupportHandle<I>();
+
+            this.Handle = NativeRclInterface.rclcs_get_zero_initialized_service();
+            int ret = NativeRcl.rcl_service_init(
+                this.Handle,
+                this.Node.Handle,
+                typeSupportHandle,
+                this.Topic,
+                this.Options
+            );
+
+            if ((RCLReturnEnum)ret != RCLReturnEnum.RCL_RET_OK)
+            {
+                this.FreeHandles();
+                Utils.CheckReturnEnum(ret);
+            }
         }
-      }
+
+        /// <remarks>
+        /// This method is not thread safe.
+        /// </remarks>
+        /// <inheritdoc/>
+        public bool TryProcess()
+        {
+            rcl_rmw_request_id_t header = default(rcl_rmw_request_id_t);
+            I message = new I();
+            int ret = NativeRcl.rcl_take_request(
+                this.Handle,
+                ref header,
+                (message as MessageInternals).Handle
+            );
+            GC.KeepAlive(this);
+
+            switch ((RCLReturnEnum)ret)
+            {
+                case RCLReturnEnum.RCL_RET_SERIVCE_TAKE_FAILD:
+                case RCLReturnEnum.RCL_RET_SERVICE_INVALID:
+                    return false;
+                default:
+                    Utils.CheckReturnEnum(ret);
+                    break;
+            }
+
+            Utils.CheckReturnEnum(ret);
+            this.ProcessRequest(header, message);
+            return true;
+        }
+
+        /// <summary>
+        /// Populates managed fields with native values and calls the callback with the created message
+        /// </summary>
+        /// <remarks>Sending the Response is also takes care of by this method</remarks>
+        /// <param name="message">Message that will be populated and provided to the callback</param>
+        /// <param name="header">request id received when taking the Request</param>
+        private void ProcessRequest(rcl_rmw_request_id_t header, I message)
+        {
+            (message as MessageInternals).ReadNativeMessage();
+            this.SendResp(header, this.Callback(message));
+        }
+
+        /// <summary>
+        /// Send Response Message with rcl/rmw layers
+        /// </summary>
+        /// <param name="header">request id received when taking the Request</param>
+        /// <param name="msg">Message to be send</param>
+        private void SendResp(rcl_rmw_request_id_t header, O msg)
+        {
+            MessageInternals msgInternals = msg as MessageInternals;
+            msgInternals.WriteNativeMessage();
+            Utils.CheckReturnEnum(NativeRcl.rcl_send_response(
+                this.Handle,
+                ref header,
+                msgInternals.Handle
+            ));
+            GC.KeepAlive(this);
+        }
+
+        /// <remarks>
+        /// This method is not thread safe and may not be called from
+        /// multiple threads simultaneously or while the service is in use.
+        /// Disposal is automatically performed on finalization by the GC.
+        /// </remarks>
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            this.Dispose(true);
+            // finalizer not needed when we disposed successfully
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>Disposal logic.</summary>
+        /// <param name="disposing">If this method is not called in a finalizer.</param>
+        private void Dispose(bool disposing)
+        {
+            if (this.Handle == IntPtr.Zero)
+            {
+                return;
+            }
+
+            // only do if Node.CurrentServices has not been finalized
+            // save since if we are being finalized we are not in a wait set anymore
+            if (disposing)
+            {
+                bool success = this.Node.RemoveService(this);
+                Debug.Assert(success, "failed to remove service");
+            }
+
+            (this as IRawService).DisposeFromNode();
+        }
+
+        /// <inheritdoc/>
+        void IRawService.DisposeFromNode()
+        {
+            if (this.Handle == IntPtr.Zero)
+            {
+                return;
+            }
+
+            Utils.CheckReturnEnum(NativeRcl.rcl_service_fini(this.Handle, this.Node.Handle));
+            this.FreeHandles();
+        }
+
+        /// <summary>
+        /// Free the rcl handles and replace them with null pointers.
+        /// </summary>
+        /// <remarks>
+        /// The handles are not finalised by this method.
+        /// </remarks>
+        private void FreeHandles()
+        {
+            NativeRclInterface.rclcs_free_service(this.Handle);
+            this.Handle = IntPtr.Zero;
+            NativeRclInterface.rclcs_service_dispose_options(this.Options);
+            this.Options = IntPtr.Zero;
+        }
+
+        ~Service()
+        {
+            this.Dispose(false);
+        }
     }
-  }
 }
