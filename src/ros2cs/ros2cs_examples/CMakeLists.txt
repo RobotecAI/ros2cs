@@ -76,11 +76,18 @@ add_dotnet_executable(ros2cs_service
   ${_assemblies_dep_dlls}
 )
 
+add_dotnet_executable(ros2cs_actionserver
+  ROS2ActionServer.cs
+  INCLUDE_DLLS
+  ${_assemblies_dep_dlls}
+)
+
 install_dotnet(ros2cs_listener DESTINATION lib/${PROJECT_NAME}/dotnet)
 install_dotnet(ros2cs_talker DESTINATION lib/${PROJECT_NAME}/dotnet)
 install_dotnet(ros2cs_performance_talker DESTINATION lib/${PROJECT_NAME}/dotnet)
 install_dotnet(ros2cs_performance_listener DESTINATION lib/${PROJECT_NAME}/dotnet)
 install_dotnet(ros2cs_client DESTINATION lib/${PROJECT_NAME}/dotnet)
 install_dotnet(ros2cs_service DESTINATION lib/${PROJECT_NAME}/dotnet)
+install_dotnet(ros2cs_actionserver DESTINATION lib/${PROJECT_NAME}/dotnet)
 
 ament_package()
