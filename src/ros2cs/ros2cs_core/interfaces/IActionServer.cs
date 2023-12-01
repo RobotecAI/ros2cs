@@ -14,14 +14,18 @@
 
 namespace ROS2
 {
+  public interface IActionServerBase : IExtendedDisposable
+  {
+
+  }
+
   /// <summary> Generic base interface for all actions (either server or client) </summary>
-  /// <typeparam name="G">Message Type for the goal</typeparam>
-  /// <typeparam name="F">Message Type for the feedback</typeparam>
-  /// <typeparam name="R">Message Type for the result</typeparam>
-  public interface IAction<G, F, R> : IExtendedDisposable
-    where G: Message
-    where F: Message
-    where R: Message
+  public interface IActionServer<TGoalRequest, TGoalResponse, TFeedback, TResultRequest, TResultResponse> : IActionServerBase
+    where TGoalRequest : Message, new()
+    where TGoalResponse : Message, new()
+    where TFeedback : Message, new()
+    where TResultRequest : Message, new()
+    where TResultResponse : Message, new()
   {
   }
 }

@@ -47,6 +47,17 @@ namespace ROS2
     /// <returns> Service for the topic </returns>
     Service<I, O> CreateService<I, O>(string topic, Func<I, O> callback, QualityOfServiceProfile qos = null) where I : Message, new() where O : Message, new();
 
+    /// <summary> Create an action server for this node </summary>
+    ActionServer<TGoalRequest, TGoalResponse, TFeedback, TResultRequest, TResultResponse>
+      CreateActionServer<TGoalRequest, TGoalResponse, TFeedback, TResultRequest, TResultResponse>(
+        string topic, Func<TGoalRequest, TGoalResponse> callback, QualityOfServiceProfile qos = null
+      )
+      where TGoalRequest : Message, new()
+      where TGoalResponse : Message, new()
+      where TFeedback : Message, new()
+      where TResultRequest : Message, new()
+      where TResultResponse : Message, new();
+
     /// <summary> Remove a service </summary>
     /// <remarks> Note that this does not call Dispose on Service </remarks>
     /// <param name="service"> Service created with earlier CreateService call </param>

@@ -21,25 +21,38 @@ namespace Examples
   /// <summary> A simple action server class to illustrate Ros2cs </summary>
   public class ROS2ActionServer
   {
-    public static IAction<Fibonacci_Goal, Fibonacci_Feedback, Fibonacci_Result> my_action_server;
+    public static IActionServer<
+      Fibonacci_SendGoal_Request,
+      Fibonacci_SendGoal_Response,
+      Fibonacci_Feedback,
+      Fibonacci_GetResult_Request,
+      Fibonacci_GetResult_Response
+    > my_action_server;
 
     public static void Main(string[] args)
     {
-      Console.WriteLine("ActionServer start")
+      Console.WriteLine("ActionServer start");
       Ros2cs.Init();
       INode node = Ros2cs.CreateNode("action_server");
-      my_action_server = node.CreateActionServer<Fibonacci_Goal, Fibonacci_Feedback, Fibonacci_Result>(
+      my_action_server = node.CreateActionServer<
+        Fibonacci_SendGoal_Request,
+        Fibonacci_SendGoal_Response,
+        Fibonacci_Feedback,
+        Fibonacci_GetResult_Request,
+        Fibonacci_GetResult_Response>(
         "fibonacci",
         goal_callback
-      )
+      );
 
       Ros2cs.Spin(node);
       Ros2cs.Shutdown();
     }
 
-    public static bool goal_callback()
+    public static Fibonacci_SendGoal_Response goal_callback(Fibonacci_SendGoal_Request request)
     {
       Console.WriteLine("Receiving new action goal...");
+
+      return new();
     }
   }
 }

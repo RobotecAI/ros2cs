@@ -12,12 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using ROS2.Internal;
+
 namespace ROS2
 {
-  public class ActionServer: IActionServer<G, F, R>
-    where G: Message, new ()
-    where F: Message, new ()
-    where R: Message, new ()
+  public class ActionServer<TGoalRequest, TGoalResponse, TFeedback, TResultRequest, TResultResponse>: IActionServer<TGoalRequest, TGoalResponse, TFeedback, TResultRequest, TResultResponse>
+    where TGoalRequest : Message, new()
+    where TGoalResponse : Message, new()
+    where TFeedback : Message, new()
+    where TResultRequest : Message, new()
+    where TResultResponse : Message, new()
   {
+    /// <summary>
+    /// Internal constructor
+    /// </summary>
+    /// <remarks>Use <see cref="INode.CreateActionServer"/> to construct new Instances</remarks>
+    internal ActionServer(string subTopic, Node node, Func<TGoalRequest, TGoalResponse> cb, QualityOfServiceProfile qpos = null)
+    {
+
+    }
+
+    public void Dispose()
+    {
+      DestroyActionServer();
+    }
+
+    /// <inheritdoc/>
+    public bool IsDisposed { get { return IsDisposed; } }
+    private bool disposed = false;
+
+    private void DestroyActionServer()
+    {
+
+    }
   }
 }

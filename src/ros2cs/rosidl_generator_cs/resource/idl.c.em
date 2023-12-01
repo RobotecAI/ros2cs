@@ -33,7 +33,6 @@ TEMPLATE(
 }@
 
 @[end for]@
-@# TODO (adamdbrw): Add services and actions
 
 @#######################################################################
 @# Handle service
@@ -60,5 +59,82 @@ TEMPLATE(
 }@
 @[end for]@
 @[end if]@
-@# // endif
 
+@#######################################################################
+@# Handle action
+@#######################################################################
+@{
+from rosidl_parser.definition import Action
+}@
+
+@[if include_parts[1] == "action"]@
+
+@[for action in content.get_elements_of_type(Action)]@
+
+@# Goal Service Request:
+@{
+TEMPLATE(
+    'srv.c.em',
+    package_name=package_name,
+    interface_path=interface_path,
+    service=action.send_goal_service,
+    message=action.send_goal_service.request_message,
+    include_parts=include_parts,
+    get_c_type=get_c_type
+    )
+}@
+
+@# Goal Service Response:
+@{
+TEMPLATE(
+    'srv.c.em',
+    package_name=package_name,
+    interface_path=interface_path,
+    service=action.send_goal_service,
+    message=action.send_goal_service.response_message,
+    include_parts=include_parts,
+    get_c_type=get_c_type
+    )
+}@
+
+@# Feedback Message:
+@{
+TEMPLATE(
+    'msg.c.em',
+    package_name=package_name,
+    interface_path=interface_path,
+    message=action.feedback,
+    include_parts=include_parts,
+    get_c_type=get_c_type
+    )
+}@
+
+@# Result Service Request:
+@{
+TEMPLATE(
+    'srv.c.em',
+    package_name=package_name,
+    interface_path=interface_path,
+    service=action.get_result_service,
+    message=action.get_result_service.request_message,
+    include_parts=include_parts,
+    get_c_type=get_c_type
+    )
+}@
+
+@# Result Service Response:
+@{
+TEMPLATE(
+    'srv.c.em',
+    package_name=package_name,
+    interface_path=interface_path,
+    service=action.get_result_service,
+    message=action.get_result_service.response_message,
+    include_parts=include_parts,
+    get_c_type=get_c_type
+    )
+}@
+
+@[end for]@
+
+@[end if]@

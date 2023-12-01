@@ -77,6 +77,7 @@ set(CS_INTERFACES
   interfaces/INode.cs
   interfaces/IClient.cs
   interfaces/IService.cs
+  interfaces/IActionServer.cs
   interfaces/IPublisher.cs
   interfaces/ISubscription.cs
 )
@@ -100,6 +101,7 @@ set(CS_SOURCES
   Clock.cs
   Client.cs
   Service.cs
+  ActionServer.cs
   Node.cs
   Publisher.cs
   QualityOfServiceProfile.cs
