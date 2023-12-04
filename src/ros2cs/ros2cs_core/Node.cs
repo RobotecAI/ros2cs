@@ -15,6 +15,8 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using action_msgs.srv;
+using action_msgs.msg;
 
 namespace ROS2
 {
@@ -214,7 +216,10 @@ namespace ROS2
 
     public ActionServer<TGoalRequest, TGoalResponse, TFeedback, TResultRequest, TResultResponse>
       CreateActionServer<TGoalRequest, TGoalResponse, TFeedback, TResultRequest, TResultResponse>(
-        string topic, Func<TGoalRequest, TGoalResponse> callback, QualityOfServiceProfile qos = null
+        string topic,
+        Func<TGoalRequest, ActionGoalResponse> handleGoal,
+        Func<CancelGoal_Request, CancelGoal_Response> handleCancel,
+        Action<TGoalRequest> handleAccepted
       )
       where TGoalRequest : Message, new()
       where TGoalResponse : Message, new()
@@ -231,7 +236,13 @@ namespace ROS2
         }
 
         ActionServer<TGoalRequest, TGoalResponse, TFeedback, TResultRequest, TResultResponse> action_server =
-          new ActionServer<TGoalRequest, TGoalResponse, TFeedback, TResultRequest, TResultResponse>(topic, this, callback, qos);
+          new ActionServer<TGoalRequest, TGoalResponse, TFeedback, TResultRequest, TResultResponse>(
+            topic,
+            this,
+            handleGoal,
+            handleCancel,
+            handleAccepted
+          );
         action_servers.Add(action_server);
         logger.LogInfo("Created action server for topic " + topic);
         return action_server;

@@ -20,6 +20,7 @@ find_package(ament_cmake REQUIRED)
 find_package(ros2cs_common REQUIRED)
 find_package(ros2cs_core REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(action_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(example_interfaces REQUIRED)
 find_package(builtin_interfaces REQUIRED)
@@ -35,6 +36,7 @@ set(_assemblies_dep_dlls
     ${ros2cs_common_ASSEMBLIES_DLL}
     ${ros2cs_core_ASSEMBLIES_DLL}
     ${std_msgs_ASSEMBLIES_DLL}
+    ${action_msgs_ASSEMBLIES_DLL}
     ${sensor_msgs_ASSEMBLIES_DLL}
     ${example_interfaces_ASSEMBLIES_DLL}
     ${builtin_interfaces_ASSEMBLIES_DLL}

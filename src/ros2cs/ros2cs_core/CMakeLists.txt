@@ -25,6 +25,7 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ros2cs_common REQUIRED)
+find_package(action_msgs REQUIRED)
 find_package(ament_cmake_export_assemblies REQUIRED)
 find_package(ament_cmake REQUIRED)
 find_package(dotnet_cmake_module REQUIRED)
@@ -36,6 +37,7 @@ find_package(DotNETExtra REQUIRED)
 
 # Used by ros2cs_native
 find_package(rcl REQUIRED)
+find_package(rcl_action REQUIRED)
 find_package(rcutils REQUIRED)
 find_package(rmw REQUIRED)
 find_package(rosidl_generator_c REQUIRED)
@@ -63,6 +65,7 @@ add_library(
 
 ament_target_dependencies(ros2cs_native
   "rcl"
+  "rcl_action"
   "rcutils"
   "rmw"
   "rosidl_generator_c"
@@ -115,6 +118,10 @@ set(_assembly_deps_dll "")
 foreach(_assembly_dep ${ros2cs_common_ASSEMBLIES_DLL})
   list(APPEND _assembly_deps_dll "${_assembly_dep}")
 endforeach()
+foreach(_assembly_dep ${action_msgs_ASSEMBLIES_DLL})
+  list(APPEND _assembly_deps_dll "${_assembly_dep}")
+endforeach()
+
 
 add_dotnet_library(${PROJECT_NAME}
 SOURCES
@@ -127,8 +134,10 @@ install_dotnet(${PROJECT_NAME} DESTINATION lib/dotnet)
 ament_export_assemblies_dll("lib/dotnet/${PROJECT_NAME}.dll")
 
 ament_export_dependencies(ros2cs_common)
+ament_export_dependencies(action_msgs)
 ament_export_dependencies(ament_cmake)
 ament_export_dependencies(rcl)
+ament_export_dependencies(rcl_action)
 ament_export_dependencies(rosidl_generator_c)
 
 option(STANDALONE_BUILD "Deploy standalone libraries with build" OFF)

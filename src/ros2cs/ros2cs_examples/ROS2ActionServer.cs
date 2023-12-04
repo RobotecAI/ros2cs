@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using action_msgs.srv;
 using ROS2;
 using example_interfaces.action;
 
@@ -41,18 +42,47 @@ namespace Examples
         Fibonacci_GetResult_Request,
         Fibonacci_GetResult_Response>(
         "fibonacci",
-        goal_callback
+        handle_goal,
+        handle_cancel,
+        handle_accepted
       );
 
       Ros2cs.Spin(node);
       Ros2cs.Shutdown();
     }
 
-    public static Fibonacci_SendGoal_Response goal_callback(Fibonacci_SendGoal_Request request)
+    /// <summary>
+    /// Callback on receiving a goal - must return quickly!
+    /// </summary>
+    public static ActionGoalResponse handle_goal(Fibonacci_SendGoal_Request request)
     {
       Console.WriteLine("Receiving new action goal...");
 
-      return new();
+      return ActionGoalResponse.ACCEPT_AND_EXECUTE;
+    }
+
+    /// <summary>
+    /// Callback on receiving a cancel request - must return quickly!
+    /// </summary>
+    public static CancelGoal_Response handle_cancel(CancelGoal_Request request)
+    {
+      CancelGoal_Response response = new CancelGoal_Response();
+      return response;
+    }
+
+    public static void handle_accepted(Fibonacci_SendGoal_Request request)
+    {
+      return;
+    }
+
+    /// <summary>
+    /// Actual action
+    ///
+    /// This function should be called from a different thread and does not need to return any time soon.
+    /// </summary>
+    public static void execute()
+    {
+      return;
     }
   }
 }

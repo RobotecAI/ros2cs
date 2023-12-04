@@ -16,6 +16,7 @@
 #include <rmw/types.h>
 #include <rmw/rmw.h>
 #include <rcl/rcl.h>
+#include <rcl_action/default_qos.h>
 
 ROSIDL_GENERATOR_C_EXPORT
 rmw_qos_profile_t * rmw_native_interface_create_qos_profile(int profile)
@@ -27,7 +28,8 @@ rmw_qos_profile_t * rmw_native_interface_create_qos_profile(int profile)
      DEFAULT,
      SERVICES_DEFAULT,
      PARAMETER_EVENTS,
-     SYSTEM_DEFAULT
+     SYSTEM_DEFAULT,
+     ACTION_STATUS_DEFAULT
   };
 
   rmw_qos_profile_t * preset_profile = (rmw_qos_profile_t *)malloc(sizeof(rmw_qos_profile_t));
@@ -40,6 +42,7 @@ rmw_qos_profile_t * rmw_native_interface_create_qos_profile(int profile)
       case SERVICES_DEFAULT: *preset_profile = rmw_qos_profile_services_default; break;
       case PARAMETER_EVENTS: *preset_profile = rmw_qos_profile_parameter_events; break;
       case SYSTEM_DEFAULT: *preset_profile = rmw_qos_profile_system_default; break;
+      case ACTION_STATUS_DEFAULT: *preset_profile = rcl_action_qos_profile_status_default; break;
       default: *preset_profile = rmw_qos_profile_unknown; break;
   }
 
