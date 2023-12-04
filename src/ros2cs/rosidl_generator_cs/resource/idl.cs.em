@@ -82,5 +82,148 @@ TEMPLATE(
 }@
 @[end for]@
 @[end if]@
-@# // endif
 
+@#######################################################################
+@# Handle action
+@#######################################################################
+@{
+from rosidl_parser.definition import Action
+}@
+
+@[if include_parts[1] == "action"]@
+
+@[for action in content.get_elements_of_type(Action)]@
+
+@# Goal Message:
+@{
+TEMPLATE(
+    'msg.cs.em',
+    package_name=package_name,
+    interface_path=interface_path,
+    message=action.goal,
+    include_directives=include_directives,
+    get_dotnet_type=get_dotnet_type,
+    get_field_name=get_field_name,
+    constant_value_to_dotnet=constant_value_to_dotnet,
+    get_c_type=get_c_type,
+    get_marshal_type=get_marshal_type,
+    get_marshal_array_type=get_marshal_array_type,
+    get_csbuild_tool=get_csbuild_tool
+    )
+}@
+
+@# Feedback Message:
+@{
+TEMPLATE(
+    'msg.cs.em',
+    package_name=package_name,
+    interface_path=interface_path,
+    message=action.feedback,
+    include_directives=include_directives,
+    get_dotnet_type=get_dotnet_type,
+    get_field_name=get_field_name,
+    constant_value_to_dotnet=constant_value_to_dotnet,
+    get_c_type=get_c_type,
+    get_marshal_type=get_marshal_type,
+    get_marshal_array_type=get_marshal_array_type,
+    get_csbuild_tool=get_csbuild_tool
+    )
+}@
+
+@# Result Message:
+@{
+TEMPLATE(
+    'msg.cs.em',
+    package_name=package_name,
+    interface_path=interface_path,
+    message=action.result,
+    include_directives=include_directives,
+    get_dotnet_type=get_dotnet_type,
+    get_field_name=get_field_name,
+    constant_value_to_dotnet=constant_value_to_dotnet,
+    get_c_type=get_c_type,
+    get_marshal_type=get_marshal_type,
+    get_marshal_array_type=get_marshal_array_type,
+    get_csbuild_tool=get_csbuild_tool
+    )
+}@
+
+@# Goal Service Request:
+@{
+TEMPLATE(
+    'srv.cs.em',
+    package_name=package_name,
+    interface_path=interface_path,
+    service=action.send_goal_service,
+    message=action.send_goal_service.request_message,
+    include_directives=include_directives,
+    get_dotnet_type=get_dotnet_type,
+    get_field_name=get_field_name,
+    constant_value_to_dotnet=constant_value_to_dotnet,
+    get_c_type=get_c_type,
+    get_marshal_type=get_marshal_type,
+    get_marshal_array_type=get_marshal_array_type,
+    get_csbuild_tool=get_csbuild_tool
+    )
+}@
+
+@# Goal Service Response:
+@{
+TEMPLATE(
+    'srv.cs.em',
+    package_name=package_name,
+    interface_path=interface_path,
+    service=action.send_goal_service,
+    message=action.send_goal_service.response_message,
+    include_directives=include_directives,
+    get_dotnet_type=get_dotnet_type,
+    get_field_name=get_field_name,
+    constant_value_to_dotnet=constant_value_to_dotnet,
+    get_c_type=get_c_type,
+    get_marshal_type=get_marshal_type,
+    get_marshal_array_type=get_marshal_array_type,
+    get_csbuild_tool=get_csbuild_tool
+    )
+}@
+
+@# Result Service Request:
+@{
+TEMPLATE(
+    'srv.cs.em',
+    package_name=package_name,
+    interface_path=interface_path,
+    service=action.get_result_service,
+    message=action.get_result_service.request_message,
+    include_directives=include_directives,
+    get_dotnet_type=get_dotnet_type,
+    get_field_name=get_field_name,
+    constant_value_to_dotnet=constant_value_to_dotnet,
+    get_c_type=get_c_type,
+    get_marshal_type=get_marshal_type,
+    get_marshal_array_type=get_marshal_array_type,
+    get_csbuild_tool=get_csbuild_tool
+    )
+}@
+
+@# Result Service Response:
+@{
+TEMPLATE(
+    'srv.cs.em',
+    package_name=package_name,
+    interface_path=interface_path,
+    service=action.get_result_service,
+    message=action.get_result_service.response_message,
+    include_directives=include_directives,
+    get_dotnet_type=get_dotnet_type,
+    get_field_name=get_field_name,
+    constant_value_to_dotnet=constant_value_to_dotnet,
+    get_c_type=get_c_type,
+    get_marshal_type=get_marshal_type,
+    get_marshal_array_type=get_marshal_array_type,
+    get_csbuild_tool=get_csbuild_tool
+    )
+}@
+
+@[end for]@
+
+@[end if]@
