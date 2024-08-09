@@ -15,6 +15,7 @@
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using ROS2;
 using std_msgs;
 using sensor_msgs;
@@ -41,8 +42,16 @@ namespace Examples
         Thread.Sleep(TimeSpan.FromSeconds(0.25));
       }
 
-      example_interfaces.srv.AddTwoInts_Response rsp = my_client.Call(msg);
-      Console.WriteLine("Sum = " + rsp.Sum);
+      Task<example_interfaces.srv.AddTwoInts_Response> rsp = my_client.CallAsync(msg);
+      while(!rsp.IsCompleted)
+      {
+        if (!Ros2cs.SpinOnce(node))
+        {
+          Thread.Sleep(TimeSpan.FromSeconds(0.25));
+        }
+      }
+
+      Console.WriteLine("Sum = " + rsp.Result.Sum);
 
       Console.WriteLine("Client shutdown");
       Ros2cs.Shutdown();
