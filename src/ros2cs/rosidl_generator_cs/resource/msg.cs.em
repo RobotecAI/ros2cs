@@ -336,8 +336,11 @@ public class @(message_class) : @(internals_interface), @(parent_interface)
       int arraySize = 0;
       IntPtr pArr = native_read_field_@(member.name)(out arraySize, handle);
       @(get_field_name(member.type, member.name, message_class)) = new @(get_dotnet_type(member.type.value_type))[arraySize];
+@[    if (get_marshal_array_type(member.type)) == 'char']@
+      byte[] __@(get_field_name(member.type, member.name, message_class)) = new byte[arraySize];
+@[    else]@
       @(get_marshal_array_type(member.type))[] __@(get_field_name(member.type, member.name, message_class)) = new @(get_marshal_array_type(member.type))[arraySize];
-
+@[    end if]@
       if (arraySize != 0)
       {
         int start = 0;
