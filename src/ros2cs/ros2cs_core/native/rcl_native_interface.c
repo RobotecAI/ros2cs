@@ -15,6 +15,7 @@
 #include <rcl/error_handling.h>
 #include <rcl/node.h>
 #include <rcl/rcl.h>
+#include <rosidl_runtime_c/visibility_control.h>
 #include <rcl/time.h>
 #include <rcutils/allocator.h>
 #include <rcutils/strdup.h>

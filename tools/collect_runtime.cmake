@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 cmake_minimum_required(VERSION 3.21)
+if(POLICY CMP0207)
+  cmake_policy(SET CMP0207 NEW)
+endif()
 if(NOT DEFINED INPUT_FILE)
   message(FATAL_ERROR "INPUT_FILE is required")
 endif()
@@ -33,9 +36,12 @@ file(GET_RUNTIME_DEPENDENCIES
 if(_unresolved)
   message(FATAL_ERROR "Unresolved runtime dependencies: ${_unresolved}")
 endif()
-if(_conflicts_FILENAMES)
-  message(FATAL_ERROR "Conflicting runtime dependencies: ${_conflicts_FILENAMES}")
-endif()
+# Return every candidate to the driver. It applies the explicitly ordered
+# overlay roots and rejects unrelated conflicting basenames, then scans any
+# selected replacements to collect their own dependencies.
+foreach(_name IN LISTS _conflicts_FILENAMES)
+  list(APPEND _resolved ${_conflicts_${_name}})
+endforeach()
 list(REMOVE_DUPLICATES _resolved)
 list(SORT _resolved)
 string(REPLACE ";" "\n" _text "${_resolved}")

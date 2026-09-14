@@ -19,6 +19,10 @@ find_package(ament_cmake_export_assemblies REQUIRED)
 find_package(dotnet_cmake_module REQUIRED)
 find_package(DotNETExtra REQUIRED) # add_dotnet_library
 find_package(ros2cs_common REQUIRED)
+if("$ENV{ROS_DISTRO}" STREQUAL "lyrical")
+  find_package(rosidl_runtime_c REQUIRED)
+  include("${CMAKE_CURRENT_LIST_DIR}/rosidl_generator_cs_link_runtime.cmake")
+endif()
 
 # Get a list of typesupport implementations from valid rmw implementations.
 rosidl_generator_cs_get_typesupports(_typesupport_impls)
@@ -258,18 +262,17 @@ foreach(_generated_msg_c_ts_file ${_generated_msg_c_ts_files})
     ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cs
   )
 
-  ament_target_dependencies(${_target_name}
-    "rosidl_generator_c"
-    "rosidl_generator_cs"
-    "rosidl_typesupport_c"
-    "rosidl_typesupport_interface"
-  )
-
-  foreach(_pkg_name ${rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES})
+  if("$ENV{ROS_DISTRO}" STREQUAL "lyrical")
+    rosidl_generator_cs_link_runtime(${_target_name}
+      ${rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES})
+  else()
     ament_target_dependencies(${_target_name}
-      ${_pkg_name}
-    )
-  endforeach()
+      "rosidl_generator_c" "rosidl_generator_cs"
+      "rosidl_typesupport_c" "rosidl_typesupport_interface")
+    foreach(_pkg_name ${rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES})
+      ament_target_dependencies(${_target_name} ${_pkg_name})
+    endforeach()
+  endif()
 
   add_dependencies(${_target_name}
     ${rosidl_generate_interfaces_TARGET}__${_typesupport_impl}
@@ -365,18 +368,17 @@ foreach(_generated_srv_c_ts_file ${_generated_srv_c_ts_files})
     ${CMAKE_CURRENT_BINARY_DIR}/rosidl_generator_cs
   )
 
-  ament_target_dependencies(${_target_name}
-    "rosidl_generator_c"
-    "rosidl_generator_cs"
-    "rosidl_typesupport_c"
-    "rosidl_typesupport_interface"
-  )
-
-  foreach(_pkg_name ${rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES})
+  if("$ENV{ROS_DISTRO}" STREQUAL "lyrical")
+    rosidl_generator_cs_link_runtime(${_target_name}
+      ${rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES})
+  else()
     ament_target_dependencies(${_target_name}
-      ${_pkg_name}
-    )
-  endforeach()
+      "rosidl_generator_c" "rosidl_generator_cs"
+      "rosidl_typesupport_c" "rosidl_typesupport_interface")
+    foreach(_pkg_name ${rosidl_generate_interfaces_DEPENDENCY_PACKAGE_NAMES})
+      ament_target_dependencies(${_target_name} ${_pkg_name})
+    endforeach()
+  endif()
 
   add_dependencies(${_target_name}
     ${rosidl_generate_interfaces_TARGET}__${_typesupport_impl}

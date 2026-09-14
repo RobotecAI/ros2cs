@@ -165,6 +165,21 @@ class ElfIntegrationTests(unittest.TestCase):
             self.assertTrue(any(p.name == "libfixture_dep.so.2" for p in found), found)
             self.assertFalse(any(p.name.startswith("libc.so") for p in found))
 
+    def test_real_elf_overlay_shadows_rpath_underlay(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "overlay").mkdir()
+            (root / "underlay").mkdir()
+            overlay = self.make_fixture(root / "overlay")
+            underlay = self.make_fixture(root / "underlay")
+            parent = underlay / "libunderlay_consumer.so"
+            (underlay / "libfixture_parent.so").rename(parent)
+            found = driver.dependency_closure(
+                [parent, overlay / "libfixture_dep.so.2"],
+                [overlay, underlay], root / "scan")
+            self.assertIn(overlay / "libfixture_dep.so.2", found)
+            self.assertNotIn(underlay / "libfixture_dep.so.2", found)
+
     def test_real_elf_missing_dependency_is_fatal(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

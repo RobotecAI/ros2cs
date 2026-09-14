@@ -61,12 +61,14 @@ add_library(
   native/rmw_native_interface.c
 )
 
-ament_target_dependencies(ros2cs_native
-  "rcl"
-  "rcutils"
-  "rmw"
-  "rosidl_generator_c"
-)
+if("$ENV{ROS_DISTRO}" STREQUAL "lyrical")
+  find_package(rosidl_runtime_c REQUIRED)
+  target_link_libraries(ros2cs_native PRIVATE
+    rcl::rcl rcutils::rcutils rmw::rmw rosidl_runtime_c::rosidl_runtime_c)
+else()
+  ament_target_dependencies(ros2cs_native
+    "rcl" "rcutils" "rmw" "rosidl_generator_c")
+endif()
 ament_export_libraries(ros2cs_native)
 ament_export_targets(ros2cs_native)
 configure_csharp_c_extension_library(ros2cs_native)

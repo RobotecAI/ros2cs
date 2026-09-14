@@ -155,7 +155,38 @@ def runtime_seeds(install, directories, rmw):
         for path in native_libraries(directory):
             if "__rosidl_typesupport_" in path.name:
                 seeds.append(path)
-    return list(dict.fromkeys(p.absolute() for p in seeds))
+    return prefer_runtime_libraries(seeds, directories)
+
+
+
+def prefer_runtime_libraries(libraries, directories):
+    """Select one basename using overlay order; reject ambiguous external paths.
+
+    Directory precedence only applies to explicitly configured search roots.
+    Two unrelated libraries outside those roots must never silently overwrite
+    each other. Windows DLL names are case insensitive.
+    """
+    windows = platform.system() == "Windows"
+    key = (lambda name: name.lower()) if windows else (lambda name: name)
+    roots = [Path(p).resolve() for p in directories]
+    groups = {}
+    for library in libraries:
+        path = Path(library).absolute()
+        groups.setdefault(key(path.name), []).append(path)
+    selected = []
+    for paths in groups.values():
+        in_search = all(p.parent.resolve() in roots for p in paths)
+        if in_search:
+            # Include higher-priority candidates not visited by the native
+            # resolver (an ELF RPATH may have selected the underlay instead).
+            preferred = next((folder / paths[0].name for folder in directories
+                              if (folder / paths[0].name).is_file()), paths[0])
+        else:
+            preferred = paths[0]
+            if any(sha256(p) != sha256(preferred) for p in paths[1:]):
+                raise BuildError("Conflicting native library outside search roots: " + preferred.name)
+        selected.append(preferred.absolute())
+    return selected
 
 
 def cmake_quote(path):
@@ -171,11 +202,19 @@ def dependency_closure(seeds, directories, work):
     work.mkdir(parents=True, exist_ok=True)
     config = work / "inputs.cmake"
     output = work / "resolved.txt"
-    config.write_text("set(SEEDS\n" + "\n".join(cmake_quote(p) for p in seeds) +
-                      "\n)\nset(SEARCH_DIRS\n" + "\n".join(cmake_quote(p) for p in directories) +
-                      "\n)\nset(OUTPUT_FILE " + cmake_quote(output) + ")\n", encoding="utf-8")
-    run(["cmake", "-DINPUT_FILE=" + str(config), "-P", ROOT / "tools/collect_runtime.cmake"])
-    return [Path(p) for p in output.read_text(encoding="utf-8").splitlines() if p]
+    scan = prefer_runtime_libraries(seeds, directories)
+    while True:
+        config.write_text("set(SEEDS\n" + "\n".join(cmake_quote(p) for p in scan) +
+                          "\n)\nset(SEARCH_DIRS\n" + "\n".join(cmake_quote(p) for p in directories) +
+                          "\n)\nset(OUTPUT_FILE " + cmake_quote(output) + ")\n", encoding="utf-8")
+        run(["cmake", "-DINPUT_FILE=" + str(config), "-P", ROOT / "tools/collect_runtime.cmake"])
+        resolved = [Path(p) for p in output.read_text(encoding="utf-8").splitlines() if p]
+        selected = prefer_runtime_libraries(scan + resolved, directories)
+        if set(selected) == set(scan):
+            return selected
+        # Scan any selected overlay replacements too: their transitive imports
+        # can differ from the shadowed binaries inspected in the previous pass.
+        scan = selected
 
 
 def copy_unique(source, destination):
@@ -203,7 +242,7 @@ def bundle(install, rmw):
         output = work / "standalone"
         output.mkdir()
         origins = {}
-        for source in list(dict.fromkeys(seeds + dependencies)):
+        for source in prefer_runtime_libraries(seeds + dependencies, directories):
             dest = copy_unique(source, output)
             origins.setdefault(dest.name, str(source))
             # Preserve real-file names as well as requested SONAME aliases.
@@ -247,7 +286,7 @@ def build(workspace, standalone=False, with_tests=False, rmw=None):
             "-DCMAKE_BUILD_TYPE=Release", "-DSTANDALONE_BUILD=OFF",
             "-DBUILD_TESTING=" + ("ON" if with_tests else "OFF")]
     if platform.system() == "Linux":
-        args += ["-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-rpath,$ORIGIN,--disable-new-dtags"]
+        args += ["-DCMAKE_INSTALL_RPATH=$ORIGIN", "-DCMAKE_BUILD_RPATH_USE_ORIGIN=ON"]
     run(args, cwd=workspace)
     install = workspace / "install"
     native_dir = install / ("bin" if platform.system() == "Windows" else "lib")

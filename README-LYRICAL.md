@@ -70,7 +70,17 @@ Each standalone artifact carries one selected RMW. This branch does not implemen
 
 ## Standalone library collection
 
-`tools/collect_runtime.cmake` resolves actual ELF/PE import dependencies. The build driver explicitly includes the selected RMW, ROS logging, and installed typesupport plugins because they can be loaded dynamically rather than appear in an import table. Missing dependencies and conflicting basenames abort packaging. Library versions are taken from the installed binaries rather than OpenSSL or DDS version strings in the build script.
+Lyrical builds link the native core and generated message/service bindings to
+exported CMake runtime targets; the removed `ament_target_dependencies` macro
+is used only by the legacy-distribution path. Missing generated dependency
+targets fail during configuration.
+
+`tools/collect_runtime.cmake` resolves actual ELF/PE import dependencies. The build driver explicitly includes the selected RMW, ROS logging, and installed typesupport plugins because they can be loaded dynamically rather than appear in an import table. Search roots are ordered with the workspace install first, followed by sourced
+overlays and the underlay. A same-basename library in those explicit roots is
+selected by that order; selected replacements are scanned again for their own
+transitive imports. Missing dependencies and conflicting basenames outside
+those roots abort packaging. This is a standard ROS overlay policy, not a check
+that arbitrary ABI-incompatible libraries can be mixed. Library versions are taken from the installed binaries rather than OpenSSL or DDS version strings in the build script.
 
 On Linux, deployed libraries receive an `$ORIGIN` RPATH. Shared-library aliases are materialized as ordinary files, retaining SONAME filenames through ZIP extraction and Unity import. System loader/glibc libraries are excluded. On Windows, API-set imports and System32 dependencies remain OS/runtime prerequisites. This is **not a completely self-contained operating-system image**: use a matching OS/runtime environment and review third-party redistribution licenses for deployment. Security extensions, custom RMW plugins and other optional plugins need separate acceptance tests and are not certified by an import-table scan.
 
@@ -82,7 +92,14 @@ The C binding includes x86_64 size/offset assertions for the layouts mirrored by
 python3 -m unittest discover -s tests/lyrical -v
 ```
 
-These tests cover orchestration, failure paths, dependency names, metadata-related inputs and real locally compiled ELF dependency fixtures. They do **not** compile ROS packages or exercise a DDS network.
+These tests cover orchestration, failure paths, overlay precedence, generated
+runtime target linkage and real locally compiled ELF/PE dependency fixtures.
+The CMake fixture compiles a small C library against test interface targets;
+it does not substitute for configuring actual ROS packages. Native fixture
+tests skip explicitly if their toolchain is unavailable. On Windows, run from
+a native tools shell with `cl`, `dumpbin`, `nmake` and `cmake` on PATH.
+See `tests/lyrical/README.md` for the recorded checks and remaining acceptance
+work. These tests do **not** compile ROS packages or exercise a DDS network.
 
 ## Required acceptance tests
 

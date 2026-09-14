@@ -15,6 +15,7 @@
   <buildtool_export_depend>ament_cmake</buildtool_export_depend>
   <buildtool_export_depend>rosidl_cmake</buildtool_export_depend>
   <buildtool_export_depend>rosidl_typesupport_c</buildtool_export_depend>
+  <buildtool_export_depend>rosidl_runtime_c</buildtool_export_depend>
   <buildtool_export_depend>rosidl_typesupport_interface</buildtool_export_depend>
   <buildtool_export_depend>ament_cmake_export_assemblies</buildtool_export_depend>
   <buildtool_export_depend>dotnet_cmake_module</buildtool_export_depend>
