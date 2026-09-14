@@ -71,7 +71,14 @@ ament_export_libraries(ros2cs_native)
 ament_export_targets(ros2cs_native)
 configure_csharp_c_extension_library(ros2cs_native)
 
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
+if(UNIX AND NOT APPLE)
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
+endif()
+
+# Guard the x86_64 managed/native layouts used by the Lyrical build.
+if("$ENV{ROS_DISTRO}" STREQUAL "lyrical")
+  target_sources(ros2cs_native PRIVATE native/lyrical_abi_checks.c)
+endif()
 
 set(CS_INTERFACES
   interfaces/INode.cs
@@ -145,6 +152,10 @@ if(ros2_distro STREQUAL "foxy")
       DESTINATION resources
     )
   endif()
+endif()
+
+if(STANDALONE_BUILD AND ros2_distro STREQUAL "lyrical")
+  message(FATAL_ERROR "For Lyrical use build.sh --standalone or build.ps1 -standalone. The Lyrical driver collects runtime dependencies after colcon completes.")
 endif()
 
 if(STANDALONE_BUILD)

@@ -24,6 +24,7 @@
 
   <exec_depend>rosidl_generator_c</exec_depend>
   <exec_depend>rosidl_parser</exec_depend>
+  <exec_depend condition="$ROS_DISTRO != 'foxy' and $ROS_DISTRO != 'galactic'">rosidl_pycommon</exec_depend>
 
   <member_of_group>rosidl_generator_packages</member_of_group>
 
