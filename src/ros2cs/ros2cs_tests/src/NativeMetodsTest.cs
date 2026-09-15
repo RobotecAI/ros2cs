@@ -442,12 +442,21 @@ namespace ROS2.TestNativeMethods
 
             Assert.That(NativeRcl.rcl_subscription_is_valid(ref subscription), Is.True);
             UIntPtr index = (UIntPtr)42;
-            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_add_subscription(ref waitSet, ref subscription, ref index));
-            Assert.That(index.ToUInt64(), Is.EqualTo(0));
-
-            long timeout_ns = 10*1000*1000;
-            var ret = (RCLReturnEnum)NativeRcl.rcl_wait(ref waitSet, timeout_ns);
-            Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_TIMEOUT));
+            var pinned = System.Runtime.InteropServices.GCHandle.Alloc(
+                subscription, System.Runtime.InteropServices.GCHandleType.Pinned);
+            try
+            {
+                TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_add_subscription(ref waitSet, pinned.AddrOfPinnedObject(), ref index));
+                Assert.That(index.ToUInt64(), Is.EqualTo(0));
+                long timeout_ns = 10*1000*1000;
+                var ret = (RCLReturnEnum)NativeRcl.rcl_wait(ref waitSet, timeout_ns);
+                Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_TIMEOUT));
+            }
+            finally
+            {
+                NativeRcl.rcl_wait_set_fini(ref waitSet);
+                pinned.Free();
+            }
         }
     }
 

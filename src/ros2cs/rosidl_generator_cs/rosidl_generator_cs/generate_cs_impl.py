@@ -24,6 +24,7 @@ from rosidl_generator_c import idl_type_to_c
 from rosidl_parser.definition import AbstractGenericString
 from rosidl_parser.definition import AbstractSequence
 from rosidl_parser.definition import AbstractString
+from rosidl_parser.definition import AbstractWString
 from rosidl_parser.definition import Array
 from rosidl_parser.definition import BasicType
 from rosidl_parser.definition import NamespacedType
@@ -79,6 +80,8 @@ def constant_value_to_dotnet(type_, value):
 
 
 def get_c_type(type_):
+    if isinstance(type_, AbstractWString):
+        return 'const uint16_t *'
     if isinstance(type_, AbstractGenericString):
         return 'const char *'
     return idl_type_to_c(type_)

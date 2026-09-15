@@ -16,6 +16,24 @@ using System;
 
 namespace ROS2
 {
+  /// <summary>Encoding helpers for ROS string fields (UTF-8 on every platform).</summary>
+  public static class Ros2csText
+  {
+    // LPUTF8Str is supported by the runtime but absent from the netstandard2.0 enum.
+    public const System.Runtime.InteropServices.UnmanagedType Utf8String =
+      (System.Runtime.InteropServices.UnmanagedType)48;
+
+    public static string PtrToStringUtf8(IntPtr pointer)
+    {
+      if (pointer == IntPtr.Zero) return null;
+      int length = 0;
+      while (System.Runtime.InteropServices.Marshal.ReadByte(pointer, length) != 0) length++;
+      byte[] bytes = new byte[length];
+      System.Runtime.InteropServices.Marshal.Copy(pointer, bytes, 0, length);
+      return System.Text.Encoding.UTF8.GetString(bytes);
+    }
+  }
+
   /// <summary> Basic Message interface, only exposing Dispose method <summary>
   public interface Message : IExtendedDisposable
   {

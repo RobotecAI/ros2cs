@@ -2,13 +2,15 @@
 
 ## Status and scope
 
-This branch contains **source-level Lyrical adaptation work awaiting target-environment validation**. The local delivery tests do not establish that ROS 2 Lyrical, Windows, or Unity builds succeed. No prebuilt DLL, SO, or Unity package is included.
+This branch contains Lyrical adaptation fixes tested against real x86_64 Windows and Linux environments. See `docs/lyrical-acceptance-20260915.md` for the exact builds, test results and remaining boundaries. Unity/IL2CPP is a separate, unvalidated target. No prebuilt DLL, SO, or Unity package is committed to the source repository.
 
 The target is x86_64 Linux with a sourced ROS 2 Lyrical installation, or x86_64 Windows 11 with ROS 2 Lyrical and the VS 2022 x64 native tools environment. Ubuntu 26.04 is Lyrical's Tier 1 Ubuntu platform. This is not a claim that Unity Editor has certified support for that Ubuntu version. Use a full repository checkout; a patch/source-subset delivery must first be restored with its `restore_full_sources.py`.
 
 The C# libraries keep the upstream `netstandard2.0` target. The machine needs a .NET SDK capable of restoring and building that target, Git, vcstool, colcon and CMake 3.21 or later. Linux builds need the native C/C++ toolchain; standalone packaging additionally needs `objdump` and `patchelf`. Windows standalone packaging requires `dumpbin` on PATH and the corresponding Visual C++ runtime installed on the destination machine. NuGet and source dependency downloads require network access on first build.
 
 ## Source dependencies
+
+The test executables target .NET 6 and need the x64 .NET 6 runtime as well as an SDK. Installing a newer SDK alone does not install that runtime. Use `dotnet --list-runtimes` to verify it. Python tooling can be installed with `uv` in a `.venv` using the same Python version as the ROS underlay; include `typing_extensions` when running the rclpy interoperability peer.
 
 With ROS 2 Lyrical sourced, run from this repository:
 
@@ -43,7 +45,7 @@ The two commands represent **different build profiles**: run them in separate fr
 Windows, from the ROS-sourced VS 2022 x64 environment:
 
 ```powershell
-python tools/lyrical.py build --with-tests --standalone
+python tools/lyrical.py build --with-tests --standalone --cmake-generator Ninja
 ```
 
 The wrappers remain available:
@@ -56,7 +58,9 @@ The wrappers remain available:
 .\build.ps1 -with_tests -standalone
 ```
 
-`--with-tests` invokes `colcon build`, `colcon test --return-code-on-test-failure`, and `colcon test-result --verbose`. A nonzero process exit code aborts the pipeline. The driver checks that the native binding and the common/core managed assemblies exist before reporting an install result.
+Install Ninja and use a short workspace path on Windows. The driver enables UTF-8 Python I/O. If building from a `subst` drive, retain the mapping until all builds/tests finish and disable shared C# compilation (`UseSharedCompilation=false`) so an existing compiler server cannot lose access to the mapped path. The generator is part of the cached build profile.
+
+`--with-tests` invokes `colcon build`, `colcon test --merge-install --return-code-on-test-failure`, and `colcon test-result --verbose`. Test results are collected even when the test command fails. The driver checks that the native binding and the common/core managed assemblies exist before reporting an install result. To run just the ros2cs runtime suite in an existing merged installation, use `colcon test --merge-install --packages-select ros2cs_tests --return-code-on-test-failure`.
 
 ## Middleware
 
@@ -66,7 +70,7 @@ The default is `rmw_fastrtps_cpp`. To select Cyclone DDS, install the Lyrical `r
 python3 tools/lyrical.py build --standalone --rmw rmw_cyclonedds_cpp
 ```
 
-Each standalone artifact carries one selected RMW. This branch does not implement Zenoh or Connext packaging. The selected RMW is recorded in `install/lyrical-build.json` and `install/standalone/runtime-manifest.json`. Source-generated typesupport libraries are still generated according to the installed ROS typesupports.
+Each standalone artifact carries one selected RMW. This branch does not implement Zenoh or Connext packaging. The selected RMW is recorded in `install/lyrical-build.json` and `install/standalone/runtime-manifest.json`. Lyrical C# message/service bindings use the generic `rosidl_typesupport_c` dispatcher; concrete DDS typesupport plugins remain runtime dependencies.
 
 ## Standalone library collection
 
@@ -85,6 +89,8 @@ that arbitrary ABI-incompatible libraries can be mixed. Library versions are tak
 On Linux, deployed libraries receive an `$ORIGIN` RPATH. Shared-library aliases are materialized as ordinary files, retaining SONAME filenames through ZIP extraction and Unity import. System loader/glibc libraries are excluded. On Windows, API-set imports and System32 dependencies remain OS/runtime prerequisites. This is **not a completely self-contained operating-system image**: use a matching OS/runtime environment and review third-party redistribution licenses for deployment. Security extensions, custom RMW plugins and other optional plugins need separate acceptance tests and are not certified by an import-table scan.
 
 The C binding includes x86_64 size/offset assertions for the layouts mirrored by `NativeTypes.cs`. A failure indicates an ABI layout mismatch and must be investigated; do not disable these assertions to make compilation pass. Passing them does not prove the absence of other ABI or semantic changes.
+
+For deployment, preserve the `share` directory included in `install/standalone`, copy the managed assemblies from `install/lib/dotnet`, and set `AMENT_PREFIX_PATH` to the deployment directory. The Lyrical buffer registry needs the bundled `rosidl_buffer_backend` package metadata even for ordinary node initialization. Set `RMW_IMPLEMENTATION` to the packaged RMW; add the deployment directory to `PATH` on Windows or `LD_LIBRARY_PATH` on Linux. Custom buffer backend plugins require their own libraries and plugin manifests and are outside this default profile.
 
 ## Local driver tests
 

@@ -203,7 +203,7 @@ foreach(_generated_msg_c_ts_file ${_generated_msg_c_ts_files})
 
   add_library(${_target_name} SHARED
     "${_generated_msg_c_ts_file}"
-    "${_generated_msg_c_files}"
+    "${_full_folder}/${_base_msg_name}_s.c"
   )
 
   set(_destination_dir "${_output_path}/${_parent_folder}")
@@ -309,7 +309,7 @@ foreach(_generated_srv_c_ts_file ${_generated_srv_c_ts_files})
 
   add_library(${_target_name} SHARED
     "${_generated_srv_c_ts_file}"
-    "${_generated_srv_c_files}"
+    "${_full_folder}/${_base_srv_name}_s.c"
   )
 
   set(_destination_dir "${_output_path}/${_parent_folder}")

@@ -151,6 +151,12 @@ def runtime_seeds(install, directories, rmw):
     # dependency graph. Explicitly seed them rather than assuming DT_NEEDED covers all ROS plugins.
     for name in ("ros2cs_native", "rcl", "rcutils", "rmw_implementation", rmw, "rcl_logging_spdlog"):
         seeds.append(find_library(name, directories))
+    if platform.system() == "Linux":
+        # tracetools dlopens this provider; tracing-disabled underlays omit it.
+        provider = next((path for directory in directories
+                         for path in sorted(directory.glob("libtracetools_provider.so*"))), None)
+        if provider is not None:
+            seeds.append(provider)
     for directory in directories:
         for path in native_libraries(directory):
             if "__rosidl_typesupport_" in path.name:
@@ -227,6 +233,26 @@ def copy_unique(source, destination):
     return target
 
 
+def copy_runtime_resources(directories, output):
+    """The Lyrical buffer registry needs its base package in the ament index.
+
+    Custom buffer plugins are not selected by this bundle; their manifests and
+    libraries require an explicit deployment profile of their own.
+    """
+    origins = {}
+    for relative in (Path("share/ament_index/resource_index/packages/rosidl_buffer_backend"),
+                     Path("share/rosidl_buffer_backend/package.xml")):
+        source = next((folder.parent / relative for folder in directories
+                       if (folder.parent / relative).is_file()), None)
+        if source is None:
+            raise BuildError("Required Lyrical runtime resource not found: " + str(relative))
+        target = output / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+        origins[relative.as_posix()] = str(source)
+    return origins
+
+
 def bundle(install, rmw):
     require_tools("cmake")
     if platform.system() == "Linux":
@@ -253,11 +279,13 @@ def bundle(install, rmw):
         if platform.system() == "Linux":
             for path in native_libraries(output):
                 run(["patchelf", "--set-rpath", "$ORIGIN", path])
+        origins.update(copy_runtime_resources(directories, output))
         write_json(output / "runtime-manifest.json", {
             "ros_distro": "lyrical", "rmw_implementation": rmw,
             "platform": platform.system(), "architecture": "x86_64",
-            "files": [{"name": p.name, "sha256": sha256(p), "source": origins[p.name]}
-                      for p in sorted(output.iterdir())],
+            "files": [{"name": p.relative_to(output).as_posix(), "sha256": sha256(p),
+                       "source": origins[p.relative_to(output).as_posix()]}
+                      for p in sorted(output.rglob("*")) if p.is_file()],
         })
         if target.exists():
             shutil.rmtree(target)
@@ -265,7 +293,7 @@ def bundle(install, rmw):
     return target
 
 
-def build(workspace, standalone=False, with_tests=False, rmw=None):
+def build(workspace, standalone=False, with_tests=False, rmw=None, cmake_generator=None):
     selected = check_environment(rmw)
     full_checkout()
     require_tools("colcon", "cmake", "dotnet")
@@ -273,8 +301,12 @@ def build(workspace, standalone=False, with_tests=False, rmw=None):
     if not (workspace / "src").is_dir():
         raise BuildError("Workspace has no src directory: " + str(workspace))
     os.environ["RMW_IMPLEMENTATION"] = selected
+    generator = cmake_generator or os.environ.get("CMAKE_GENERATOR")
+    if platform.system() == "Windows":
+        os.environ.setdefault("PYTHONUTF8", "1")
     profile = {"distro": "lyrical", "platform": platform.system(), "architecture": "x86_64",
-               "rmw": selected, "standalone": bool(standalone), "configuration": "Release"}
+               "rmw": selected, "standalone": bool(standalone), "configuration": "Release",
+               "cmake_generator": generator}
     marker = workspace / "build/lyrical-build-profile.json"
     if marker.exists():
         if json.loads(marker.read_text()) != profile:
@@ -287,6 +319,8 @@ def build(workspace, standalone=False, with_tests=False, rmw=None):
             "-DBUILD_TESTING=" + ("ON" if with_tests else "OFF")]
     if platform.system() == "Linux":
         args += ["-DCMAKE_INSTALL_RPATH=$ORIGIN", "-DCMAKE_BUILD_RPATH_USE_ORIGIN=ON"]
+    if generator:
+        args += ["-G", generator]
     run(args, cwd=workspace)
     install = workspace / "install"
     native_dir = install / ("bin" if platform.system() == "Windows" else "lib")
@@ -295,8 +329,10 @@ def build(workspace, standalone=False, with_tests=False, rmw=None):
         if not (install / "lib/dotnet" / assembly).is_file():
             raise BuildError("Build did not produce " + assembly)
     if with_tests:
-        run(["colcon", "test", "--return-code-on-test-failure", "--event-handlers", "console_direct+"], cwd=workspace)
-        run(["colcon", "test-result", "--verbose"], cwd=workspace)
+        try:
+            run(["colcon", "test", "--merge-install", "--return-code-on-test-failure", "--event-handlers", "console_direct+"], cwd=workspace)
+        finally:
+            run(["colcon", "test-result", "--verbose"], cwd=workspace)
     if standalone:
         bundle(install, selected)
     write_json(install / "lyrical-build.json", profile)
@@ -313,12 +349,13 @@ def main(argv=None):
     p.add_argument("--standalone", "-s", action="store_true")
     p.add_argument("--with-tests", "-t", action="store_true")
     p.add_argument("--rmw", choices=RMWS)
+    p.add_argument("--cmake-generator", help="Explicit CMake generator, e.g. Ninja; defaults to CMAKE_GENERATOR")
     args = parser.parse_args(argv)
     try:
         if args.command == "fetch":
             fetch(custom=args.get_custom_messages)
         else:
-            build(args.workspace, args.standalone, args.with_tests, args.rmw)
+            build(args.workspace, args.standalone, args.with_tests, args.rmw, args.cmake_generator)
     except (BuildError, subprocess.CalledProcessError, OSError, ValueError, KeyError) as exc:
         print("Lyrical build failed: " + str(exc), file=sys.stderr)
         return 1

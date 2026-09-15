@@ -33,6 +33,8 @@ if(BUILD_TESTING)
     src/InitShutdownTest.cs
     src/LargeMessageTest.cs
     src/MessagesTest.cs
+    src/StringEncodingTest.cs
+    src/WaitSetLifetimeTest.cs
     src/NodeTest.cs
     src/NativeMetodsTest.cs
     src/ClientTest.cs

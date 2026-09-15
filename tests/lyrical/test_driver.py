@@ -15,6 +15,27 @@ spec.loader.exec_module(driver)
 
 
 class EnvironmentTests(unittest.TestCase):
+    def test_build_and_test_use_merged_layout_and_explicit_generator(self):
+        with tempfile.TemporaryDirectory() as temp:
+            workspace = Path(temp)
+            (workspace / "src").mkdir()
+            (workspace / "install/lib/dotnet").mkdir(parents=True)
+            for name in ("ros2cs_common.dll", "ros2cs_core.dll"):
+                (workspace / "install/lib/dotnet" / name).touch()
+            # A profile stamp makes these fixture install files valid inputs.
+            profile = {"distro": "lyrical", "platform": "Windows", "architecture": "x86_64",
+                       "rmw": "rmw_fastrtps_cpp", "standalone": False,
+                       "configuration": "Release", "cmake_generator": "Ninja"}
+            driver.write_json(workspace / "build/lyrical-build-profile.json", profile)
+            with patch.dict(os.environ, {}, clear=True), patch.object(driver.platform, "system", return_value="Windows"), patch.object(driver, "check_environment", return_value="rmw_fastrtps_cpp"), patch.object(driver, "full_checkout"), patch.object(driver, "require_tools"), patch.object(driver, "find_library"), patch.object(driver, "run") as run:
+                driver.build(workspace, with_tests=True, cmake_generator="Ninja")
+                commands = [call.args[0] for call in run.call_args_list]
+                self.assertIn("--merge-install", commands[0])
+                self.assertEqual(commands[0][-2:], ["-G", "Ninja"])
+                self.assertIn("--merge-install", commands[1])
+                self.assertEqual(commands[2], ["colcon", "test-result", "--verbose"])
+                self.assertEqual(os.environ["PYTHONUTF8"], "1")
+
     def test_wrong_distro_rejected(self):
         with patch.dict(os.environ, {"ROS_DISTRO": "jazzy"}, clear=True):
             with self.assertRaises(driver.BuildError):

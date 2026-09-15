@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace ROS2
 {
@@ -23,7 +25,7 @@ namespace ROS2
     DISPOSED
   }
 
-  internal class WaitSet
+  internal class WaitSet : IDisposable
   {
     internal ulong SubscriptionCount {get { return Handle.size_of_subscriptions.ToUInt64(); }}
 
@@ -32,6 +34,23 @@ namespace ROS2
     internal ulong ServiceCount {get { return Handle.size_of_services.ToUInt64(); }}
 
     private rcl_wait_set_t Handle;
+    private readonly List<GCHandle> entityHandles = new List<GCHandle>();
+    private bool disposed;
+
+    private IntPtr Retain<T>(T value) where T : struct
+    {
+      // rcl retains the address until the wait set is cleared. A ref to a local
+      // copy is valid only during the add call, and is reused by subsequent adds.
+      var pinned = GCHandle.Alloc(value, GCHandleType.Pinned);
+      entityHandles.Add(pinned);
+      return pinned.AddrOfPinnedObject();
+    }
+
+    private void ReleaseEntities()
+    {
+      foreach (var pinned in entityHandles) pinned.Free();
+      entityHandles.Clear();
+    }
 
     internal WaitSet(ref rcl_context_t context)
     {
@@ -50,16 +69,31 @@ namespace ROS2
 
     ~WaitSet()
     {
+      if (!disposed)
+      {
+        NativeRcl.rcl_wait_set_fini(ref Handle);
+        ReleaseEntities();
+      }
+    }
+
+    public void Dispose()
+    {
+      if (disposed) return;
       Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_fini(ref Handle));
+      ReleaseEntities();
+      disposed = true;
+      GC.SuppressFinalize(this);
     }
 
     internal void Clear()
     {
       Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_clear(ref Handle));
+      ReleaseEntities();
     }
 
     internal void Resize(ulong subscriptionCount, ulong clientCount, ulong serviceCount)
     {
+      Clear();
       Utils.CheckReturnEnum(NativeRcl.rcl_wait_set_resize(
       ref Handle,
       (UIntPtr)subscriptionCount,
@@ -82,10 +116,9 @@ namespace ROS2
           return AddResult.DISPOSED;
         }
 
-        rcl_subscription_t subscription_handle = subscription.Handle;
         ret = NativeRcl.rcl_wait_set_add_subscription(
           ref Handle,
-          ref subscription_handle,
+          Retain(subscription.Handle),
           ref native_index
         );
       }
@@ -115,10 +148,9 @@ namespace ROS2
           return AddResult.DISPOSED;
         }
 
-        rcl_client_t client_handle = client.Handle;
         ret = NativeRcl.rcl_wait_set_add_client(
           ref Handle,
-          ref client_handle,
+          Retain(client.Handle),
           ref native_index
         );
       }
@@ -149,10 +181,9 @@ namespace ROS2
           return AddResult.DISPOSED;
         }
 
-        rcl_service_t service_handle = service.Handle;
         ret = NativeRcl.rcl_wait_set_add_service(
           ref Handle,
-          ref service_handle,
+          Retain(service.Handle),
           ref native_index
         );
       }
