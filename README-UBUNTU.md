@@ -1,4 +1,4 @@
-# ROS2CS - Ubuntu 20.04 and Ubuntu 22.04
+# ROS2CS - Ubuntu
 
 ## Building
 
@@ -8,7 +8,7 @@
 
 - ROS2 installed on the system, along with `test-msgs`, `cyclonedds` and `fastrtps` packages
 - vcstool package - [see here](https://github.com/dirk-thomas/vcstool)
-- .NET 6.0 sdk - [see here](https://www.microsoft.com/net/learn/get-started)
+- .NET 10 SDK - [see here](https://learn.microsoft.com/dotnet/core/install/linux-ubuntu)
 
 
 ```bash
@@ -22,16 +22,12 @@ curl -s https://packagecloud.io/install/repositories/dirk-thomas/vcstool/script.
 sudo apt-get update
 sudo apt-get install -y python3-vcstool
 
-# Install Microsoft packages (Ubuntu 20.04 only)
-wget https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-sudo dpkg -i packages-microsoft-prod.deb
-rm packages-microsoft-prod.deb
-
-# install .NET core 6.0 SDK
-sudo apt-get update; \
-  sudo apt-get install -y apt-transport-https && \
-  sudo apt-get update && \
-  sudo apt-get install -y dotnet-sdk-6.0
+# Install .NET 10 SDK using Microsoft's installer (requires a supported Linux OS).
+curl -fsSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
+bash dotnet-install.sh --channel 10.0
+export DOTNET_ROOT="$HOME/.dotnet"
+export PATH="$DOTNET_ROOT:$PATH"
+dotnet --version
 ```
 
 **Optional**

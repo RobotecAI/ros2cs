@@ -25,7 +25,8 @@ class EnvironmentTests(unittest.TestCase):
             # A profile stamp makes these fixture install files valid inputs.
             profile = {"distro": "lyrical", "platform": "Windows", "architecture": "x86_64",
                        "rmw": "rmw_fastrtps_cpp", "standalone": False,
-                       "configuration": "Release", "cmake_generator": "Ninja"}
+                       "configuration": "Release", "cmake_generator": "Ninja",
+                       "library_framework": "netstandard2.0", "executable_framework": "net10.0"}
             driver.write_json(workspace / "build/lyrical-build-profile.json", profile)
             with patch.dict(os.environ, {}, clear=True), patch.object(driver.platform, "system", return_value="Windows"), patch.object(driver, "check_environment", return_value="rmw_fastrtps_cpp"), patch.object(driver, "full_checkout"), patch.object(driver, "require_tools"), patch.object(driver, "find_library"), patch.object(driver, "run") as run:
                 driver.build(workspace, with_tests=True, cmake_generator="Ninja")

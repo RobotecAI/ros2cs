@@ -17,6 +17,9 @@ find_package(rosidl_typesupport_c REQUIRED)
 find_package(rosidl_typesupport_interface REQUIRED)
 find_package(ament_cmake_export_assemblies REQUIRED)
 find_package(dotnet_cmake_module REQUIRED)
+# Generated bindings are also consumed by Unity, independently of the build SDK.
+set(CSHARP_TARGET_FRAMEWORK "netstandard2.0")
+set(CSBUILD_TOOL "DotNetCore")
 find_package(DotNETExtra REQUIRED) # add_dotnet_library
 find_package(ros2cs_common REQUIRED)
 if("$ENV{ROS_DISTRO}" STREQUAL "lyrical")

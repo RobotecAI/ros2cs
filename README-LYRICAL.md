@@ -6,11 +6,11 @@ This branch contains Lyrical adaptation fixes tested against real x86_64 Windows
 
 The target is x86_64 Linux with a sourced ROS 2 Lyrical installation, or x86_64 Windows 11 with ROS 2 Lyrical and the VS 2022 x64 native tools environment. Ubuntu 26.04 is Lyrical's Tier 1 Ubuntu platform. This is not a claim that Unity Editor has certified support for that Ubuntu version. Use a full repository checkout; a patch/source-subset delivery must first be restored with its `restore_full_sources.py`.
 
-The C# libraries keep the upstream `netstandard2.0` target. The machine needs a .NET SDK capable of restoring and building that target, Git, vcstool, colcon and CMake 3.21 or later. Linux builds need the native C/C++ toolchain; standalone packaging additionally needs `objdump` and `patchelf`. Windows standalone packaging requires `dumpbin` on PATH and the corresponding Visual C++ runtime installed on the destination machine. NuGet and source dependency downloads require network access on first build.
+The C# libraries and generated message/service assemblies target `netstandard2.0` for Unity compatibility on both Windows and Linux. Standalone examples and tests target `net10.0`. The machine needs the .NET 10 SDK, Git, vcstool, colcon and CMake 3.21 or later. Linux builds need the native C/C++ toolchain; standalone packaging additionally needs `objdump` and `patchelf`. Windows standalone packaging requires `dumpbin` on PATH and the corresponding Visual C++ runtime installed on the destination machine. NuGet and source dependency downloads require network access on first build.
 
 ## Source dependencies
 
-The test executables target .NET 6 and need the x64 .NET 6 runtime as well as an SDK. Installing a newer SDK alone does not install that runtime. Use `dotnet --list-runtimes` to verify it. Python tooling can be installed with `uv` in a `.venv` using the same Python version as the ROS underlay; include `typing_extensions` when running the rclpy interoperability peer.
+The test executables need the x64 .NET 10 runtime (included with the .NET 10 SDK). Use `dotnet --list-runtimes` to verify it. Python tooling can be installed with `uv` in a `.venv` using the same Python version as the ROS underlay; include `typing_extensions` when running the rclpy interoperability peer.
 
 With ROS 2 Lyrical sourced, run from this repository:
 
@@ -40,7 +40,7 @@ python3 tools/lyrical.py build --with-tests
 python3 tools/lyrical.py build --with-tests --standalone
 ```
 
-The two commands represent **different build profiles**: run them in separate fresh workspaces, not consecutively in the same build/install tree. A profile contains the distribution, OS, architecture, RMW, standalone setting and Release configuration. An incompatible cached profile fails before compilation. To reuse a source checkout with another profile, explicitly remove its generated `build`, `install`, and `log` directories after retaining any needed output.
+The two commands represent **different build profiles**: run them in separate fresh workspaces, not consecutively in the same build/install tree. A profile contains the distribution, OS, architecture, RMW, standalone setting, library/executable target frameworks and Release configuration. An incompatible cached profile fails before compilation. To reuse a source checkout with another profile, explicitly remove its generated `build`, `install`, and `log` directories after retaining any needed output.
 
 Windows, from the ROS-sourced VS 2022 x64 environment:
 

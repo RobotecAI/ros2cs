@@ -306,7 +306,8 @@ def build(workspace, standalone=False, with_tests=False, rmw=None, cmake_generat
         os.environ.setdefault("PYTHONUTF8", "1")
     profile = {"distro": "lyrical", "platform": platform.system(), "architecture": "x86_64",
                "rmw": selected, "standalone": bool(standalone), "configuration": "Release",
-               "cmake_generator": generator}
+               "cmake_generator": generator, "library_framework": "netstandard2.0",
+               "executable_framework": "net10.0"}
     marker = workspace / "build/lyrical-build-profile.json"
     if marker.exists():
         if json.loads(marker.read_text()) != profile:

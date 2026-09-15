@@ -1,5 +1,8 @@
 # Lyrical regression checks
 
+For the .NET 10 SDK migration with Unity-compatible `netstandard2.0` libraries,
+see [the Windows/Linux validation results](NET10-VALIDATION.md).
+
 Run `python -m unittest discover -s tests/lyrical -v` from this repository.
 CMake 3.21+ is required for runtime dependency checks. Linux native fixtures
 require GCC, objdump and CMake. Windows fixtures require the x64 native tools
