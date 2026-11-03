@@ -14,6 +14,15 @@ Param (
     [Parameter(Mandatory=$false)][switch]$standalone=$false
 )
 
+if ($Env:ROS_DISTRO -eq "lyrical") {
+    $driverArgs = @("build")
+    if ($with_tests) { $driverArgs += "--with-tests" }
+    if ($standalone) { $driverArgs += "--standalone" }
+    & python (Join-Path $PSScriptRoot "tools/lyrical.py") @driverArgs
+    exit $LASTEXITCODE
+}
+
+
 $msg="Build started."
 $tests_switch=0
 if($with_tests) {

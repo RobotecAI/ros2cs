@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Lyrical uses the checked, cross-platform build driver.
+if [ "${ROS_DISTRO:-}" = "lyrical" ]; then
+  SCRIPT_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+  exec python3 "$SCRIPT_ROOT/tools/lyrical.py" build "$@"
+fi
+
 display_usage() {
     echo "Usage: "
     echo "build.sh [--with-tests] [--standalone]"
@@ -10,7 +16,7 @@ display_usage() {
 }
 
 if [ -z "${ROS_DISTRO}" ]; then
-    echo "Source your ros2 distro first (foxy, galactic, humble or rolling are supported)"
+    echo "Source your ros2 distro first (foxy, galactic, humble, jazzy or rolling are supported)"
     exit 1
 fi
 

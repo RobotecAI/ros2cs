@@ -16,6 +16,7 @@
 #include <rmw/types.h>
 #include <rmw/rmw.h>
 #include <rcl/rcl.h>
+#include <rosidl_runtime_c/visibility_control.h>
 
 ROSIDL_GENERATOR_C_EXPORT
 rmw_qos_profile_t * rmw_native_interface_create_qos_profile(int profile)

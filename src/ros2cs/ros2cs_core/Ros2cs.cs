@@ -79,6 +79,8 @@ namespace ROS2
         initialized = false;
 
         Ros2csLogger.GetInstance().LogInfo("Ros2cs shutdown");
+        WaitSet.Dispose();
+        WaitSet = null;
         Utils.CheckReturnEnum(NativeRcl.rcl_shutdown(ref global_context));
 
         foreach (var node in nodes)

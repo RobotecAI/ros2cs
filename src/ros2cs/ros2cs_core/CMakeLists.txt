@@ -61,17 +61,26 @@ add_library(
   native/rmw_native_interface.c
 )
 
-ament_target_dependencies(ros2cs_native
-  "rcl"
-  "rcutils"
-  "rmw"
-  "rosidl_generator_c"
-)
+if("$ENV{ROS_DISTRO}" STREQUAL "lyrical")
+  find_package(rosidl_runtime_c REQUIRED)
+  target_link_libraries(ros2cs_native PRIVATE
+    rcl::rcl rcutils::rcutils rmw::rmw rosidl_runtime_c::rosidl_runtime_c)
+else()
+  ament_target_dependencies(ros2cs_native
+    "rcl" "rcutils" "rmw" "rosidl_generator_c")
+endif()
 ament_export_libraries(ros2cs_native)
 ament_export_targets(ros2cs_native)
 configure_csharp_c_extension_library(ros2cs_native)
 
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
+if(UNIX AND NOT APPLE)
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
+endif()
+
+# Guard the x86_64 managed/native layouts used by the Lyrical build.
+if("$ENV{ROS_DISTRO}" STREQUAL "lyrical")
+  target_sources(ros2cs_native PRIVATE native/lyrical_abi_checks.c)
+endif()
 
 set(CS_INTERFACES
   interfaces/INode.cs
@@ -145,6 +154,10 @@ if(ros2_distro STREQUAL "foxy")
       DESTINATION resources
     )
   endif()
+endif()
+
+if(STANDALONE_BUILD AND ros2_distro STREQUAL "lyrical")
+  message(FATAL_ERROR "For Lyrical use build.sh --standalone or build.ps1 -standalone. The Lyrical driver collects runtime dependencies after colcon completes.")
 endif()
 
 if(STANDALONE_BUILD)
@@ -238,7 +251,7 @@ if(STANDALONE_BUILD)
       endif()
 
       # Get rmw_cyclonedds_cpp for humble
-      if("${_library_name}" STREQUAL "rmw_cyclonedds_cpp" AND (ros2_distro STREQUAL "humble" OR ros2_distro STREQUAL "rolling"))
+      if("${_library_name}" STREQUAL "rmw_cyclonedds_cpp" AND (ros2_distro STREQUAL "humble" OR ros2_distro STREQUAL "jazzy" OR ros2_distro STREQUAL "rolling"))
         fetch_target_lib(rmw_cyclonedds_cpp::rmw_cyclonedds_cpp)
         list(APPEND REQ_STANDALONE_LIBS ${rmw_cyclonedds_cpp_rmw_cyclonedds_cpp_LIB_PATH})
       endif()
@@ -377,7 +390,7 @@ if(STANDALONE_BUILD)
     rosidl_typesupport_introspection_cpp
     spdlog
     tracetools
-    yaml
+    yaml-cpp
     tinyxml2
   )
   

@@ -6,7 +6,7 @@ if(BUILD_TESTING)
   find_package(ament_cmake REQUIRED)
   find_package(dotnet_cmake_module REQUIRED)
 
-  set(CSHARP_TARGET_FRAMEWORK "netcoreapp6.0")
+  set(CSHARP_TARGET_FRAMEWORK "net10.0")
 
   set(CSBUILD_TOOL "DotNetCore")
   find_package(DotNETExtra REQUIRED)
@@ -33,6 +33,8 @@ if(BUILD_TESTING)
     src/InitShutdownTest.cs
     src/LargeMessageTest.cs
     src/MessagesTest.cs
+    src/StringEncodingTest.cs
+    src/WaitSetLifetimeTest.cs
     src/NodeTest.cs
     src/NativeMetodsTest.cs
     src/ClientTest.cs

@@ -12,11 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from rosidl_cmake import generate_files
+try:
+    from rosidl_pycommon import generate_files
+except ModuleNotFoundError as exc:
+    # Foxy/Galactic do not provide rosidl_pycommon. Do not mask broken imports
+    # inside an installed rosidl_pycommon package.
+    if exc.name != 'rosidl_pycommon':
+        raise
+    from rosidl_cmake import generate_files
 from rosidl_generator_c import idl_type_to_c
 from rosidl_parser.definition import AbstractGenericString
 from rosidl_parser.definition import AbstractSequence
 from rosidl_parser.definition import AbstractString
+from rosidl_parser.definition import AbstractWString
 from rosidl_parser.definition import Array
 from rosidl_parser.definition import BasicType
 from rosidl_parser.definition import NamespacedType
@@ -72,6 +80,8 @@ def constant_value_to_dotnet(type_, value):
 
 
 def get_c_type(type_):
+    if isinstance(type_, AbstractWString):
+        return 'const uint16_t *'
     if isinstance(type_, AbstractGenericString):
         return 'const char *'
     return idl_type_to_c(type_)
