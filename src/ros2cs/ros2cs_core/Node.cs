@@ -15,6 +15,8 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using action_msgs.srv;
+using action_msgs.msg;
 
 namespace ROS2
 {
@@ -65,6 +67,7 @@ namespace ROS2
     private HashSet<IPublisherBase> publishers;
     private HashSet<IClientBase> clients;
     private HashSet<IServiceBase> services;
+    private HashSet<IActionServerBase> action_servers;
     private readonly object mutex = new object();
     private bool disposed = false;
 
@@ -82,6 +85,7 @@ namespace ROS2
       publishers = new HashSet<IPublisherBase>();
       clients = new HashSet<IClientBase>();
       services = new HashSet<IServiceBase>();
+      action_servers = new HashSet<IActionServerBase>();
 
       nodeHandle = NativeRcl.rcl_get_zero_initialized_node();
       defaultNodeOptions = NativeRclInterface.rclcs_node_create_default_options();
@@ -187,7 +191,7 @@ namespace ROS2
           return null;
         }
 
-	Service<I, O> service = new Service<I, O>(topic, this, callback, qos);
+        Service<I, O> service = new Service<I, O>(topic, this, callback, qos);
         services.Add(service);
         logger.LogInfo("Created service for topic " + topic);
         return service;
@@ -207,6 +211,41 @@ namespace ROS2
           return services.Remove(service);
         }
         return false;
+      }
+    }
+
+    public ActionServer<TGoalRequest, TGoalResponse, TFeedback, TResultRequest, TResultResponse>
+      CreateActionServer<TGoalRequest, TGoalResponse, TFeedback, TResultRequest, TResultResponse>(
+        string topic,
+        Func<TGoalRequest, ActionGoalResponse> handleGoal,
+        Func<CancelGoal_Request, CancelGoal_Response> handleCancel,
+        Action<TGoalRequest> handleAccepted
+      )
+      where TGoalRequest : Message, new()
+      where TGoalResponse : Message, new()
+      where TFeedback : Message, new()
+      where TResultRequest : Message, new()
+      where TResultResponse : Message, new()
+    {
+      lock (mutex)
+      {
+        if (disposed || !Ros2cs.Ok())
+        {
+          logger.LogWarning("Cannot create action server as the class is already disposed or shutdown was called");
+          return null;
+        }
+
+        ActionServer<TGoalRequest, TGoalResponse, TFeedback, TResultRequest, TResultResponse> action_server =
+          new ActionServer<TGoalRequest, TGoalResponse, TFeedback, TResultRequest, TResultResponse>(
+            topic,
+            this,
+            handleGoal,
+            handleCancel,
+            handleAccepted
+          );
+        action_servers.Add(action_server);
+        logger.LogInfo("Created action server for topic " + topic);
+        return action_server;
       }
     }
 

@@ -25,7 +25,8 @@ namespace ROS2
     DEFAULT,
     SERVICES_DEFAULT,
     PARAMETER_EVENTS,
-    SYSTEM_DEFAULT
+    SYSTEM_DEFAULT,
+    ACTION_STATUS_DEFAULT,
   }
 
   public enum HistoryPolicy
