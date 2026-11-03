@@ -245,7 +245,7 @@ foreach(_generated_msg_c_ts_file ${_generated_msg_c_ts_files})
 
   set(ros2_distro "$ENV{ROS_DISTRO}")
 
-  if(ros2_distro STREQUAL "humble" OR ros2_distro STREQUAL "rolling")
+  if(${rosidl_cmake_VERSION} VERSION_GREATER 2.5.0)
     rosidl_get_typesupport_target(c_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_c")
     target_link_libraries(${_target_name} "${c_typesupport_target}")
   else()
@@ -352,7 +352,7 @@ foreach(_generated_srv_c_ts_file ${_generated_srv_c_ts_files})
 
   set(ros2_distro "$ENV{ROS_DISTRO}")
 
-  if(ros2_distro STREQUAL "humble" OR ros2_distro STREQUAL "rolling")
+  if(${rosidl_cmake_VERSION} VERSION_GREATER 2.5.0)
     rosidl_get_typesupport_target(c_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_c")
     target_link_libraries(${_target_name} "${c_typesupport_target}")
   else()
