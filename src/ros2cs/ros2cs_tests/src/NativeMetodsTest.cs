@@ -1,5 +1,5 @@
-﻿// Copyright 2019 Dyno Robotics (by Samuel Lindgren samuel@dynorobotics.se)
-// Copyright 2019-2021 Robotec.ai
+﻿// Copyright 2019-2023 Robotec.ai
+// Copyright 2019 Dyno Robotics (by Samuel Lindgren samuel@dynorobotics.se)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,17 +13,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using NUnit.Framework;
 using System;
-using ROS2.Test;
+using NUnit.Framework;
 using ROS2.Internal;
+using ROS2.Test;
 
 namespace ROS2.TestNativeMethods
 {
     [TestFixture]
     public class RCLInitialize
     {
-        public static void InitRcl(ref rcl_context_t context)
+        internal static IntPtr InitRcl()
         {
             NativeRcl.rcl_reset_error();
             rcl_init_options_t init_options = NativeRcl.rcl_get_zero_initialized_init_options();
@@ -31,54 +31,36 @@ namespace ROS2.TestNativeMethods
             var ret = (RCLReturnEnum)NativeRcl.rcl_init_options_init(ref init_options, allocator);
             Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_OK));
 
-            context = NativeRcl.rcl_get_zero_initialized_context();
-
-            ret = (RCLReturnEnum)NativeRcl.rcl_init(0, null, ref init_options, ref context);
+            IntPtr context = NativeRclInterface.rclcs_get_zero_initialized_context();
+            ret = (RCLReturnEnum)NativeRcl.rcl_init(0, null, ref init_options, context);
             Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_OK), Utils.PopRclErrorString());
-            Assert.That(NativeRcl.rcl_context_is_valid(ref context), Is.True);
+            Assert.That(NativeRclInterface.rclcs_context_is_valid(context), Is.True);
+            return context;
         }
 
-        public static void ShutdownRcl(ref rcl_context_t context)
+        internal static void ShutdownRcl(IntPtr context)
         {
-            var ret = (RCLReturnEnum)NativeRcl.rcl_shutdown(ref context);
+            var ret = (RCLReturnEnum)NativeRcl.rcl_shutdown(context);
+            Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_OK));
+            Assert.That(NativeRclInterface.rclcs_context_is_valid(context), Is.False);
+
+            ret = (RCLReturnEnum)NativeRcl.rcl_context_fini(context);
             Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_OK));
 
-            ret = (RCLReturnEnum)NativeRcl.rcl_context_fini(ref context);
-            Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_OK));
+            NativeRclInterface.rclcs_free_context(context);
         }
 
         [Test]
         public void InitShutdownFinalize()
         {
-            rcl_context_t context = new rcl_context_t();
-            InitRcl(ref context);
-            ShutdownRcl(ref context);
+            var context = InitRcl();
+            ShutdownRcl(context);
         }
     }
 
     [TestFixture]
     public class RCL
     {
-        rcl_context_t context = new rcl_context_t();
-
-        [SetUp]
-        public void SetUp()
-        {
-            RCLInitialize.InitRcl(ref context);
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            RCLInitialize.ShutdownRcl(ref context);
-        }
-
-        [Test]
-        public void GetZeroInitializedContext()
-        {
-            rcl_context_t context = NativeRcl.rcl_get_zero_initialized_context();
-        }
-
         [Test]
         public void GetDefaultAllocator()
         {
@@ -120,42 +102,32 @@ namespace ROS2.TestNativeMethods
             rcl_init_options_t init_options = NativeRcl.rcl_get_zero_initialized_init_options();
             rcl_allocator_t allocator = NativeRcl.rcutils_get_default_allocator();
             NativeRcl.rcl_init_options_init(ref init_options, allocator);
-            rcl_context_t context = NativeRcl.rcl_get_zero_initialized_context();
+            IntPtr context = NativeRclInterface.rclcs_get_zero_initialized_context();
 
             var ret = (RCLReturnEnum)NativeRcl.rcl_init(
-                2, new string[] { "foo", "bar" }, ref init_options, ref context);
+                2, new string[] { "foo", "bar" }, ref init_options, context);
             Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_OK));
+            Assert.That(NativeRclInterface.rclcs_context_is_valid(context), Is.True);
 
-            Assert.That(NativeRcl.rcl_context_is_valid(ref context), Is.True);
-            ret = (RCLReturnEnum)NativeRcl.rcl_shutdown(ref context);
-            Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_OK));
-
-            ret = (RCLReturnEnum)NativeRcl.rcl_context_fini(ref context);
-            Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_OK));
+            RCLInitialize.ShutdownRcl(context);
         }
     }
 
     [TestFixture]
     public class NodeInitialize
     {
-        rcl_context_t context = new rcl_context_t();
+        private IntPtr Context = IntPtr.Zero;
 
         [SetUp]
         public void SetUp()
         {
-            RCLInitialize.InitRcl(ref context);
+            this.Context = RCLInitialize.InitRcl();
         }
 
         [TearDown]
         public void TearDown()
         {
-            RCLInitialize.ShutdownRcl(ref context);
-        }
-
-        [Test]
-        public void GetZeroInitializedNode()
-        {
-            rcl_node_t node = NativeRcl.rcl_get_zero_initialized_node();
+            RCLInitialize.ShutdownRcl(this.Context);
         }
 
         [Test]
@@ -165,68 +137,80 @@ namespace ROS2.TestNativeMethods
             NativeRclInterface.rclcs_node_dispose_options(defaultNodeOptions);
         }
 
-        public static void InitNode(ref rcl_node_t node, IntPtr nodeOptions, ref rcl_context_t context)
+        internal static IntPtr InitOptions()
         {
-            node = NativeRcl.rcl_get_zero_initialized_node();
-
-            nodeOptions = NativeRclInterface.rclcs_node_create_default_options();
-            string name = "node_test";
-            string nodeNamespace = "/ns";
-
-            var ret = (RCLReturnEnum)NativeRcl.rcl_node_init(
-                ref node, name, nodeNamespace, ref context, nodeOptions);
-            Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_OK));
+            return NativeRclInterface.rclcs_node_create_default_options();
         }
 
-        public static void ShutdownNode(ref rcl_node_t node, IntPtr nodeOptions)
+        internal static void ShutdownOptions(IntPtr options)
         {
-            NativeRcl.rcl_node_fini(ref node);
-            NativeRclInterface.rclcs_node_dispose_options(nodeOptions);
+            NativeRclInterface.rclcs_node_dispose_options(options);
+        }
+
+        internal static IntPtr InitNode(IntPtr options, IntPtr context)
+        {
+            string name = "node_test";
+            string nodeNamespace = "/ns";
+            IntPtr node = NativeRclInterface.rclcs_get_zero_initialized_node();
+
+            var ret = (RCLReturnEnum)NativeRcl.rcl_node_init(
+                node, name, nodeNamespace, context, options);
+            Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_OK));
+            return node;
+        }
+
+        internal static void ShutdownNode(IntPtr node)
+        {
+            var ret = (RCLReturnEnum)NativeRcl.rcl_node_fini(node);
+            Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_OK));
         }
 
         [Test]
         public void NodeInitShutdown()
         {
-            rcl_node_t node = new rcl_node_t();
-            IntPtr nodeOptions = new IntPtr();
-
-            InitNode(ref node, nodeOptions, ref context);
-            ShutdownNode(ref node, nodeOptions);
+            var options = InitOptions();
+            var node = InitNode(options, this.Context);
+            ShutdownNode(node);
+            ShutdownOptions(options);
         }
     }
 
     [TestFixture]
-    public class Node
+    public class NodeTest
     {
-        rcl_context_t context;
-        rcl_node_t node;
-        IntPtr nodeOptions = new IntPtr();
+        private IntPtr Context = IntPtr.Zero;
+
+        private IntPtr Options = IntPtr.Zero;
+
+        private IntPtr Node = IntPtr.Zero;
 
         [SetUp]
         public void SetUp()
         {
-            RCLInitialize.InitRcl(ref context);
-            NodeInitialize.InitNode(ref node, nodeOptions, ref context);
+            this.Context = RCLInitialize.InitRcl();
+            this.Options = NodeInitialize.InitOptions();
+            this.Node = NodeInitialize.InitNode(this.Options, this.Context);
         }
 
         [TearDown]
         public void TearDown()
         {
-            NodeInitialize.ShutdownNode(ref node, nodeOptions);
-            RCLInitialize.ShutdownRcl(ref context);
+            NodeInitialize.ShutdownNode(this.Node);
+            NodeInitialize.ShutdownOptions(this.Options);
+            RCLInitialize.ShutdownRcl(this.Context);
         }
 
         [Test]
         public void NodeGetNamespace()
         {
-            string nodeNameFromRcl = Utils.PtrToString(NativeRcl.rcl_node_get_name(ref node));
+            string nodeNameFromRcl = Utils.PtrToString(NativeRcl.rcl_node_get_name(this.Node));
             Assert.That("node_test", Is.EqualTo(nodeNameFromRcl));
         }
 
         [Test]
         public void NodeGetName()
         {
-            string nodeNamespaceFromRcl = Utils.PtrToString(NativeRcl.rcl_node_get_namespace(ref node));
+            string nodeNamespaceFromRcl = Utils.PtrToString(NativeRcl.rcl_node_get_namespace(this.Node));
             Assert.That("/ns", Is.EqualTo(nodeNamespaceFromRcl));
         }
     }
@@ -234,22 +218,26 @@ namespace ROS2.TestNativeMethods
     [TestFixture]
     public class PublisherInitialize
     {
-        rcl_context_t context;
-        rcl_node_t node;
-        IntPtr nodeOptions = new IntPtr();
+        private IntPtr Context = IntPtr.Zero;
+
+        private IntPtr NodeOptions = IntPtr.Zero;
+
+        private IntPtr Node = IntPtr.Zero;
 
         [SetUp]
         public void SetUp()
         {
-            RCLInitialize.InitRcl(ref context);
-            NodeInitialize.InitNode(ref node, nodeOptions, ref context);
+            this.Context = RCLInitialize.InitRcl();
+            this.NodeOptions = NodeInitialize.InitOptions();
+            this.Node = NodeInitialize.InitNode(this.NodeOptions, this.Context);
         }
 
         [TearDown]
         public void TearDown()
         {
-            NodeInitialize.ShutdownNode(ref node, nodeOptions);
-            RCLInitialize.ShutdownRcl(ref context);
+            NodeInitialize.ShutdownNode(this.Node);
+            NodeInitialize.ShutdownOptions(this.NodeOptions);
+            RCLInitialize.ShutdownRcl(this.Context);
         }
 
         [Test]
@@ -259,85 +247,112 @@ namespace ROS2.TestNativeMethods
             IntPtr publisherOptions = NativeRclInterface.rclcs_publisher_create_options(qos.handle);
         }
 
-        [Test]
-        public void GetZeroInitializedPublisher()
+        internal static IntPtr InitOptions()
         {
-            rcl_publisher_t publisher = NativeRcl.rcl_get_zero_initialized_publisher();
+            QualityOfServiceProfile qos = new QualityOfServiceProfile();
+            return NativeRclInterface.rclcs_publisher_create_options(qos.handle);
         }
 
-        public static void InitPublisher(
-            ref rcl_publisher_t publisher, ref rcl_node_t node, IntPtr publisherOptions)
+        internal static void ShutdownOptions(IntPtr options)
         {
-            publisher = NativeRcl.rcl_get_zero_initialized_publisher();
-            QualityOfServiceProfile qos = new QualityOfServiceProfile();
-            publisherOptions = NativeRclInterface.rclcs_publisher_create_options(qos.handle);
+            NativeRclInterface.rclcs_publisher_dispose_options(options);
+        }
+
+        internal static IntPtr InitPublisher(IntPtr node, IntPtr options)
+        {
+            IntPtr publisher = NativeRclInterface.rclcs_get_zero_initialized_publisher();
             MessageInternals msg = new std_msgs.msg.Bool();
             IntPtr typeSupportHandle = msg.TypeSupportHandle;
             var ret = (RCLReturnEnum)NativeRcl.rcl_publisher_init(
-                ref publisher, ref node, typeSupportHandle, "publisher_test_topic", publisherOptions);
+                publisher, node, typeSupportHandle, "publisher_test_topic", options);
+            Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_OK), Utils.PopRclErrorString());
+            return publisher;
         }
 
-        public static void ShutdownPublisher(
-            ref rcl_publisher_t publisher, ref rcl_node_t node, IntPtr publisherOptions)
+        public static void ShutdownPublisher(IntPtr publisher, IntPtr node)
         {
-            var ret = (RCLReturnEnum)NativeRcl.rcl_publisher_fini(ref publisher, ref node);
+            var ret = (RCLReturnEnum)NativeRcl.rcl_publisher_fini(publisher, node);
             Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_OK), Utils.PopRclErrorString());
-            NativeRclInterface.rclcs_publisher_dispose_options(publisherOptions);
+            NativeRclInterface.rclcs_free_publisher(publisher);
         }
 
         [Test]
         public void PublisherInit()
         {
-            rcl_publisher_t publisher = new rcl_publisher_t();
-            IntPtr publisherOptions = new IntPtr();
-            InitPublisher(ref publisher, ref node, publisherOptions);
-            ShutdownPublisher(ref publisher, ref node, publisherOptions);
+            var options = InitOptions();
+            var publisher = InitPublisher(this.Node, options);
+            ShutdownPublisher(publisher, this.Node);
+            ShutdownOptions(options);
         }
     }
 
     [TestFixture]
-    public class Publisher
+    public class PublisherTest
     {
-        rcl_context_t context;
-        rcl_node_t node;
-        IntPtr nodeOptions = new IntPtr();
+        private IntPtr Context = IntPtr.Zero;
+
+        private IntPtr NodeOptions = IntPtr.Zero;
+
+        private IntPtr Node = IntPtr.Zero;
+
+        private IntPtr PublisherOptions = IntPtr.Zero;
+
+        private IntPtr Publisher = IntPtr.Zero;
 
         [SetUp]
         public void SetUp()
         {
-            RCLInitialize.InitRcl(ref context);
-            NodeInitialize.InitNode(ref node, nodeOptions, ref context);
+            this.Context = RCLInitialize.InitRcl();
+            this.NodeOptions = NodeInitialize.InitOptions();
+            this.Node = NodeInitialize.InitNode(this.NodeOptions, this.Context);
+            this.PublisherOptions = PublisherInitialize.InitOptions();
+            this.Publisher = PublisherInitialize.InitPublisher(this.Node, this.PublisherOptions);
         }
 
         [TearDown]
         public void TearDown()
         {
-            NodeInitialize.ShutdownNode(ref node, nodeOptions);
-            RCLInitialize.ShutdownRcl(ref context);
+            PublisherInitialize.ShutdownPublisher(this.Publisher, this.Node);
+            PublisherInitialize.ShutdownOptions(this.PublisherOptions);
+            NodeInitialize.ShutdownNode(this.Node);
+            NodeInitialize.ShutdownOptions(this.NodeOptions);
+            RCLInitialize.ShutdownRcl(this.Context);
         }
 
         [Test]
         public void PublisherPublish()
         {
-            rcl_publisher_t publisher = new rcl_publisher_t();
-            IntPtr publisherOptions = new IntPtr();
-            PublisherInitialize.InitPublisher(ref publisher, ref node, publisherOptions);
             MessageInternals msg = new std_msgs.msg.Bool();
             rcl_allocator_t allocator = NativeRcl.rcutils_get_default_allocator();
 
-            var ret = (RCLReturnEnum)NativeRcl.rcl_publish(ref publisher, msg.Handle, allocator.allocate);
+            var ret = (RCLReturnEnum)NativeRcl.rcl_publish(this.Publisher, msg.Handle, allocator.allocate);
             Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_OK), Utils.PopRclErrorString());
-            PublisherInitialize.ShutdownPublisher(ref publisher, ref node, publisherOptions);
         }
     }
 
     [TestFixture]
     public class SubscriptionInitialize
     {
-        [Test]
-        public void GetZeroInitializedSubscription()
+        private IntPtr Context = IntPtr.Zero;
+
+        private IntPtr NodeOptions = IntPtr.Zero;
+
+        private IntPtr Node = IntPtr.Zero;
+
+        [SetUp]
+        public void SetUp()
         {
-            rcl_subscription_t subscription = NativeRcl.rcl_get_zero_initialized_subscription();
+            this.Context = RCLInitialize.InitRcl();
+            this.NodeOptions = NodeInitialize.InitOptions();
+            this.Node = NodeInitialize.InitNode(this.NodeOptions, this.Context);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            NodeInitialize.ShutdownNode(this.Node);
+            NodeInitialize.ShutdownOptions(this.NodeOptions);
+            RCLInitialize.ShutdownRcl(this.Context);
         }
 
         [Test]
@@ -348,76 +363,82 @@ namespace ROS2.TestNativeMethods
             NativeRclInterface.rclcs_subscription_dispose_options(subscriptionOptions);
         }
 
-        public static void InitSubscription(
-            ref rcl_subscription_t subscription, IntPtr subscriptionOptions, ref rcl_node_t node)
+        internal static IntPtr InitOptions()
         {
-            subscription = NativeRcl.rcl_get_zero_initialized_subscription();
             QualityOfServiceProfile qos = new QualityOfServiceProfile();
-            subscriptionOptions = NativeRclInterface.rclcs_subscription_create_options(qos.handle);            
+            return NativeRclInterface.rclcs_subscription_create_options(qos.handle);      
+        }
+
+        internal static void ShutdownOptions(IntPtr options)
+        {
+            NativeRclInterface.rclcs_subscription_dispose_options(options);
+        }
+
+        internal static IntPtr InitSubscription(IntPtr node, IntPtr options)
+        {
+            IntPtr subscription = NativeRclInterface.rclcs_get_zero_initialized_subscription();      
             MessageInternals msg = new std_msgs.msg.Bool();
             IntPtr typeSupportHandle = msg.TypeSupportHandle;
             var ret = (RCLReturnEnum)NativeRcl.rcl_subscription_init(
-                ref subscription, ref node, typeSupportHandle, "/subscriber_test_topic", subscriptionOptions);
+                subscription, node, typeSupportHandle, "/subscriber_test_topic", options);
             Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_OK), Utils.PopRclErrorString());
+            return subscription;
         }
 
-        public static void ShutdownSubscription(
-            ref rcl_subscription_t subscription, IntPtr subscriptionOptions, ref rcl_node_t node)
+        internal static void ShutdownSubscription(IntPtr subscription, IntPtr node)
         {
-            var ret = (RCLReturnEnum)NativeRcl.rcl_subscription_fini(ref subscription, ref node);
-            NativeRclInterface.rclcs_subscription_dispose_options(subscriptionOptions);
+            var ret = (RCLReturnEnum)NativeRcl.rcl_subscription_fini(subscription, node);
             Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_OK), Utils.PopRclErrorString());
+            NativeRclInterface.rclcs_free_subscription(subscription);
         }
 
         [Test]
         public void SubscriptionInit()
         {
-            rcl_context_t context = new rcl_context_t();
-            rcl_node_t node = new rcl_node_t();
-            IntPtr nodeOptions = new IntPtr();
-
-            RCLInitialize.InitRcl(ref context);
-            NodeInitialize.InitNode(ref node, nodeOptions, ref context);
-
-            rcl_subscription_t subscription = new rcl_subscription_t();
-            IntPtr subscriptionOptions = new IntPtr();
-
-            InitSubscription(ref subscription, subscriptionOptions, ref node);
-            ShutdownSubscription(ref subscription, subscriptionOptions, ref node);
-
-            NodeInitialize.ShutdownNode(ref node, nodeOptions);
-            RCLInitialize.ShutdownRcl(ref context);
+            var options = InitOptions();
+            var subscription = InitSubscription(this.Node, options);
+            ShutdownSubscription(subscription, this.Node);
+            ShutdownOptions(options);
         }
     }
 
     [TestFixture]
-    public class Subscription
+    public class SubscriptionTest
     {
-        rcl_context_t context;
-        rcl_node_t node;
-        IntPtr nodeOptions = new IntPtr();
-        rcl_subscription_t subscription;
-        IntPtr subscriptionOptions = new IntPtr();
+        private IntPtr Context = IntPtr.Zero;
+
+        private IntPtr NodeOptions = IntPtr.Zero;
+
+        private IntPtr Node = IntPtr.Zero;
+
+        private IntPtr SubscriptionOptions = IntPtr.Zero;
+
+        private IntPtr Subscription = IntPtr.Zero;
 
         [SetUp]
         public void SetUp()
         {
-            RCLInitialize.InitRcl(ref context);
-            NodeInitialize.InitNode(ref node, nodeOptions, ref context);
-            SubscriptionInitialize.InitSubscription(ref subscription, subscriptionOptions, ref node);
+            this.Context = RCLInitialize.InitRcl();
+            this.NodeOptions = NodeInitialize.InitOptions();
+            this.Node = NodeInitialize.InitNode(this.NodeOptions, this.Context);
+            this.SubscriptionOptions = SubscriptionInitialize.InitOptions();
+            this.Subscription = SubscriptionInitialize.InitSubscription(this.Node, this.SubscriptionOptions);
         }
 
         [TearDown]
         public void TearDown()
         {
-            NodeInitialize.ShutdownNode(ref node, nodeOptions);
-            RCLInitialize.ShutdownRcl(ref context);
+            SubscriptionInitialize.ShutdownSubscription(this.Subscription, this.Node);
+            SubscriptionInitialize.ShutdownOptions(this.SubscriptionOptions);
+            NodeInitialize.ShutdownNode(this.Node);
+            NodeInitialize.ShutdownOptions(this.NodeOptions);
+            RCLInitialize.ShutdownRcl(this.Context);
         }
 
         [Test]
         public void SubscriptionIsValid()
         {
-            Assert.That(NativeRcl.rcl_subscription_is_valid(ref subscription), Is.True);
+            Assert.That(NativeRclInterface.rclcs_subscription_is_valid(this.Subscription), Is.True);
         }
 
         [Test]
@@ -426,163 +447,135 @@ namespace ROS2.TestNativeMethods
             NativeRcl.rcl_reset_error();
 
             rcl_allocator_t allocator = NativeRcl.rcutils_get_default_allocator();
-            rcl_wait_set_t waitSet = NativeRcl.rcl_get_zero_initialized_wait_set();
+            IntPtr handle = NativeRclInterface.rclcs_get_zero_initialized_wait_set();
             TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_init(
-                ref waitSet,
+                handle,
                 (UIntPtr)1,
                 (UIntPtr)0,
                 (UIntPtr)0,
                 (UIntPtr)0,
                 (UIntPtr)0,
                 (UIntPtr)0,
-                ref context,
+                this.Context,
                 allocator
             ));
-            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_clear(ref waitSet));
+            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_clear(handle));
 
-            Assert.That(NativeRcl.rcl_subscription_is_valid(ref subscription), Is.True);
+            Assert.That(NativeRclInterface.rclcs_subscription_is_valid(this.Subscription), Is.True);
             UIntPtr index = (UIntPtr)42;
-            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_add_subscription(ref waitSet, ref subscription, ref index));
+            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_add_subscription(handle, this.Subscription, out index));
             Assert.That(index.ToUInt64(), Is.EqualTo(0));
 
             long timeout_ns = 10*1000*1000;
-            var ret = (RCLReturnEnum)NativeRcl.rcl_wait(ref waitSet, timeout_ns);
+            var ret = (RCLReturnEnum)NativeRcl.rcl_wait(handle, timeout_ns);
             Assert.That(ret, Is.EqualTo(RCLReturnEnum.RCL_RET_TIMEOUT));
+            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_fini(handle));
+            NativeRclInterface.rclcs_free_wait_set(handle);
         }
     }
 
     [TestFixture]
     public class WaitSet
     {
-        rcl_context_t context;
-        rcl_node_t node;
-        IntPtr nodeOptions = new IntPtr();
+        private IntPtr Context = IntPtr.Zero;
 
         [SetUp]
         public void SetUp()
         {
-            RCLInitialize.InitRcl(ref context);
-            NodeInitialize.InitNode(ref node, nodeOptions, ref context);
+            this.Context = RCLInitialize.InitRcl();
         }
 
         [TearDown]
         public void TearDown()
         {
-            NodeInitialize.ShutdownNode(ref node, nodeOptions);
-            RCLInitialize.ShutdownRcl(ref context);
-        }
-
-        [Test]
-        public void GetZeroInitializedWaitSet()
-        {
-            // NOTE: The struct rcl_wait_set_t contains size_t
-            // fields that are set to UIntPtr in C# declaration,
-            // not guaranteed to work for all C implemenations/platforms.
-            rcl_wait_set_t waitSet = NativeRcl.rcl_get_zero_initialized_wait_set();
+            RCLInitialize.ShutdownRcl(this.Context);
         }
 
         [Test]
         public void WaitSetInit()
         {
             rcl_allocator_t allocator = NativeRcl.rcutils_get_default_allocator();
-            rcl_wait_set_t waitSet = NativeRcl.rcl_get_zero_initialized_wait_set();
+            IntPtr handle = NativeRclInterface.rclcs_get_zero_initialized_wait_set();
             TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_init(
-                ref waitSet,
+                handle,
                 (UIntPtr)1,
                 (UIntPtr)0,
                 (UIntPtr)0,
                 (UIntPtr)0,
                 (UIntPtr)0,
                 (UIntPtr)0,
-                ref context,
+                this.Context,
                 allocator
             ));
-            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_fini(ref waitSet));
+            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_fini(handle));
+            NativeRclInterface.rclcs_free_wait_set(handle);
         }
 
         [Test]
         public void WaitSetClear()
         {
             rcl_allocator_t allocator = NativeRcl.rcutils_get_default_allocator();
-            rcl_wait_set_t waitSet = NativeRcl.rcl_get_zero_initialized_wait_set();
-            NativeRcl.rcl_wait_set_init(
-                ref waitSet,
+            IntPtr handle = NativeRclInterface.rclcs_get_zero_initialized_wait_set();
+            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_init(
+                handle,
                 (UIntPtr)1,
                 (UIntPtr)0,
                 (UIntPtr)0,
                 (UIntPtr)0,
                 (UIntPtr)0,
                 (UIntPtr)0,
-                ref context,
+                this.Context,
                 allocator
-            );
-            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_clear(ref waitSet));
-            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_fini(ref waitSet));
+            ));
+            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_clear(handle));
+            TestUtils.AssertRetOk(NativeRcl.rcl_wait_set_fini(handle));
+            NativeRclInterface.rclcs_free_wait_set(handle);
         }
     }
 
     [TestFixture]
     public class QualityOfService
     {
-        rcl_context_t context;
-        rcl_node_t node;
-        IntPtr nodeOptions = new IntPtr();
+        private IntPtr Context = IntPtr.Zero;
+
+        private IntPtr Options = IntPtr.Zero;
+
+        private IntPtr Node = IntPtr.Zero;
 
         [SetUp]
         public void SetUp()
         {
-            RCLInitialize.InitRcl(ref context);
-            NodeInitialize.InitNode(ref node, nodeOptions, ref context);
+            this.Context = RCLInitialize.InitRcl();
+            this.Options = NodeInitialize.InitOptions();
+            this.Node = NodeInitialize.InitNode(this.Options, this.Context);
         }
 
         [TearDown]
         public void TearDown()
         {
-            NodeInitialize.ShutdownNode(ref node, nodeOptions);
-            RCLInitialize.ShutdownRcl(ref context);
+            NodeInitialize.ShutdownNode(this.Node);
+            NodeInitialize.ShutdownOptions(this.Options);
+            RCLInitialize.ShutdownRcl(this.Context);
         }
 
         [Test]
         public void SetSubscriptionQosProfile()
         {
-            rcl_subscription_t subscription = NativeRcl.rcl_get_zero_initialized_subscription();
-
             QualityOfServiceProfile qos = new QualityOfServiceProfile();
-            IntPtr subscriptionOptions = NativeRclInterface.rclcs_subscription_create_options(qos.handle);
+            IntPtr options = NativeRclInterface.rclcs_subscription_create_options(qos.handle);
 
-            MessageInternals msg = new std_msgs.msg.Bool();
-            IntPtr typeSupportHandle = msg.TypeSupportHandle;
-            NativeRcl.rcl_subscription_init(
-                ref subscription, ref node, typeSupportHandle, "/subscriber_test_topic", subscriptionOptions);
+            var subscription = SubscriptionInitialize.InitSubscription(this.Node, options);
 
-            Assert.That(NativeRcl.rcl_subscription_is_valid(ref subscription), Is.True);
+            Assert.That(NativeRclInterface.rclcs_subscription_is_valid(subscription), Is.True);
 
-            NativeRcl.rcl_subscription_fini(ref subscription, ref node);
-            NativeRclInterface.rclcs_subscription_dispose_options(subscriptionOptions);
+            SubscriptionInitialize.ShutdownSubscription(subscription, this.Node);
+            SubscriptionInitialize.ShutdownOptions(options);
         }
     }
 
     [TestFixture]
     public class Clock
     {
-        rcl_context_t context;
-        rcl_node_t node;
-        IntPtr nodeOptions = new IntPtr();
-
-        [SetUp]
-        public void SetUp()
-        {
-            RCLInitialize.InitRcl(ref context);
-            NodeInitialize.InitNode(ref node, nodeOptions, ref context);
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            NodeInitialize.ShutdownNode(ref node, nodeOptions);
-            RCLInitialize.ShutdownRcl(ref context);
-        }
-
         [Test]
         public void CreateClock()
         {
@@ -597,7 +590,7 @@ namespace ROS2.TestNativeMethods
             rcl_allocator_t allocator = NativeRcl.rcutils_get_default_allocator();
             IntPtr clockHandle = NativeRclInterface.rclcs_ros_clock_create(ref allocator);
             long queryNow = 0;
-            NativeRcl.rcl_clock_get_now(clockHandle, ref queryNow);
+            NativeRcl.rcl_clock_get_now(clockHandle, out queryNow);
 
             Assert.That(queryNow, Is.Not.EqualTo(0));
 

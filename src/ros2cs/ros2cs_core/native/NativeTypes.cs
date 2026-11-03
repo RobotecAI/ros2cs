@@ -1,4 +1,4 @@
-// Copyright 2019-2021 Robotec.ai
+// Copyright 2019-2023 Robotec.ai
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,45 +42,12 @@ namespace ROS2
     private IntPtr impl;
   }
 
-  public struct rcl_context_t
-{
-    private IntPtr global_arguments;
-    private IntPtr impl;
-    private IntPtr instance_id_storage;
-  }
-
   public struct rcl_error_string_t
   {
     internal IntPtr str;
   }
 
   public struct rcl_init_options_t
-  {
-    private IntPtr impl;
-  }
-
-  public struct rcl_node_t
-  {
-    private IntPtr context;
-    private IntPtr rcl_node_impl_t;
-  }
-
-  public struct rcl_publisher_t
-  {
-    private IntPtr impl;
-  }
-
-  public struct rcl_subscription_t
-  {
-    private IntPtr impl;
-  }
-
-  public struct rcl_client_t
-  {
-    private IntPtr impl;
-  }
-
-  public struct rcl_service_t
   {
     private IntPtr impl;
   }
@@ -95,23 +62,6 @@ namespace ROS2
     [MarshalAs(UnmanagedType.I8)]
     public long sequence_number;
   };
-
-  public struct rcl_wait_set_t
-  {
-    private IntPtr subscriptions;
-    internal UIntPtr size_of_subscriptions;
-    private IntPtr guard_conditions;
-    internal UIntPtr size_of_guard_conditions;
-    private IntPtr timers;
-    internal UIntPtr size_of_timers;
-    private IntPtr clients;
-    internal UIntPtr size_of_clients;
-    private IntPtr services;
-    internal UIntPtr size_of_services;
-    private IntPtr events;
-    internal UIntPtr size_of_events;
-    private IntPtr impl;
-  }
 
   public struct rcl_clock_t
   {

@@ -1,5 +1,5 @@
-﻿// Copyright 2019 Dyno Robotics (by Samuel Lindgren samuel@dynorobotics.se)
-// Copyright 2019-2021 Robotec.ai
+﻿// Copyright 2019-2023 Robotec.ai
+// Copyright 2019 Dyno Robotics (by Samuel Lindgren samuel@dynorobotics.se)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,41 +20,44 @@ namespace ROS2.Test
     [TestFixture]
     public class LargeMessageTest
     {
-        INode subscriptionNode;
-        INode publisherNode;
-        Publisher<std_msgs.msg.Float64MultiArray> publisher;
+        private Context Context;
+
+        private INode SubscriptionNode;
+
+        private INode PublisherNode;
+
+        private IPublisher<std_msgs.msg.Float64MultiArray> Publisher;
 
         [SetUp]
         public void SetUp()
         {
-            Ros2cs.Init();
+            Context = new Context();
 
-            subscriptionNode = Ros2cs.CreateNode("subscription_test_node");
-            publisherNode = Ros2cs.CreateNode("publisher_test_node");
+            Context.TryCreateNode("subscription_test_node", out SubscriptionNode);
+            Context.TryCreateNode("publisher_test_node", out PublisherNode);
 
-            publisher = publisherNode.CreatePublisher<std_msgs.msg.Float64MultiArray>("subscription_test_topic");
+            Publisher = PublisherNode.CreatePublisher<std_msgs.msg.Float64MultiArray>("subscription_test_topic");
         }
 
         [TearDown]
         public void TearDown()
         {
-            publisher.Dispose();
-            subscriptionNode.Dispose();
-            Ros2cs.Shutdown();
+            Context.Dispose();
         }
 
         [Test]
-        public void SubscriptionTriggerCallback()
+        public void SubscriptionTryProcess()
         {
             bool callbackTriggered = false;
-            subscriptionNode.CreateSubscription<std_msgs.msg.Float64MultiArray>(
+            using var subscription = SubscriptionNode.CreateSubscription<std_msgs.msg.Float64MultiArray>(
                 "subscription_test_topic", (msg) => { callbackTriggered = true; });
 
             std_msgs.msg.Float64MultiArray largeMsg = new std_msgs.msg.Float64MultiArray();
             largeMsg.Data = new double[1024];
 
-            publisher.Publish(largeMsg);
-            Ros2cs.SpinOnce(subscriptionNode, 0.1);
+            Publisher.Publish(largeMsg);
+            
+            Assert.That(subscription.TryProcess());
 
             Assert.That(callbackTriggered, Is.True);
         }

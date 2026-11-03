@@ -1,4 +1,4 @@
-// Copyright 2019-2021 Robotec.ai
+// Copyright 2019-2023 Robotec.ai
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,43 +23,53 @@ namespace ROS2.Test
     {
         private static readonly string SERVICE_NAME = "test_service";
 
+        private Context Context;
+
         private INode Node;
 
         private IService<AddTwoInts_Request, AddTwoInts_Response> Service;
 
-        private Func<AddTwoInts_Request, AddTwoInts_Response> OnRequest =
-            msg => throw new InvalidOperationException("callback not set");
-
         [SetUp]
         public void SetUp()
         {
-            Ros2cs.Init();
-            Node = Ros2cs.CreateNode("service_test_node");
-            Service = Node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(SERVICE_NAME, OnRequest);
+            Context = new Context();
+            Context.TryCreateNode("service_test_node", out Node);
+            Service = Node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
+                SERVICE_NAME,
+                request => { throw new InvalidOperationException($"received request ${request}"); }
+            );
         }
 
         [TearDown]
         public void TearDown()
         {
-            Node.Dispose();
-            Ros2cs.Shutdown();
+            Context.Dispose();
         }
 
         [Test]
         public void DisposedServiceHandling()
         {
-            Assert.That(!Service.IsDisposed);
+            Assert.That(Service.IsDisposed, Is.False);
+
             Service.Dispose();
+
             Assert.That(Service.IsDisposed);
-            Assert.DoesNotThrow(() => { Ros2cs.SpinOnce(Node, 0.1); });
+            Assert.That(Node.Services, Does.Not.Contain(Service));
         }
 
         [Test]
-        public void ReinitializeDisposedService()
+        public void DoubleDisposeService()
         {
             Service.Dispose();
-            Service = Node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(SERVICE_NAME, OnRequest);
-            Assert.DoesNotThrow(() => { Ros2cs.SpinOnce(Node, 0.1); });
+            Service.Dispose();
+
+            Assert.That(Service.IsDisposed);
+        }
+
+        [Test]
+        public void ServiceTryProcess()
+        {
+            Assert.That(Service.TryProcess(), Is.False);
         }
     }
 }

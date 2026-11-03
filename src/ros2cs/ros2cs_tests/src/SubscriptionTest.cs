@@ -1,5 +1,5 @@
-﻿// Copyright 2019 Dyno Robotics (by Samuel Lindgren samuel@dynorobotics.se)
-// Copyright 2019-2021 Robotec.ai
+﻿// Copyright 2019-2023 Robotec.ai
+// Copyright 2019 Dyno Robotics (by Samuel Lindgren samuel@dynorobotics.se)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,40 +13,51 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using NUnit.Framework;
-using System.Collections.Generic;
 
 namespace ROS2.Test
 {
     [TestFixture]
     public class SubscriptionTest
     {
-        INode node;
-        Publisher<std_msgs.msg.Int32> publisher;
+        private static readonly string TOPIC = "test_subscription";
+
+        private Context Context;
+
+        private INode Node;
 
         [SetUp]
         public void SetUp()
         {
-            Ros2cs.Init();
-            node = Ros2cs.CreateNode("subscription_test_node");
-            publisher = node.CreatePublisher<std_msgs.msg.Int32>("subscription_test_topic");
+            Context = new Context();
+            Context.TryCreateNode("subscription_test_node", out Node);
         }
 
         [TearDown]
         public void TearDown()
         {
-            publisher.Dispose();
-            node.Dispose();
-            Ros2cs.Shutdown();
+            Context.Dispose();
+        }
+
+        private std_msgs.msg.Int32 CreateMessage(int data)
+        {
+            var msg = new std_msgs.msg.Int32();
+            msg.Data = data;
+            return msg;
         }
 
         [Test]
         public void SubscriptionTriggerCallback()
         {
             bool callbackTriggered = false;
-            node.CreateSubscription<std_msgs.msg.Int32>("subscription_test_topic", (msg) => { callbackTriggered = true; });
-            publisher.Publish(new std_msgs.msg.Int32());
-            Ros2cs.SpinOnce(node, 0.1);
+            using var subscription = Node.CreateSubscription<std_msgs.msg.Int32>(
+                TOPIC,
+                (msg) => { callbackTriggered = true; }
+            );
+            Node.CreatePublisher<std_msgs.msg.Int32>(TOPIC).Publish(CreateMessage(0));
+
+            Assert.That(subscription.TryProcess());
 
             Assert.That(callbackTriggered, Is.True);
         }
@@ -55,11 +66,13 @@ namespace ROS2.Test
         public void SubscriptionCallbackMessageData()
         {
             int messageData = 12345;
-            node.CreateSubscription<std_msgs.msg.Int32>("subscription_test_topic", (msg) => { messageData = msg.Data; });
-            std_msgs.msg.Int32 published_msg = new std_msgs.msg.Int32();
-            published_msg.Data = 42;
-            publisher.Publish(published_msg);
-            Ros2cs.SpinOnce(node, 0.1);
+            using var subscription = Node.CreateSubscription<std_msgs.msg.Int32>(
+                TOPIC,
+                (msg) => { messageData = msg.Data; }
+            );
+            Node.CreatePublisher<std_msgs.msg.Int32>(TOPIC).Publish(CreateMessage(42));
+
+            Assert.That(subscription.TryProcess());
 
             Assert.That(messageData, Is.EqualTo(42));
         }
@@ -67,60 +80,54 @@ namespace ROS2.Test
         [Test]
         public void DisposedSubscriptionHandling()
         {
-            ISubscription<std_msgs.msg.Int32> subscriber =
-              node.CreateSubscription<std_msgs.msg.Int32>("subscription_test_topic", (msg) => { });
-            subscriber.Dispose();
-            Assert.DoesNotThrow( () => { Ros2cs.SpinOnce(node, 0.1); });
+            var subscription = Node.CreateSubscription<std_msgs.msg.Int32>(
+                TOPIC,
+                (msg) => { throw new InvalidOperationException($"received message {msg}"); }
+            );
+            
+            Assert.That(subscription.IsDisposed, Is.False);
+
+            subscription.Dispose();
+
+            Assert.That(subscription.IsDisposed);
+            Assert.That(Node.Subscriptions, Does.Not.Contain(subscription));
         }
 
         [Test]
-        public void MultipleDisposedSubscriptionsHandling()
+        public void DoubleDisposeSubscription()
         {
-            int numberOfSubscribers = 10;
-            List<Subscription<std_msgs.msg.Int32>> subscriptions = new List<Subscription<std_msgs.msg.Int32>>();
-            for(int i = 0; i < numberOfSubscribers; i++)
-            {
-                subscriptions.Add(
-                    node.CreateSubscription<std_msgs.msg.Int32>("subscription_test_topic", (msg) => { }));
-            }
-            Ros2cs.SpinOnce(node, 0.1);
-            subscriptions.ForEach(delegate(Subscription<std_msgs.msg.Int32> subscription)
-            {
-                subscription.Dispose();
-            });
-            Assert.DoesNotThrow( () => { Ros2cs.SpinOnce(node, 0.1); });
-        }
+            var subscription = Node.CreateSubscription<std_msgs.msg.Int32>(
+                TOPIC,
+                (msg) => { throw new InvalidOperationException($"received message {msg}"); }
+            );
 
-        [Test]
-        public void ReinitializeDisposedSubscriber()
-        {
-            ISubscription<std_msgs.msg.Int32> subscriber =
-              node.CreateSubscription<std_msgs.msg.Int32>("subscription_test_topic", (msg) => { });
-            subscriber.Dispose();
-            subscriber =
-              node.CreateSubscription<std_msgs.msg.Int32>("subscription_test_topic", (msg) => { });
-            Assert.DoesNotThrow( () => { Ros2cs.SpinOnce(node, 0.1); });
+            subscription.Dispose();
+            subscription.Dispose();
+
+            Assert.That(subscription.IsDisposed);
         }
 
         [Test]
         public void SubscriptionQosDefaultDepth()
         {
             int count = 0;
-            node.CreateSubscription<std_msgs.msg.Int32>("subscription_test_topic",
-                                                        (msg) => { count += 1; });
-
-            std_msgs.msg.Int32 published_msg = new std_msgs.msg.Int32();
-            published_msg.Data = 42;
+            using var subscription = Node.CreateSubscription<std_msgs.msg.Int32>(
+                TOPIC,
+                (msg) => { count += 1; }
+            );
+            using var publisher = Node.CreatePublisher<std_msgs.msg.Int32>(TOPIC);
+            var msg = CreateMessage(42);
 
             for (int i = 0; i < 10; i++)
             {
-                publisher.Publish(published_msg);
+                publisher.Publish(msg);
             }
 
-            for (int i = 0; i < 11; i++)
+            for (int i = 0; i < 10; i++)
             {
-                Ros2cs.SpinOnce(node, 0.1);
+                Assert.That(subscription.TryProcess());
             }
+            Assert.That(subscription.TryProcess(), Is.False);
 
             Assert.That(count, Is.EqualTo(10));
         }
@@ -129,25 +136,24 @@ namespace ROS2.Test
         public void SubscriptionQosSensorDataDepth()
         {
             int count = 0;
-            QualityOfServiceProfile qosProfile = 
-                    new QualityOfServiceProfile(QosPresetProfile.SENSOR_DATA);
-
-            node.CreateSubscription<std_msgs.msg.Int32>("subscription_test_topic",
-                                                        (msg) => { count += 1; },
-                                                        qosProfile);
-
-            std_msgs.msg.Int32 published_msg = new std_msgs.msg.Int32();
-            published_msg.Data = 42;
+            using var subscription = Node.CreateSubscription<std_msgs.msg.Int32>(
+                TOPIC,
+                (msg) => { count += 1; },
+                new QualityOfServiceProfile(QosPresetProfile.SENSOR_DATA)
+            );
+            using var publisher = Node.CreatePublisher<std_msgs.msg.Int32>(TOPIC);
+            var msg = CreateMessage(42);
 
             for (int i = 0; i < 6; i++)
             {
-                publisher.Publish(published_msg);
+                publisher.Publish(msg);
             }
 
-            for (int i = 0; i < 11; i++)
+            for (int i = 0; i < 5; i++)
             {
-                Ros2cs.SpinOnce(node, 0.1);
+                Assert.That(subscription.TryProcess());
             }
+            Assert.That(subscription.TryProcess(), Is.False);
 
             Assert.That(count, Is.EqualTo(5));
         }

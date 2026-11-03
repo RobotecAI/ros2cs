@@ -1,4 +1,4 @@
-// Copyright 2019-2021 Robotec.ai
+// Copyright 2019-2023 Robotec.ai
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,6 +35,14 @@ namespace ROS2
           throw new InvalidNamespaceException(errorMessage);
         case RCLReturnEnum.RCL_RET_WAIT_SET_EMPTY:
           throw new WaitSetEmptyException(errorMessage);
+        case RCLReturnEnum.RCL_RET_NOT_INIT:
+        case RCLReturnEnum.RCL_RET_NODE_INVALID:
+        case RCLReturnEnum.RCL_RET_PUBLISHER_INVALID:
+        case RCLReturnEnum.RCL_RET_SUBSCRIPTION_INVALID:
+        case RCLReturnEnum.RCL_RET_CLIENT_INVALID:
+        case RCLReturnEnum.RCL_RET_SERVICE_INVALID:
+        case RCLReturnEnum.RCL_RET_WAIT_SET_INVALID:
+          throw new ObjectDisposedException(errorMessage);
         default:
           throw new RuntimeError(errorMessage);
       }

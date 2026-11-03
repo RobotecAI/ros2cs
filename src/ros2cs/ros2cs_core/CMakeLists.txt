@@ -1,4 +1,4 @@
-# Copyright 2019-2021 Robotec.ai
+# Copyright 2019-2023 Robotec.ai
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -79,6 +79,9 @@ set(CS_INTERFACES
   interfaces/IService.cs
   interfaces/IPublisher.cs
   interfaces/ISubscription.cs
+  interfaces/IContext.cs
+  interfaces/IExecutor.cs
+  interfaces/IWaitable.cs
 )
 
 set(CS_NATIVE
@@ -91,6 +94,9 @@ set(CS_NATIVE
 
 set(CS_UTILS
   utils/Utils.cs
+  utils/LockedDictionary.cs
+  utils/LockedCollection.cs
+  utils/MappedValueDictionary.cs
 )
 
 set(CS_SOURCES
@@ -103,9 +109,12 @@ set(CS_SOURCES
   Node.cs
   Publisher.cs
   QualityOfServiceProfile.cs
-  Ros2cs.cs
   Subscription.cs
   WaitSet.cs
+  Context.cs
+  GuardCondition.cs
+  executors/ManualExecutor.cs
+  executors/TaskExecutor.cs
   properties/AssemblyInfo.cs
 )
 

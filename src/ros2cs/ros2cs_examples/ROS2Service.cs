@@ -1,4 +1,4 @@
-// Copyright 2019-2021 Robotec.ai
+// Copyright 2019-2023 Robotec.ai
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,34 +14,38 @@
 
 
 using System;
-using System.Collections.Generic;
+using System.Collections;
 using ROS2;
+using ROS2.Executors;
+using example_interfaces.srv;
 
 namespace Examples
 {
-  /// <summary> A simple service class to illustrate Ros2cs in action </summary>
-  public class ROS2Service
-  {
-    public static IService<example_interfaces.srv.AddTwoInts_Request, example_interfaces.srv.AddTwoInts_Response> my_service;
-
-    public static void Main(string[] args)
+    /// <summary> A simple service class to illustrate Ros2cs in action </summary>
+    public class ROS2Service
     {
-      Console.WriteLine("Service start");
-      Ros2cs.Init();
-      INode node = Ros2cs.CreateNode("service");
-      my_service = node.CreateService<example_interfaces.srv.AddTwoInts_Request, example_interfaces.srv.AddTwoInts_Response>(
-        "add_two_ints", recv_callback);
+        public static void Main(string[] args)
+        {
+            Console.WriteLine("Service start");
 
-      Ros2cs.Spin(node);
-      Ros2cs.Shutdown();
-    }
+            // everything is disposed when disposing the context
+            using Context context = new Context();
+            using ManualExecutor executor = new ManualExecutor(context);
+            context.TryCreateNode("service", out INode node);
+            executor.Add(node);
 
-    public static example_interfaces.srv.AddTwoInts_Response recv_callback( example_interfaces.srv.AddTwoInts_Request msg )
-    {
-      Console.WriteLine ("Incoming Service Request A=" + msg.A + " B=" + msg.B);
-      example_interfaces.srv.AddTwoInts_Response response = new example_interfaces.srv.AddTwoInts_Response();
-      response.Sum = msg.A + msg.B;
-      return response;
+            IService<AddTwoInts_Request, AddTwoInts_Response> my_service = node.CreateService<AddTwoInts_Request, AddTwoInts_Response>(
+                "add_two_ints",
+                msg =>
+                {
+                    Console.WriteLine("Incoming Service Request A={0} B={1}", msg.A, msg.B);
+                    AddTwoInts_Response response = new AddTwoInts_Response();
+                    response.Sum = msg.A + msg.B;
+                    return response;
+                }
+            );
+
+            executor.SpinWhile(() => true);
+        }
     }
-  }
 }

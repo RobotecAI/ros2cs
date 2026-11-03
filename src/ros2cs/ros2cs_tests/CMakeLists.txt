@@ -1,3 +1,17 @@
+# Copyright 2019-2023 Robotec.ai
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 cmake_minimum_required(VERSION 3.6)
 project(ros2cs_tests)
 
@@ -29,8 +43,8 @@ if(BUILD_TESTING)
 
   set(TESTS_SRC
     src/ClockTest.cs
-    src/CreateNodeTest.cs
-    src/InitShutdownTest.cs
+    src/ContextTest.cs
+    src/PublisherTest.cs
     src/LargeMessageTest.cs
     src/MessagesTest.cs
     src/NodeTest.cs
@@ -39,6 +53,10 @@ if(BUILD_TESTING)
     src/ServiceTest.cs
     src/SubscriptionTest.cs
     src/TestUtils.cs
+    src/WaitSetTest.cs
+    src/GuardConditionTest.cs
+    src/ManualExecutorTest.cs
+    src/TaskExecutorTest.cs
   )
 
   add_dotnet_test(ros2cs_tests
