@@ -81,7 +81,7 @@ public class @(message_class) : @(internals_interface), @(parent_interface)
 @[  elif isinstance(member.type, AbstractSequence) and isinstance(member.type.value_type, AbstractNestableType)]@
   public @(get_dotnet_type(member.type)) @(get_field_name(member.type, member.name, message_class)) { get; set; }
 @[  elif isinstance(member.type, Array) and isinstance(member.type.value_type, AbstractNestableType)]@
-  public @(get_dotnet_type(member.type)) @(get_field_name(member.type, member.name, message_class)) { get; private set; }
+  public @(get_dotnet_type(member.type)) @(get_field_name(member.type, member.name, message_class)) { get; set; }
 @[  end if]@
 @[end for]@
 
